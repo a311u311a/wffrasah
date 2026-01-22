@@ -1,5 +1,6 @@
+/*
 import 'package:flutter/material.dart';
-import '../widgets/coupons_list.dart';
+import '../widgets/coupons_list.dart'; // تأكد من أن المسار صحيح
 
 class DiscountsScreen extends StatelessWidget {
   const DiscountsScreen({super.key});
@@ -11,7 +12,7 @@ class DiscountsScreen extends StatelessWidget {
         title: const Text('التخفيضات'),
         backgroundColor: Colors.white,
       ),
-      body: const CouponsList(selectedStoreId: null), // عرض جميع الكوبونات
+      body: const CouponsList(selectedStoreId: null, searchQuery: '',), // عرض جميع الكوبونات
     );
   }
-}
+}*/

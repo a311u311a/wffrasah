@@ -1,14 +1,15 @@
-
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
-
+import 'package:flutter_svg/svg.dart';
+import '../constants.dart';
+import '../localization/app_localizations.dart';
 import '../models/store.dart';
 import 'error_message.dart';
 import 'loading_indicator.dart';
 
 class StoresList extends StatelessWidget {
   final Function(String?) onStoreSelected;
-  final String? selectedStoreId;
+  final String? selectedStoreId; // slug غالباً
 
   const StoresList({
     super.key,
@@ -18,24 +19,96 @@ class StoresList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 10,
-      child: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('stores').snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) return const ErrorMessage(message: 'خطأ في تحميل المتاجر');
-          if (!snapshot.hasData) return const CustomLoadingIndicator();
+    final localizations = AppLocalizations.of(context);
+    final supabase = Supabase.instance.client;
 
-          return ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: snapshot.data!.docs.length + 1, // +1 لزر "عرض الكل"
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                // زر "عرض الكل"
-                return _buildShowAllItem(selectedStoreId == null);
+    return SizedBox(
+      height: 75,
+      child: StreamBuilder<List<dynamic>>(
+        stream: supabase
+            .from('coupons')
+            .stream(primaryKey: ['id']).order('created_at', ascending: false),
+        builder: (context, couponSnapshot) {
+          if (couponSnapshot.hasError) return const SizedBox();
+          if (!couponSnapshot.hasData) return const CustomLoadingIndicator();
+
+          final couponRows =
+              (couponSnapshot.data ?? []).cast<Map<String, dynamic>>();
+
+          // ✅ كل القيم الموجودة في coupons.store_id (قد تكون slug أو id)
+          final Set<String> activeStoreKeys = couponRows
+              .map((c) => (c['store_id'] ?? c['storeId'])?.toString())
+              .where((v) => v != null && v.trim().isNotEmpty)
+              .cast<String>()
+              .toSet();
+
+          return StreamBuilder<List<dynamic>>(
+            stream: supabase.from('stores').stream(
+                primaryKey: ['id']).order('created_at', ascending: false),
+            builder: (context, storeSnapshot) {
+              if (storeSnapshot.hasError) {
+                return ErrorMessage(
+                  message: localizations?.translate('error_loading_stores') ??
+                      'Error loading stores',
+                );
               }
-              final store = Store.fromFirestore(snapshot.data!.docs[index - 1]);
-              return _buildStoreItem(store, selectedStoreId == store.id);
+              if (!storeSnapshot.hasData) return const CustomLoadingIndicator();
+
+              final storeRows =
+                  (storeSnapshot.data ?? []).cast<Map<String, dynamic>>();
+
+              final stores = storeRows
+                  .map((data) => Store.fromSupabase(
+                      data, localizations?.locale.languageCode ?? 'ar'))
+                  .where((s) => s.slug.trim().isNotEmpty) // ✅ هنا
+                  .where((s) =>
+                      activeStoreKeys.contains(s.slug) ||
+                      activeStoreKeys.contains(s.id))
+                  .toList();
+
+              // ✅ إزالة التكرار: نعتمد على "المفتاح" الفعلي للعرض (slug إن وجد وإلا id)
+              final seen = <String>{};
+              final displayStores = <Store>[];
+              for (final s in stores) {
+                final key = s.slug.trim().isNotEmpty ? s.slug : s.id;
+                if (seen.contains(key)) continue;
+                seen.add(key);
+                displayStores.add(s);
+              }
+
+              // ✅ لو المتجر المحدد لم يعد موجوداً ضمن النشطين
+              if (selectedStoreId != null &&
+                  selectedStoreId!.isNotEmpty &&
+                  !displayStores.any((s) {
+                    final key = s.slug.trim().isNotEmpty ? s.slug : s.id;
+                    return key == selectedStoreId;
+                  })) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  onStoreSelected(null);
+                });
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                scrollDirection: Axis.horizontal,
+                itemCount: displayStores.length + 1, // ✅ هنا
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return _buildShowAllItem(context, selectedStoreId == null);
+                  }
+
+                  final store = displayStores[index - 1]; // ✅ هنا
+                  final storeKey =
+                      store.slug.trim().isNotEmpty ? store.slug : store.id;
+
+                  return _buildStoreItem(
+                    context,
+                    store,
+                    selectedStoreId == storeKey,
+                    storeKey,
+                  );
+                },
+              );
             },
           );
         },
@@ -43,81 +116,107 @@ class StoresList extends StatelessWidget {
     );
   }
 
-  Widget _buildStoreItem(Store store, bool isSelected) {
+  Widget _buildStoreItem(
+    BuildContext context,
+    Store store,
+    bool isSelected,
+    String storeKey,
+  ) {
     return GestureDetector(
-      onTap: () => onStoreSelected(store.id), // تمرير storeId هنا
-      child: Container(
-
-
-        margin: const EdgeInsets.all(8),
-        padding: const EdgeInsets.all(2
-        ),
+      onTap: () => onStoreSelected(storeKey),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 100),
+        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 9),
+        width: 75,
+        height: 75,
         decoration: BoxDecoration(
-          color: isSelected ? Colors.purple.shade50 : Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? Colors.purple : Colors.grey.shade300,
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                store.image,
-                height: 40,
-                width: 80,
-                fit: BoxFit.cover,
-              alignment: Alignment.center,
-
-                errorBuilder: (context, error, stackTrace) => const Icon(Icons.store),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Expanded(
-              child: Text(
-                store.name,
-                style: TextStyle(
-                  color: isSelected ? Colors.purple.shade900 : Colors.black87,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: isSelected
+              ? Border(
+                  top: BorderSide(color: Constants.primaryColor, width: 2),
+                  left: BorderSide(color: Constants.primaryColor, width: 2),
+                  right: BorderSide(color: Constants.primaryColor, width: 2),
+                  bottom: BorderSide(color: Constants.primaryColor, width: 20),
+                )
+              : Border.all(color: Colors.grey.shade200, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: isSelected
+                  ? Constants.primaryColor.withOpacity(0.2)
+                  : Colors.black.withOpacity(0.05),
+              blurRadius: isSelected ? 6 : 2,
+              offset: const Offset(0, 3),
             ),
           ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.all(2.0),
+            child: Image.network(
+              store.image,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.store, size: 40, color: Colors.grey),
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildShowAllItem(bool isSelected) {
+  Widget _buildShowAllItem(BuildContext context, bool isSelected) {
+    final localizations = AppLocalizations.of(context);
+
     return GestureDetector(
-      onTap: () => onStoreSelected(null), // null يعني عرض الكل
-      child: Container(
-        margin: const EdgeInsets.all(8),
-        padding: const EdgeInsets.all(12),
+      onTap: () => onStoreSelected(null),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 100),
+        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 9),
+        width: 75,
+        height: 75,
         decoration: BoxDecoration(
-          color: isSelected ? Colors.purple.shade50 : Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? Colors.purple : Colors.grey.shade300,
-            width: isSelected ? 1 : 1,
-          ),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: isSelected
+              ? Border(
+                  top: BorderSide(color: Constants.primaryColor, width: 2),
+                  left: BorderSide(color: Constants.primaryColor, width: 2),
+                  right: BorderSide(color: Constants.primaryColor, width: 2),
+                  bottom: BorderSide(color: Constants.primaryColor, width: 20),
+                )
+              : Border.all(color: Colors.grey.shade200, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: isSelected
+                  ? Constants.primaryColor.withOpacity(0.2)
+                  : Colors.black.withOpacity(0.05),
+              blurRadius: isSelected ? 6 : 4,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.all_inclusive, size: 35, color: Colors.purple),
-            const SizedBox(height: 4),
-            Expanded(
-              child: Text(
-                'عرض الكل',
-                style: TextStyle(
-                  color: isSelected ? Colors.purple.shade900 : Colors.black87,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
+            SvgPicture.asset(
+              'assets/icon/grid.svg',
+              height: 30,
+              width: 30,
+              colorFilter: ColorFilter.mode(
+                isSelected ? Constants.primaryColor : Colors.grey,
+                BlendMode.srcIn,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              localizations?.translate('show_all') ?? 'All',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: isSelected ? Constants.primaryColor : Colors.black87,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: 12,
               ),
             ),
           ],

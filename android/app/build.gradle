@@ -1,17 +1,16 @@
 plugins {
     id "com.android.application"
-    // START: FlutterFire Configuration
-    id 'com.google.gms.google-services'
-    // END: FlutterFire Configuration
     id "kotlin-android"
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
+    // START: FlutterFire Configuration
+    id 'com.google.gms.google-services'
+    // END: FlutterFire Configuration
 }
 
 android {
     namespace = "com.example.coupon"
     compileSdk = 35
-    buildToolsVersion "30.0.3"
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -20,7 +19,12 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = '17'
+    }
+
+    androidResources {
+        // Prevents Gradle from compressing these assets which fixes the "cannot overwrite" error
+        noCompress 'jpg', 'jpeg', 'png', 'webp', 'json'
     }
 
     defaultConfig {
@@ -28,7 +32,7 @@ android {
         applicationId = "com.example.coupon"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -39,6 +43,9 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.debug
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }
@@ -46,5 +53,7 @@ android {
 flutter {
     source = "../.."
 }
-apply plugin: 'com.android.application'
-apply plugin: 'com.google.gms.google-services' // إضافة هذا السطر
+
+dependencies {
+    implementation platform('com.google.firebase:firebase-bom:33.9.0')
+}
