@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../constants.dart';
 import '../localization/app_localizations.dart';
-import '../Login Signup/Widget/snackbar.dart';
+import '../screens/login_signup/widgets/snackbar.dart';
 
 class ContactUsScreen extends StatefulWidget {
   const ContactUsScreen({super.key});
 
   @override
-  _ContactUsScreenState createState() => _ContactUsScreenState();
+  State<ContactUsScreen> createState() => _ContactUsScreenState();
 }
 
 class _ContactUsScreenState extends State<ContactUsScreen> {
@@ -33,7 +33,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
 
     final Uri emailLaunchUri = Uri(
       scheme: 'mailto',
-      path: 'a311u311a@gmail.com',
+      path: 'help@rbhan.co',
       queryParameters: {
         'subject': '${localizations?.translate('contact_us')} - $name',
         'body': message,
@@ -47,11 +47,13 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
         throw 'Could not launch $emailLaunchUri';
       }
     } catch (e) {
-      showSnackBar(
-        context,
-        '${localizations?.translate('email_failed') ?? 'Failed to send email'}: $e',
-        isError: true,
-      );
+      if (mounted) {
+        showSnackBar(
+          context,
+          '${localizations?.translate('email_failed') ?? 'Failed to send email'}: $e',
+          isError: true,
+        );
+      }
     }
   }
 

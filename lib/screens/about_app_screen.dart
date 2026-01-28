@@ -12,7 +12,7 @@ class AboutAppScreen extends StatefulWidget {
 
 class _AboutAppScreenState extends State<AboutAppScreen> {
   String _version = '';
-  String _appName = 'Coupon App';
+  final String _appName = 'Rbhan';
 
   @override
   void initState() {
@@ -24,7 +24,6 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
     final info = await PackageInfo.fromPlatform();
     setState(() {
       _version = info.version;
-      _appName = info.appName;
     });
   }
 
@@ -36,7 +35,7 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         title: Text(
-          localizations?.translate('حول التطبيق') ?? 'About App',
+          localizations?.translate('about_app') ?? 'About App',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -72,7 +71,7 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                   ],
                 ),
                 padding: const EdgeInsets.all(15),
-                child: Image.asset('assets/image/coupon.png',
+                child: Image.asset('assets/image/Rbhan.png',
                     errorBuilder: (c, e, s) => Icon(Icons.shopping_bag,
                         size: 40, color: Constants.primaryColor)),
               ),
@@ -101,8 +100,9 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
               _buildSectionContainer(
                 child: Column(
                   children: [
-                    const Text(
-                      'وجهتك الأولى للتسوق الذكي والتوفير الحقيقي.',
+                    Text(
+                      localizations?.translate('about_app_intro_title') ??
+                          'Your primery destination for smart shopping and real savings.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           fontSize: 16,
@@ -112,7 +112,8 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'نؤمن في $_appName بأن التسوق الممتع لا يجب أن يكون مكلفاً. نحن منصة متكاملة تجمع لك أحدث وأقوى الكوبونات وعروض الخصم من أشهر المتاجر المحلية والعالمية في مكان واحد.\n\nهدفنا هو تمكين المستهلك من الحصول على أفضل المنتجات بأقل الأسعار، من خلال واجهة سهلة الاستخدام وتحديثات يومية تضمن لك فاعلية كل كود خصم قبل استخدامه. مع $_appName، التوفير أصبح بضغطة زر.',
+                      localizations?.translate('about_app_intro_body') ??
+                          'At Rbhan, we believe that fun shopping shouldn\'t be expensive...',
                       textAlign: TextAlign.justify,
                       style: const TextStyle(
                           fontSize: 14,
@@ -133,7 +134,8 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                   children: [
                     Center(
                       child: Text(
-                        'لماذا نحن؟ (ما الذي يميزنا؟)',
+                        localizations?.translate('why_us_title') ??
+                            'Why Us? (What makes us special?)',
                         style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -143,20 +145,38 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                     ),
                     const SizedBox(height: 15),
                     Text(
-                      'لأننا نحرص على أن تحصل على كود خصم يعمل من أول مرة، جاء $_appName ليقدم لك تجربة خصومات موثوقة عبر:',
+                      localizations?.translate('why_us_intro') ??
+                          'Because we ensure you get a discount code that works from the first time...',
                       textAlign: TextAlign.justify,
                       style: const TextStyle(
                           fontSize: 14, height: 1.5, fontFamily: 'Tajawal'),
                     ),
                     const SizedBox(height: 10),
-                    _buildFeatureItem('تحديث يومي',
-                        'نقوم بفحص وتجربة جميع الكوبونات يدويًا يوميًا للتأكد من فعاليتها وصلاحيتها.'),
-                    _buildFeatureItem('عروض حصرية',
-                        'أكواد خصم خاصة لمستخدمي $_appName فقط عبر شراكات مباشرة مع المتاجر .'),
-                    _buildFeatureItem('تنبيهات ذكية',
-                        'لا تفوت فرصة أبداً! سنرسل لك إشعارات فورية عند توفر عرض جديد لمتجرك المفضل.'),
-                    _buildFeatureItem('شفافية تامة',
-                        'توضيح جميع شروط استخدام الكوبون بكل وضوح قبل الاستخدام.'),
+                    _buildFeatureItem(
+                        localizations
+                                ?.translate('feature_daily_update_title') ??
+                            'Daily Update',
+                        localizations?.translate('feature_daily_update_desc') ??
+                            'We manually check and test all coupons daily...'),
+                    _buildFeatureItem(
+                        localizations
+                                ?.translate('feature_exclusive_offers_title') ??
+                            'Exclusive Offers',
+                        localizations
+                                ?.translate('feature_exclusive_offers_desc') ??
+                            'Special discount codes for Rbhan users only...'),
+                    _buildFeatureItem(
+                        localizations
+                                ?.translate('feature_smart_alerts_title') ??
+                            'Smart Alerts',
+                        localizations?.translate('feature_smart_alerts_desc') ??
+                            'Never miss a chance! We will send you instant notifications...'),
+                    _buildFeatureItem(
+                        localizations
+                                ?.translate('feature_transparency_title') ??
+                            'Total Transparency',
+                        localizations?.translate('feature_transparency_desc') ??
+                            'Clarifying all coupon usage conditions clearly before use.'),
                   ],
                 ),
               ),
@@ -168,26 +188,27 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Text(
-                      ' تابعنا وشاركنا تجربتك أو استفساراتك عبر منصاتنا الرسمية:',
+                    Text(
+                      localizations?.translate('follow_us_text') ??
+                          'Follow us and share your experience...',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           fontSize: 14, height: 1.5, fontFamily: 'Tajawal'),
                     ),
                     const SizedBox(height: 15),
                     _buildSocialRow('assets/icon/x.png', 'X (تويتر سابقاً)',
-                        '@CouponApp'), // استبدل @CouponApp بالحساب الفعلي
+                        '@rbhanco'), // استبدل @CouponApp بالحساب الفعلي
                     _buildSocialRow(
-                        'assets/icon/instagram.png', 'إنستغرام', '@CouponApp'),
+                        'assets/icon/instagram.png', 'إنستغرام', '@rbhan.co'),
                     _buildSocialRow(
-                        'assets/icon/tiktok.png', 'تيك توك', '@CouponApp'),
+                        'assets/icon/tiktok.png', 'تيك توك', '@rbhan.co'),
                   ],
                 ),
               ),
 
               const SizedBox(height: 30),
               Text(
-                '© ${DateTime.now().year} جميع الحقوق محفوظة. كوبونات التخفيضات',
+                '© ${DateTime.now().year} ${localizations?.translate('rights_reserved_rbhan') ?? "All rights reserved. Rbhan App & Website"}',
                 style: TextStyle(
                     fontSize: 10,
                     color: Colors.grey[400],

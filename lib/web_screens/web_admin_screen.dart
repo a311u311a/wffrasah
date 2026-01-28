@@ -49,7 +49,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Constants.primaryColor.withOpacity(0.1),
+            Constants.primaryColor.withValues(alpha: 0.1),
             Colors.white,
           ],
         ),
@@ -167,7 +167,6 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
             icon: Icons.storefront_rounded,
             color: Colors.blueGrey,
             onTap: () {
-              // TODO: Navigate to admin stores
               _showComingSoon();
             },
           ),
@@ -179,7 +178,6 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
             icon: Icons.confirmation_number_outlined,
             color: Colors.deepPurple,
             onTap: () {
-              // TODO: Navigate to admin coupons
               _showComingSoon();
             },
           ),
@@ -191,7 +189,6 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
             icon: Icons.local_offer_rounded,
             color: Colors.orange,
             onTap: () {
-              // TODO: Navigate to admin offers
               _showComingSoon();
             },
           ),
@@ -203,7 +200,6 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
             icon: Icons.photo_library_outlined,
             color: Colors.teal,
             onTap: () {
-              // TODO: Navigate to admin carousel
               _showComingSoon();
             },
           ),
@@ -215,7 +211,6 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
             icon: Icons.notifications_active_rounded,
             color: Colors.redAccent,
             onTap: () {
-              // TODO: Navigate to admin notifications
               _showComingSoon();
             },
           ),
@@ -240,7 +235,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -252,7 +247,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 32),
@@ -302,9 +297,9 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.05),
+            color: color.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withOpacity(0.2)),
+            border: Border.all(color: color.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [

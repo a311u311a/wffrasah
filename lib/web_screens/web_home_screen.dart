@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 import '../constants.dart';
 import '../models/coupon.dart';
 import '../models/store.dart';
+import '../models/carousel.dart';
+import '../models/offers.dart';
+
 import '../providers/locale_provider.dart';
+
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
 import '../web_widgets/web_coupon_card.dart';
 import '../web_widgets/web_banner_carousel.dart';
 import '../web_widgets/web_search_bar.dart';
-
 import '../web_widgets/web_store_card.dart';
 import '../web_widgets/web_offer_card.dart';
-import '../models/offers.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 /// الصفحة الرئيسية الاحترافية المحدثة للويب
 class WebHomeScreen extends StatefulWidget {
@@ -27,11 +30,14 @@ class WebHomeScreen extends StatefulWidget {
 
 class _WebHomeScreenState extends State<WebHomeScreen> {
   final supabase = Supabase.instance.client;
+
   List<dynamic> displayItems = []; // قائمة مختلطة (كوبونات + عروض)
   List<Store> stores = [];
+  List<Carousel> carouselItems = [];
   bool isLoading = true;
   bool isFiltering = false;
   String? selectedStoreId;
+  final GlobalKey _couponsSectionKey = GlobalKey(); // ✅ مفتاح التمرير
 
   @override
   void initState() {
@@ -40,20 +46,22 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
   }
 
   Future<void> _loadData() async {
-    // إذا كانت المتاجر محملة بالفعل، فهذا يعني أننا نقوم بفلترة فقط
-    if (stores.isNotEmpty) {
-      setState(() => isFiltering = true);
-    } else {
-      setState(() => isLoading = true);
-    }
+    setState(() {
+      if (stores.isNotEmpty && selectedStoreId != null) {
+        isFiltering = true;
+      } else {
+        isLoading = true;
+      }
+    });
 
     final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
     final langCode = localeProvider.locale.languageCode;
 
     try {
       List<Store> loadedStores = stores;
+      List<Carousel> loadedCarousel = carouselItems;
 
-      // تحميل المتاجر فقط إذا لم تكن محملة من قبل
+      // 1) تحميل المتاجر والبنر مرة واحدة
       if (stores.isEmpty) {
         final storesData = await supabase
             .from('stores')
@@ -63,79 +71,101 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
         loadedStores = (storesData as List)
             .map((store) => Store.fromSupabase(store, langCode))
             .toList();
+
+        final carouselData = await supabase.from('carousel').select();
+        loadedCarousel = (carouselData as List)
+            .map((item) => Carousel.fromMap(item, langCode))
+            .toList();
       }
 
-      // إذا تم اختيار متجر، نجلب الكوبونات والعروض الخاصة به
+      // 2) حالة الفلترة حسب المتجر
       if (selectedStoreId != null) {
-        // 1. جلب الكوبونات
-        final couponsFuture = supabase
+        final selectedStore = loadedStores.firstWhere(
+          (s) => s.id == selectedStoreId,
+          orElse: () => Store(
+            id: selectedStoreId!,
+            slug: selectedStoreId!,
+            name: '',
+            description: '',
+            nameAr: '',
+            nameEn: '',
+            descriptionAr: '',
+            descriptionEn: '',
+            image: '',
+          ),
+        );
+
+        final storeKey = selectedStore.slug.isNotEmpty
+            ? selectedStore.slug
+            : selectedStoreId!;
+
+        // جلب الكوبونات
+        final couponsResponse = await supabase
             .from('coupons')
             .select()
-            .eq('store_id', selectedStoreId!)
+            .eq('store_id', storeKey.trim())
             .order('created_at', ascending: false);
 
-        // 2. جلب العروض
-        // ملاحظة: نفترض أن store_id في جدول offers هو نفسه id المتجر (أو slug حسب التصميم الجديد)
-        // وبما أننا نستخدم selectedStoreId (وهو UUID غالبًا)، نتأكد من الجدول.
-        // إذا كان الجدول يستخدم slug، سنحتاج لتعديل هذا، لكن سنفترض التناسق حالياً كما في الكوبونات.
-        final offersFuture = supabase
+        // جلب العروض
+        final offersResponse = await supabase
             .from('offers')
             .select()
-            .eq('store_id', selectedStoreId!)
+            .eq('store_id', storeKey.trim())
             .order('created_at', ascending: false);
 
-        final results = await Future.wait([couponsFuture, offersFuture]);
-
-        final loadedCoupons = (results[0] as List)
+        final loadedCoupons = (couponsResponse as List)
             .map((data) => Coupon.fromSupabase(data, langCode))
             .toList();
 
-        final loadedOffers = (results[1] as List)
+        final loadedOffers = (offersResponse as List)
             .map((data) => Offer.fromSupabase(data, langCode))
             .toList();
 
-        // دمج القائمتين
         final List<dynamic> allItems = [...loadedCoupons, ...loadedOffers];
 
-        // ترتيب حسب الأحدث (اختياري - هنا نعتمد على أن كلاهما مرتب، لكن الدمج قد يحتاج إعادة ترتيب)
-        // للتبسيط سنعرض الكوبونات ثم العروض، أو يمكن خلطهم إذا كان لديهم timestamp مشترك
-        // allItems.shuffle(); // أو ترتيب زمني
-
-        setState(() {
-          stores = loadedStores;
-          displayItems = allItems;
-          isLoading = false;
-          isFiltering = false;
-        });
+        if (mounted) {
+          setState(() {
+            stores = loadedStores;
+            carouselItems = loadedCarousel;
+            displayItems = allItems;
+            isLoading = false;
+            isFiltering = false;
+          });
+        }
         return;
       }
 
-      // الحالة الافتراضية (الصفحة الرئيسية): نجلب أحدث الكوبونات فقط (أو أحدث العروض أيضاً إذا أردنا)
-      // حالياً سنبقيها للكوبونات فقط كما كان، أو يمكننا جلب Mix
+      // 3) الحالة الافتراضية: أحدث الكوبونات
       final couponsData = await supabase
           .from('coupons')
           .select()
           .order('created_at', ascending: false)
-          .limit(12);
+          .limit(20);
 
       final loadedCoupons = (couponsData as List)
           .map((coupon) => Coupon.fromSupabase(coupon, langCode))
           .toList();
 
-      setState(() {
-        stores = loadedStores;
-        displayItems = loadedCoupons;
-        isLoading = false;
-        isFiltering = false;
-      });
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-        isFiltering = false;
-      });
       if (mounted) {
+        setState(() {
+          stores = loadedStores;
+          carouselItems = loadedCarousel;
+          displayItems = loadedCoupons;
+          isLoading = false;
+          isFiltering = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          isFiltering = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('حدث خطأ: $e')),
+          SnackBar(
+            content: Text('حدث خطأ أثناء تحميل البيانات: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -150,19 +180,10 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // شريط البحث
             _buildSearchSection(),
-
-            // قسم Hero الجديد (Grid متاجر + Carousel)
             _buildHeroSection(),
-
-            // Latest Coupons Section
             _buildCouponsSection(),
-
-            // Popular Stores Section
             _buildStoresSection(),
-
-            // Footer
             const WebFooter(),
           ],
         ),
@@ -179,22 +200,18 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
       ),
       decoration: BoxDecoration(
         color: Colors.grey[50],
-        border: Border(
-          bottom: BorderSide(color: Colors.grey[200]!),
-        ),
+        border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
       ),
       child: Center(
         child: WebSearchBar(
           hintText: 'ابحث عن الكوبونات والمتاجر...',
-          onSearch: (query) {
-            // البحث سيتم تنفيذه لاحقاً
-          },
+          onSearch: (query) {},
         ),
       ),
     );
   }
 
-  // قسم Hero الجديد (Grid متاجر + Carousel)
+  // Hero
   Widget _buildHeroSection() {
     if (isLoading && stores.isEmpty) return const SizedBox.shrink();
 
@@ -202,22 +219,13 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
       padding: ResponsivePadding.page(context),
       child: ResponsiveLayout.isDesktop(context)
           ? SizedBox(
-              height: 450, // ✅ تحديد ارتفاع ثابت للديسك توب
+              height: 380,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Carousel العروض (الأكبر - يمين في العربي)
-                  Expanded(
-                    flex: 3,
-                    child: _buildFeaturedCarousel(),
-                  ),
+                  Expanded(flex: 5, child: _buildFeaturedCarousel()),
                   const SizedBox(width: 24),
-
-                  // قائمة المتاجر الجانبية (الأصغر - يسار في العربي)
-                  Expanded(
-                    flex: 1,
-                    child: _buildBestStoresSidePanel(),
-                  ),
+                  Expanded(flex: 2, child: _buildBestStoresSidePanel()),
                 ],
               ),
             )
@@ -232,8 +240,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
   }
 
   Widget _buildBestStoresSidePanel() {
-    final topStores = stores.take(5).toList();
-
+    final topStores = stores.take(9).toList();
     if (topStores.isEmpty) return const SizedBox.shrink();
 
     return Container(
@@ -244,7 +251,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
         border: Border.all(color: Colors.grey[100]!),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -252,7 +259,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min, // ✅ مهم عشان يغلف المحتوى
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -286,80 +293,107 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          // ✅ إزالة Expanded واستخدام shrinkWrap
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: topStores.length,
-            separatorBuilder: (context, index) => const Divider(height: 16),
-            itemBuilder: (context, index) {
-              final store = topStores[index];
-              return InkWell(
-                onTap: () {
-                  setState(() => selectedStoreId = store.id);
-                  _loadData();
-                },
-                borderRadius: BorderRadius.circular(8),
-                child: Row(
+
+          // 3x3
+          Column(
+            children: [
+              for (int i = 0; i < 3; i++) ...[
+                if (i > 0) const SizedBox(height: 8),
+                Row(
                   children: [
-                    Container(
-                      width: 45,
-                      height: 45,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey[200]!),
-                      ),
-                      padding: const EdgeInsets.all(4),
-                      child: store.image.isNotEmpty
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: CachedNetworkImage(
-                                imageUrl: store.image,
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) => Container(
-                                  color: Colors.grey[200],
-                                  child: const Center(
-                                    child: SizedBox(
-                                      width: 10,
-                                      height: 10,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    ),
+                    for (int j = 0; j < 3; j++) ...[
+                      if (j > 0) const SizedBox(width: 8),
+                      Expanded(
+                        child: Builder(
+                          builder: (context) {
+                            final index = i * 3 + j;
+                            if (index >= topStores.length) {
+                              return const SizedBox();
+                            }
+                            final store = topStores[index];
+                            final isSelected = selectedStoreId == store.id;
+
+                            return InkWell(
+                              onTap: () {
+                                setState(() => selectedStoreId = store.id);
+                                _loadData();
+
+                                Future.delayed(
+                                    const Duration(milliseconds: 300), () {
+                                  if (_couponsSectionKey.currentContext !=
+                                      null) {
+                                    Scrollable.ensureVisible(
+                                      _couponsSectionKey.currentContext!,
+                                      duration:
+                                          const Duration(milliseconds: 600),
+                                      curve: Curves.easeInOut,
+                                      alignment: 0.1,
+                                    );
+                                  }
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? Constants.primaryColor
+                                          .withValues(alpha: 0.05)
+                                      : Colors.grey[50],
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? Constants.primaryColor
+                                        : Colors.grey[200]!,
+                                    width: isSelected ? 1.5 : 1,
                                   ),
                                 ),
-                                errorWidget: (context, url, error) =>
-                                    const Icon(Icons.store, size: 20),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      width: 75,
+                                      height: 75,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                            color: Colors.grey[100]!),
+                                      ),
+                                      child: store.image.isNotEmpty
+                                          ? ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                              child: CachedNetworkImage(
+                                                imageUrl: store.image,
+                                                fit: BoxFit.cover,
+                                                placeholder: (context, url) =>
+                                                    Container(
+                                                  color: Colors.grey[200],
+                                                ),
+                                                errorWidget:
+                                                    (context, url, error) =>
+                                                        const Icon(Icons.store,
+                                                            size: 16),
+                                              ),
+                                            )
+                                          : Icon(Icons.store,
+                                              color: Constants.primaryColor,
+                                              size: 20),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            )
-                          : Icon(Icons.store,
-                              color: Constants.primaryColor, size: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            store.name,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Tajawal',
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                    Icon(Icons.arrow_forward_ios_rounded,
-                        size: 12, color: Colors.grey[300]),
+                    ],
                   ],
                 ),
-              );
-            },
+              ],
+            ],
           ),
         ],
       ),
@@ -367,18 +401,11 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
   }
 
   Widget _buildFeaturedCarousel() {
-    if (stores.isEmpty) return const SizedBox.shrink();
+    if (carouselItems.isEmpty) return const SizedBox.shrink();
 
-    // نزيد الارتفاع قليلاً ليكون العنصر المهيمن
     return SizedBox(
-      height: ResponsiveLayout.isDesktop(context) ? 450 : 300,
-      child: WebBannerCarousel(
-        stores: stores,
-        onStoreTap: (storeId) {
-          setState(() => selectedStoreId = storeId);
-          _loadData();
-        },
-      ),
+      height: ResponsiveLayout.isDesktop(context) ? 380 : 300,
+      child: WebBannerCarousel(items: carouselItems),
     );
   }
 
@@ -394,9 +421,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
       );
     }
 
-    if (stores.isEmpty) {
-      return const SizedBox.shrink();
-    }
+    if (stores.isEmpty) return const SizedBox.shrink();
 
     return Container(
       padding: ResponsivePadding.page(context),
@@ -405,10 +430,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Colors.white,
-            Colors.grey[50]!,
-          ],
+          colors: [Colors.white, Colors.grey[50]!],
         ),
       ),
       child: Column(
@@ -425,7 +447,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF6366F1).withOpacity(0.1),
+                          color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
@@ -462,7 +484,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
               if (ResponsiveLayout.isDesktop(context))
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6366F1).withOpacity(0.1),
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: TextButton.icon(
@@ -512,9 +534,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
   }
 
   Widget _buildCouponsSection() {
-    if (isLoading && displayItems.isEmpty) {
-      return const SizedBox.shrink();
-    }
+    if (isLoading && displayItems.isEmpty) return const SizedBox.shrink();
 
     return Container(
       padding: ResponsivePadding.page(context),
@@ -523,6 +543,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            key: _couponsSectionKey,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Column(
@@ -533,7 +554,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEC4899).withOpacity(0.1),
+                          color: const Color(0xFFEC4899).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
@@ -545,7 +566,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                       const SizedBox(width: 16),
                       Text(
                         selectedStoreId != null
-                            ? 'أحدث العروض والكوبونات'
+                            ? 'عروض ${_getStoreName(selectedStoreId!)}'
                             : 'أحدث الكوبونات',
                         style: TextStyle(
                           fontSize:
@@ -594,7 +615,6 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
             ],
           ),
           const SizedBox(height: 40),
-
           if (isFiltering)
             Center(
               child: Padding(
@@ -638,12 +658,15 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
+
+              // ✅✅ الحل 1 هنا: mainAxisExtent بدل childAspectRatio
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: ResponsiveGrid.columns(context, max: 4),
                 crossAxisSpacing: ResponsiveGrid.spacing(context),
                 mainAxisSpacing: ResponsiveGrid.spacing(context),
-                childAspectRatio: 0.75,
+                mainAxisExtent: _couponCardExtent(context),
               ),
+
               itemCount: displayItems.length,
               itemBuilder: (context, index) {
                 final item = displayItems[index];
@@ -663,6 +686,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                       image: '',
                     ),
                   );
+
                   return WebCouponCard(
                     coupon: item,
                     storeName: store.name,
@@ -682,40 +706,37 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                       image: '',
                     ),
                   );
+
                   return WebOfferCard(
                     offer: item,
                     storeName: store.name,
                   );
                 }
+
                 return const SizedBox.shrink();
               },
             ),
-
           const SizedBox(height: 50),
-
-          // زر عرض المزيد المحسّن
           Center(
             child: Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
                     Constants.primaryColor,
-                    Constants.primaryColor.withOpacity(0.8),
+                    Constants.primaryColor.withValues(alpha: 0.8),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Constants.primaryColor.withOpacity(0.3),
+                    color: Constants.primaryColor.withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
                 ],
               ),
               child: ElevatedButton.icon(
-                onPressed: () {
-                  // TODO: Load more
-                },
+                onPressed: () {},
                 icon: const Icon(Icons.refresh_rounded, size: 22),
                 label: const Text(
                   'عرض المزيد',
@@ -743,5 +764,24 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
         ],
       ),
     );
+  }
+
+  // ✅ ارتفاع ثابت للكارد (متجاوب) — يمنع overflow نهائيًا
+  double _couponCardExtent(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    if (width >= 1400) return 390;
+    if (width >= 1100) return 390;
+    if (width >= 900) return 400;
+    if (width >= 700) return 420;
+    return 460;
+  }
+
+  String _getStoreName(String storeId) {
+    try {
+      final store = stores.firstWhere((s) => s.id == storeId);
+      return store.name;
+    } catch (_) {
+      return 'المتجر';
+    }
   }
 }

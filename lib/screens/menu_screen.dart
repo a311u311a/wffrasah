@@ -1,10 +1,10 @@
-import 'package:coupon/screens/signin.dart';
+import 'package:rbhan/screens/signin.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:app_settings/app_settings.dart';
-import '../Login Signup/Widget/edit_profile_page.dart';
+import '../screens/login_signup/widgets/edit_profile_page.dart';
 import '../constants.dart';
 import '../localization/app_localizations.dart';
 import '../providers/locale_provider.dart';
@@ -13,7 +13,7 @@ import '../providers/notification_provider.dart';
 import '../widgets/bottom_navigation_bar.dart';
 import 'about_app_screen.dart';
 import 'contact_us.dart';
-import 'admin_screen.dart';
+import 'admin/admin_screen.dart';
 import 'terms_screen.dart';
 import 'privacy_screen.dart';
 import 'faq_screen.dart';
@@ -109,7 +109,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Constants.primaryColor.withOpacity(0.1),
+              Constants.primaryColor.withValues(alpha: 0.1),
               Colors.white,
             ],
             stops: const [0.0, 0.3],
@@ -146,7 +146,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
+                                color: Colors.black.withValues(alpha: 0.2),
                                 blurRadius: 10,
                                 offset: const Offset(0, 5),
                               ),
@@ -158,10 +158,12 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                                 _buildDivider(),
                                 Consumer<UserProvider>(
                                   builder: (context, userProvider, child) {
-                                    if (userProvider.isLoading)
+                                    if (userProvider.isLoading) {
                                       return const SizedBox.shrink();
-                                    if (!userProvider.isAdmin)
+                                    }
+                                    if (!userProvider.isAdmin) {
                                       return const SizedBox.shrink();
+                                    }
 
                                     return _buildMenuTile(
                                       icon: Icons.admin_panel_settings,
@@ -202,11 +204,12 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                                 icon: Icons.share_rounded,
                                 title: localizations?.translate('share_app') ??
                                     'Share App',
-                                onTap: () {
+                                onTap: () async {
                                   const String appLink =
                                       "https://play.google.com/store/apps/details?id=com.yourapp.package";
-                                  Share.share(
-                                      'Check out this amazing app for coupons! $appLink');
+                                  await SharePlus.instance.share(ShareParams(
+                                      text:
+                                          'Check out this amazing app for coupons! $appLink'));
                                 },
                               ),
                               _buildDivider(),
@@ -295,7 +298,8 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
             color: Colors.white,
             borderRadius: BorderRadius.circular(25),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15)
+              BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05), blurRadius: 15)
             ],
           ),
           child: Column(
@@ -304,7 +308,8 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                 children: [
                   CircleAvatar(
                     radius: 35,
-                    backgroundColor: Constants.primaryColor.withOpacity(0.1),
+                    backgroundColor:
+                        Constants.primaryColor.withValues(alpha: 0.1),
                     backgroundImage: user.userMetadata?['avatar_url'] != null
                         ? NetworkImage(user.userMetadata?['avatar_url'])
                         : null,
@@ -366,7 +371,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                     icon: const Icon(Icons.logout_rounded,
                         color: Colors.redAccent),
                     style: IconButton.styleFrom(
-                      backgroundColor: Colors.redAccent.withOpacity(0.1),
+                      backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
@@ -386,7 +391,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
       decoration: BoxDecoration(
         gradient: LinearGradient(colors: [
           Constants.primaryColor,
-          Constants.primaryColor.withOpacity(0.8)
+          Constants.primaryColor.withValues(alpha: 0.8)
         ]),
         borderRadius: BorderRadius.circular(25),
       ),
@@ -485,7 +490,8 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
             boxShadow: isActive
                 ? [
                     BoxShadow(
-                        color: Colors.black.withOpacity(0.05), blurRadius: 5)
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 5)
                   ]
                 : [],
           ),
@@ -507,7 +513,8 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
             color: Colors.white,
             borderRadius: BorderRadius.circular(15),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)
+              BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)
             ],
           ),
           child: Material(

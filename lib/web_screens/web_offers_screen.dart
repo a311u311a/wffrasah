@@ -95,7 +95,7 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Constants.primaryColor.withOpacity(0.1),
+            Constants.primaryColor.withValues(alpha: 0.1),
             Colors.white,
           ],
         ),

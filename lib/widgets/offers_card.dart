@@ -45,7 +45,7 @@ class _OffersCardState extends State<OffersCard> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
             )
           ],
@@ -71,13 +71,16 @@ class _OffersCardState extends State<OffersCard> {
                       fit: BoxFit.fill, // ✅ يملأ بدون فراغات
                       filterQuality: FilterQuality.high,
                       loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
+                        if (loadingProgress == null) {
+                          return child;
+                        }
                         return Container(
                           color: Colors.grey[50],
                           child: Center(
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Constants.primaryColor.withOpacity(0.5),
+                              color:
+                                  Constants.primaryColor.withValues(alpha: 0.5),
                             ),
                           ),
                         );
@@ -155,7 +158,8 @@ class _OffersCardState extends State<OffersCard> {
                               'assets/icon/share.svg',
                               height: 18,
                               width: 18,
-                              color: Colors.white,
+                              colorFilter: const ColorFilter.mode(
+                                  Colors.white, BlendMode.srcIn),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -174,14 +178,16 @@ class _OffersCardState extends State<OffersCard> {
                                       key: const ValueKey('fav_active'),
                                       height: 18,
                                       width: 18,
-                                      color: const Color(0xFFFFD700),
+                                      colorFilter: const ColorFilter.mode(
+                                          Color(0xFFFFD700), BlendMode.srcIn),
                                     )
                                   : SvgPicture.asset(
                                       'assets/icon/star.svg',
                                       key: const ValueKey('fav_inactive'),
                                       height: 18,
                                       width: 18,
-                                      color: Colors.white,
+                                      colorFilter: const ColorFilter.mode(
+                                          Colors.white, BlendMode.srcIn),
                                     ),
                             ),
                           ),
@@ -320,8 +326,8 @@ class _OffersCardState extends State<OffersCard> {
     );
   }
 
-  void _shareOffer() {
-    Share.share(widget.offer.web);
+  Future<void> _shareOffer() async {
+    await SharePlus.instance.share(ShareParams(text: widget.offer.web));
   }
 
   Future<void> _onButtonTapped() async {
@@ -333,7 +339,9 @@ class _OffersCardState extends State<OffersCard> {
       return;
     }
 
-    if (_isCopied || _isBusy) return;
+    if (_isCopied || _isBusy) {
+      return;
+    }
 
     setState(() {
       _isBusy = true;
@@ -348,7 +356,9 @@ class _OffersCardState extends State<OffersCard> {
     await _launchStore();
 
     await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     setState(() {
       _isCopied = false;
@@ -386,9 +396,10 @@ class _Pill extends StatelessWidget {
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.55),
+        color: Colors.black.withValues(alpha: 0.55),
         borderRadius: borderRadius ?? BorderRadius.circular(30),
-        border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
+        border:
+            Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
       ),
       child: child,
     );

@@ -20,8 +20,10 @@ class WebStoresScreen extends StatefulWidget {
 class _WebStoresScreenState extends State<WebStoresScreen> {
   final supabase = Supabase.instance.client;
   final searchController = TextEditingController();
+
   List<Store> allStores = [];
   List<Store> filteredStores = [];
+
   bool isLoading = true;
   String searchQuery = '';
 
@@ -117,7 +119,7 @@ class _WebStoresScreenState extends State<WebStoresScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Constants.primaryColor.withOpacity(0.1),
+            Constants.primaryColor.withValues(alpha: 0.1),
             Colors.white,
           ],
         ),
@@ -162,7 +164,7 @@ class _WebStoresScreenState extends State<WebStoresScreen> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -274,11 +276,11 @@ class _WebStoresScreenState extends State<WebStoresScreen> {
           return WebStoreCard(
             store: filteredStores[index],
             onTap: () {
-              // Navigate to store coupons
+              final store = filteredStores[index];
               Navigator.pushNamed(
                 context,
-                '/store-coupons',
-                arguments: filteredStores[index].id,
+                '/store/${store.slug}',
+                arguments: store,
               );
             },
           );

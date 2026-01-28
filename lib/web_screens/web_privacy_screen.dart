@@ -4,21 +4,114 @@ import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
 
-/// صفحة سياسة الخصوصية للويب
 class WebPrivacyScreen extends StatelessWidget {
   const WebPrivacyScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[50],
       appBar: const WebNavigationBar(),
       body: SingleChildScrollView(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildHeader(context),
-            _buildContent(context),
+            Container(
+              padding: ResponsivePadding.page(context),
+              constraints: const BoxConstraints(maxWidth: 1000),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 40),
+                  _buildHeader(context),
+                  const SizedBox(height: 40),
+                  _buildSectionContainer(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'سياسة الخصوصية',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Tajawal',
+                            color: Constants.primaryColor,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        const Text(
+                          'نحن نحترم خصوصية وسرية البيانات الشخصية لعملائنا وزبائننا وزوارنا وجميع الأشخاص الذين نتعامل معهم أثناء تقديم خدماتنا. وبينما نسعى لتقديم تجربة تسوق محسّنة لعملائنا، فإننا ندرك أن من أهم مخاوفهم سلامة معلوماتهم الشخصية، ولذلك نلتزم بضمان بقاء جميع البيانات الشخصية المقدمة لنا آمنة وعدم استخدامها إلا للأغراض التي وافق عليها العميل.\n\nفي البداية، نقوم بجمع المعلومات الشخصية الضرورية فقط لتقديم الخدمات التي طلبتها، وفهم احتياجاتك، وخدمتك بشكل أفضل. كما أننا نزود شركاءنا من التجار فقط بالمعلومات اللازمة للتحقق من مكافآتك وتتبعها.\n\nنحن لا نبيع معلوماتك تحت أي ظرف.',
+                          textAlign: TextAlign.justify,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontFamily: 'Tajawal',
+                            height: 1.6,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        _buildPolicyPoint(
+                          'سياسة الخصوصية',
+                          'يهدف هذا المستند إلى توضيح كيفية قيام Rbhan بإدارة وجمع واستخدام والإفصاح عن البيانات الشخصية الخاصة بك وبمستخدمي موقعنا الإلكتروني وتطبيقاتنا وبرامجنا ومنصاتنا الأخرى.\n\nنحن نزاول أعمالنا وفقًا لقوانين حماية البيانات المعمول بها، وقد قمنا بتطبيق تدابير إضافية لحماية معلوماتك الشخصية. ويُعد استمرار استخدامك لخدماتنا موافقة منك على الالتزام بسياسة الخصوصية هذه كما يتم تحديثها من وقت لآخر.',
+                        ),
+                        _buildPolicyPoint(
+                          'البيانات الشخصية',
+                          'يقصد بمصطلح "البيانات الشخصية" أي بيانات تتعلق بشخص يمكن التعرف عليه من خلالها، سواء بشكل مباشر أو غير مباشر، بما في ذلك البيانات الموجودة في سجلاتنا.',
+                        ),
+                        _buildPolicyPoint(
+                          'جمع البيانات الشخصية',
+                          'تعتمد البيانات التي قد تجمعها Rbhan على المنتجات والخدمات والعروض التي تستخدمها أو تشترك فيها. ويتم جمع هذه البيانات لتمكين المنصات من العمل بشكل صحيح ولمعرفة كيفية استخدامها على مختلف الأجهزة والمتصفحات.\n\nعادةً نقوم بجمع بياناتك عندما تقوم بما يلي:\n\nتزويدنا بمعلومات الاتصال بعد زيارة أو استخدام أو تثبيت مواقعنا أو تطبيقاتنا.\nالتسجيل في خدماتنا أو تعبئة أي نماذج.\nالاشتراك في التنبيهات أو النشرات البريدية.\nالتواصل معنا للاستفسار أو طلب المساعدة.\nالمشاركة في المسابقات أو الاستبيانات.\nتقديم السيرة الذاتية أو طلبات التوظيف.\nإحالتك إلينا من شركاء أو أطراف ثالثة.',
+                        ),
+                        _buildPolicyPoint(
+                          'قد تشمل البيانات المجمعة',
+                          'الهوية: الاسم الكامل، البريد الإلكتروني، تاريخ الميلاد، رقم الهاتف، الصور، عنوان IP، معرف الجهاز، ومعلومات الدفع.\nالتفاعلات معنا: تسجيلات المكالمات والبريد الإلكتروني والمراسلات.\nالحساب: معلومات حساب Rbhan الخاص بك.\nاستخدام الخدمات: بيانات التصفح وملفات تعريف الارتباط (Cookies).\nالتفضيلات: المنتجات والعلامات التجارية المفضلة وطرق التواصل.',
+                        ),
+                        _buildPolicyPoint(
+                          'أمان البيانات الشخصية',
+                          'نطبق إجراءات صارمة لحماية بياناتك، ومنها:\n\nاستخدام اتصال SSL مشفّر 128-bit.\nتخزين البيانات على خوادم آمنة.\nتقييد الوصول للمعلومات.\nتطبيق آليات تحقق صارمة.\nإتلاف البيانات عند عدم الحاجة إليها.',
+                        ),
+                        _buildPolicyPoint(
+                          'استخدام البيانات الشخصية',
+                          'لا نقوم ببيع أو المتاجرة ببياناتك الشخصية. ونستخدمها من أجل:\n\n1) إدارة الخدمات\nلتنفيذ الطلبات، تتبع المعاملات، إضافة الكاش باك، وتقديم العروض والمكافآت.\n\n2) تحسين الخدمات\nتحليل الشكاوى، تحسين الأداء، تخصيص المحتوى، وإرسال الإعلانات ذات الصلة.\n\n3) خدمة العملاء\nالرد على الاستفسارات وتقديم الدعم.\n\n4) الأمان والامتثال\nمنع الاحتيال والالتزام بالأنظمة والقوانين.\n\n5) طلبات التوظيف\nمعالجة طلبات التوظيف وإدارة السجلات الوظيفية.\n\nنحتفظ بالبيانات فقط للمدة اللازمة قانونيًا أو تشغيليًا.',
+                        ),
+                        _buildPolicyPoint(
+                          'مشاركة البيانات الشخصية',
+                          'قد نشارك بياناتك مع:\n\nشركائنا ومقدمي الخدمات.\nالمستثمرين أو الأطراف المشاركة في صفقات استحواذ أو اندماج.\nالجهات الحكومية أو التنظيمية عند الطلب.',
+                        ),
+                        _buildPolicyPoint(
+                          'النشرات البريدية',
+                          'قد نرسل لك رسائل ترويجية، ويمكنك إلغاء الاشتراك في أي وقت.',
+                        ),
+                        _buildPolicyPoint(
+                          'الإفصاح لمزودي الإعلانات الرقمية',
+                          'قد تتعاون Rbhan مع أطراف ثالثة لعرض إعلانات مخصصة بناءً على نشاطك على الإنترنت. ولا تغطي هذه السياسة ممارسات تلك الأطراف.',
+                        ),
+                        _buildPolicyPoint(
+                          'تحديث البيانات الشخصية',
+                          'يمكنك تحديث بياناتك من خلال حسابك، أو التواصل معنا عبر:\ncontact@rbhan.com',
+                        ),
+                        _buildPolicyPoint(
+                          'حقوقك في الوصول وسحب الموافقة',
+                          'يمكنك طلب الوصول إلى بياناتك أو سحب موافقتك في أي وقت عبر البريد أعلاه.\nقد يؤدي سحب الموافقة إلى عدم قدرتنا على تقديم بعض الخدمات.',
+                        ),
+                        _buildPolicyPoint(
+                          'حذف البيانات الشخصية',
+                          'لطلب حذف حسابك وبياناتك، راسلنا من بريدك المسجل.\n\nيرجى ملاحظة:\n\nستفقد أي كاش باك متبقي.\nسيتم حذف جميع بياناتك الشخصية.\nسنحتفظ بسجلات المعاملات لأغراض تدقيقية.\nلن تتمكن من تسجيل الدخول مجددًا.',
+                        ),
+                        _buildPolicyPoint(
+                          'التعديلات على سياسة الخصوصية',
+                          'تحتفظ Rbhan بحق تعديل السياسة في أي وقت، وسيتم نشر التحديثات على الموقع.',
+                        ),
+                        _buildPolicyPoint(
+                          'القانون الحاكم',
+                          'تخضع هذه السياسة لقوانين الدولة التي تقيم فيها.',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                ],
+              ),
+            ),
             const WebFooter(),
           ],
         ),
@@ -27,144 +120,60 @@ class WebPrivacyScreen extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
+    return Center(
+        child: Text(
+      'سياسة الخصوصية',
+      style: TextStyle(
+        fontSize: ResponsiveLayout.isDesktop(context) ? 42 : 32,
+        fontWeight: FontWeight.w900,
+        color: Constants.primaryColor,
+        fontFamily: 'Tajawal',
+      ),
+    ));
+  }
+
+  Widget _buildSectionContainer({required Widget child}) {
     return Container(
-      padding: ResponsivePadding.page(context),
+      width: double.infinity,
+      padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Constants.primaryColor.withOpacity(0.1),
-            Colors.white,
-          ],
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05), blurRadius: 10),
+        ],
+      ),
+      child: child,
+    );
+  }
+
+  Widget _buildPolicyPoint(String title, String body) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Tajawal',
+            color: Constants.primaryColor,
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 40),
-          Text(
-            'سياسة الخصوصية',
-            style: TextStyle(
-              fontSize: ResponsiveLayout.isDesktop(context) ? 42 : 32,
-              fontWeight: FontWeight.w900,
-              color: Constants.primaryColor,
-              fontFamily: 'Tajawal',
-            ),
+        const SizedBox(height: 12),
+        Text(
+          body,
+          textAlign: TextAlign.justify,
+          style: const TextStyle(
+            fontSize: 15,
+            fontFamily: 'Tajawal',
+            height: 1.8,
+            color: Colors.black87,
           ),
-          const SizedBox(height: 12),
-          Text(
-            'آخر تحديث: ${DateTime.now().year}',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-              fontFamily: 'Tajawal',
-            ),
-          ),
-          const SizedBox(height: 40),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContent(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 900),
-      padding: ResponsivePadding.page(context),
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSection(
-            'المقدمة',
-            'نحن في منصة الكوبونات نلتزم بحماية خصوصيتك. توضح سياسة الخصوصية هذه كيفية جمعنا واستخدامنا وحمايتنا للمعلومات التي تقدمها عند استخدام موقعنا وتطبيقاتنا.',
-          ),
-          _buildSection(
-            'المعلومات التي نجمعها',
-            '''نقوم بجمع الأنواع التالية من المعلومات:
-
-• معلومات الحساب: الاسم، البريد الإلكتروني، وكلمة المرور عند إنشاء حساب.
-• معلومات الاستخدام: تفاصيل حول كيفية استخدامك للمنصة، مثل الكوبونات التي تشاهدها أو تستخدمها.
-• المعلومات التقنية: عنوان IP، نوع المتصفح، ونظام التشغيل.
-• ملفات تعريف الارتباط: نستخدم ملفات تعريف الارتباط لتحسين تجربتك وتذكر تفضيلاتك.''',
-          ),
-          _buildSection(
-            'كيفية استخدام المعلومات',
-            '''نستخدم المعلومات التي نجمعها للأغراض التالية:
-
-• تقديم وتحسين خدماتنا
-• تخصيص المحتوى والعروض بناءً على اهتماماتك
-• التواصل معك بشأن التحديثات والعروض الجديدة
-• حماية المنصة من الاحتيال والإساءة
-• تحليل استخدام المنصة لتحسين الأداء''',
-          ),
-          _buildSection(
-            'مشاركة المعلومات',
-            '''نحن لا نبيع أو نؤجر معلوماتك الشخصية لأطراف ثالثة. قد نشارك المعلومات في الحالات التالية:
-
-• مع المتاجر الشريكة: لتتبع استخدام الكوبونات (بطريقة مجهولة الهوية)
-• مع مزودي الخدمة: الذين يساعدوننا في تشغيل المنصة
-• للامتثال القانوني: عند الطلب بموجب القانون''',
-          ),
-          _buildSection(
-            'أمان البيانات',
-            'نستخدم تدابير أمنية متقدمة لحماية معلوماتك من الوصول غير المصرح به أو التغيير أو الإفصاح أو الإتلاف. ومع ذلك، لا يمكن ضمان أمان الإنترنت بنسبة 100%.',
-          ),
-          _buildSection(
-            'حقوقك',
-            '''لديك الحق في:
-
-• الوصول إلى معلوماتك الشخصية
-• تصحيح أو تحديث معلوماتك
-• حذف حسابك وبياناتك
-• إلغاء الاشتراك في الرسائل التسويقية
-• طلب نسخة من بياناتك''',
-          ),
-          _buildSection(
-            'ملفات تعريف الارتباط',
-            'نستخدم ملفات تعريف الارتباط لتحسين تجربتك على المنصة. يمكنك تعطيل ملفات تعريف الارتباط من إعدادات المتصفح، لكن هذا قد يؤثر على بعض الوظائف.',
-          ),
-          _buildSection(
-            'التغييرات على سياسة الخصوصية',
-            'قد نقوم بتحديث سياسة الخصوصية من وقت لآخر. سنقوم بإخطارك بأي تغييرات جوهرية عبر البريد الإلكتروني أو من خلال إشعار على المنصة.',
-          ),
-          _buildSection(
-            'اتصل بنا',
-            'إذا كان لديك أي أسئلة حول سياسة الخصوصية هذه، يرجى التواصل معنا عبر صفحة "اتصل بنا" أو عبر البريد الإلكتروني: privacy@coupons.com',
-          ),
-          const SizedBox(height: 40),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSection(String title, String content) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: Constants.primaryColor,
-              fontFamily: 'Tajawal',
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            content,
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.grey[700],
-              height: 1.8,
-              fontFamily: 'Tajawal',
-            ),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 24),
+      ],
     );
   }
 }

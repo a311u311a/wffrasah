@@ -4,21 +4,97 @@ import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
 
-/// صفحة الشروط والأحكام للويب
 class WebTermsScreen extends StatelessWidget {
   const WebTermsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[50], // F8F9FA
       appBar: const WebNavigationBar(),
       body: SingleChildScrollView(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildHeader(context),
-            _buildContent(context),
+            Container(
+              padding: ResponsivePadding.page(context),
+              constraints: const BoxConstraints(maxWidth: 1000),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 40),
+                  _buildHeader(context),
+                  const SizedBox(height: 40),
+                  _buildSectionContainer(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'شروط الاستخدام',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Tajawal',
+                            color: Constants.primaryColor,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        const Text(
+                          'باستخدامك لتطبيق (rbhan)، فإنك توافق على الالتزام بشروط الاستخدام التالية. إذا لم توافق على هذه الشروط، يرجى عدم استخدام التطبيق.',
+                          textAlign: TextAlign.justify,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontFamily: 'Tajawal',
+                            height: 1.6,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        _buildPolicyPoint(
+                          '1. وصف الخدمة',
+                          'يوفر التطبيق منصة لعرض الكوبونات والعروض الترويجية المقدمة من أطراف ثالثة، ولا يضمن توفر أو صلاحية جميع العروض في جميع الأوقات.',
+                        ),
+                        _buildPolicyPoint(
+                          '2. أهلية الاستخدام',
+                          '• يجب أن يكون عمرك 13 عامًا على الأقل (أو حسب القوانين المحلية المعمول بها).\n'
+                              '• أنت مسؤول عن صحة ودقة المعلومات التي تقدمها عند استخدام التطبيق.',
+                        ),
+                        _buildPolicyPoint(
+                          '3. استخدام الكوبونات والعروض',
+                          '• تخضع جميع الكوبونات والعروض لشروط وأحكام الجهة المقدمة لها.\n'
+                              '• لا يتحمل التطبيق أي مسؤولية عن إلغاء أو تعديل أو انتهاء صلاحية أي عرض.\n'
+                              '• يمنع استخدام الكوبونات بطرق غير قانونية أو مخالفة للأنظمة.',
+                        ),
+                        _buildPolicyPoint(
+                          '4. الملكية الفكرية',
+                          'جميع المحتويات داخل التطبيق، بما في ذلك النصوص والتصاميم والشعارات، مملوكة للتطبيق أو للجهات المرخصة له، ويمنع نسخها أو إعادة استخدامها دون إذن مسبق.',
+                        ),
+                        _buildPolicyPoint(
+                          '5. إيقاف أو إنهاء الحساب',
+                          'يحق لإدارة التطبيق تعليق أو إنهاء حساب المستخدم في حال مخالفة شروط الاستخدام أو إساءة استخدام التطبيق، دون إشعار مسبق.',
+                        ),
+                        _buildPolicyPoint(
+                          '6. إخلاء المسؤولية',
+                          'يتم تقديم التطبيق "كما هي" دون أي ضمانات صريحة أو ضمنية. ولا نتحمل أي مسؤولية عن أي خسائر مباشرة أو غير مباشرة ناتجة عن استخدام العروض أو الكوبونات.',
+                        ),
+                        _buildPolicyPoint(
+                          '7. التعديلات على الشروط',
+                          'نحتفظ بالحق في تعديل شروط الاستخدام في أي وقت، ويعد استمرارك في استخدام التطبيق بعد التعديلات موافقة عليها.',
+                        ),
+                        _buildPolicyPoint(
+                          '8. القانون الواجب التطبيق',
+                          'تخضع هذه الشروط وتفسر وفقًا لقوانين الدولة التي يتم تشغيل التطبيق منها، ويكون الاختصاص القضائي لمحاكمها.',
+                        ),
+                        _buildPolicyPoint(
+                          '9. التواصل معنا',
+                          'لأي استفسارات متعلقة بشروط الاستخدام، يرجى التواصل عبر قنوات الدعم المتاحة داخل التطبيق.',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                ],
+              ),
+            ),
             const WebFooter(),
           ],
         ),
@@ -27,154 +103,61 @@ class WebTermsScreen extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Container(
-      padding: ResponsivePadding.page(context),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Constants.primaryColor.withOpacity(0.1),
-            Colors.white,
-          ],
+    return Center(
+      child: Text(
+        'شروط الاستخدام',
+        style: TextStyle(
+          fontSize: ResponsiveLayout.isDesktop(context) ? 42 : 32,
+          fontWeight: FontWeight.w900,
+          color: Constants.primaryColor,
+          fontFamily: 'Tajawal',
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 40),
-          Text(
-            'الشروط والأحكام',
-            style: TextStyle(
-              fontSize: ResponsiveLayout.isDesktop(context) ? 42 : 32,
-              fontWeight: FontWeight.w900,
-              color: Constants.primaryColor,
-              fontFamily: 'Tajawal',
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'آخر تحديث: ${DateTime.now().year}',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-              fontFamily: 'Tajawal',
-            ),
-          ),
-          const SizedBox(height: 40),
-        ],
-      ),
     );
   }
 
-  Widget _buildContent(BuildContext context) {
+  Widget _buildSectionContainer({required Widget child}) {
     return Container(
-      constraints: const BoxConstraints(maxWidth: 900),
-      padding: ResponsivePadding.page(context),
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSection(
-            'القبول بالشروط',
-            'باستخدامك لمنصة الكوبونات، فإنك توافق على الالتزام بهذه الشروط والأحكام. إذا كنت لا توافق على أي جزء من هذه الشروط، يجب عليك عدم استخدام المنصة.',
-          ),
-          _buildSection(
-            'استخدام الخدمة',
-            '''عند استخدام منصتنا، أنت توافق على:
-
-• استخدام الكوبونات بطريقة قانونية وأخلاقية
-• عدم محاولة اختراق أو تعطيل المنصة
-• عدم استخدام الكوبونات بطرق احتيالية
-• توفير معلومات دقيقة وصحيحة عند إنشاء حساب
-• الحفاظ على سرية معلومات حسابك''',
-          ),
-          _buildSection(
-            'الكوبونات والعروض',
-            '''فيما يتعلق بالكوبونات المتوفرة على المنصة:
-
-• جميع الكوبونات مقدمة من المتاجر الشريكة وليس من منصتنا مباشرة
-• نبذل قصارى جهدنا لضمان صحة الكوبونات، لكننا لا نضمن نجاح جميع الكوبونات
-• قد تكون الكوبونات خاضعة لشروط وقيود من المتاجر
-• المتاجر لها الحق في إلغاء أو تعديل العروض في أي وقت
-• نحن غير مسؤولين عن أي نزاعات بينك وبين المتاجر''',
-          ),
-          _buildSection(
-            'حساب المستخدم',
-            '''عند إنشاء حساب:
-
-• أنت مسؤول عن الحفاظ على أمان حسابك
-• يجب أن يكون عمرك 18 عاماً على الأقل أو لديك موافقة ولي الأمر
-• حساب واحد لكل شخص
-• نحتفظ بالحق في تعليق أو إنهاء الحسابات المخالفة
-• يجب إخطارنا فوراً بأي استخدام غير مصرح به لحسابك''',
-          ),
-          _buildSection(
-            'الملكية الفكرية',
-            'جميع المحتويات على المنصة، بما في ذلك النصوص والصور والشعارات والرموز، هي ملك لمنصة الكوبونات أو مرخصة لنا. لا يجوز استخدام أي محتوى دون إذن كتابي مسبق.',
-          ),
-          _buildSection(
-            'إخلاء المسؤولية',
-            '''المنصة متاحة "كما هي" دون أي ضمانات:
-
-• لا نضمن دقة أو اكتمال المعلومات
-• لا نضمن توفر الخدمة بشكل متواصل
-• لا نتحمل المسؤولية عن أي خسائر ناتجة عن استخدام المنصة
-• نحن لسنا مسؤولين عن محتوى المواقع الخارجية التي نرتبط بها''',
-          ),
-          _buildSection(
-            'حدود المسؤولية',
-            'في أي حال من الأحوال، لن نكون مسؤولين عن أي أضرار مباشرة أو غير مباشرة أو عرضية أو خاصة أو تبعية ناشئة عن استخدام أو عدم القدرة على استخدام المنصة.',
-          ),
-          _buildSection(
-            'التعديلات',
-            'نحتفظ بالحق في تعديل هذه الشروط والأحكام في أي وقت. التعديلات الجوهرية سيتم إخطارك بها عبر البريد الإلكتروني أو إشعار على المنصة. استمرارك في استخدام المنصة بعد التعديلات يعني قبولك لها.',
-          ),
-          _buildSection(
-            'الإنهاء',
-            'يمكننا إنهاء أو تعليق وصولك إلى المنصة فوراً، دون إشعار مسبق أو مسؤولية، لأي سبب كان، بما في ذلك دون حصر إذا خالفت هذه الشروط.',
-          ),
-          _buildSection(
-            'القانون الحاكم',
-            'تخضع هذه الشروط والأحكام وتفسر وفقاً لقوانين المملكة العربية السعودية. أي نزاع ينشأ عن هذه الشروط سيخضع للاختصاص القضائي الحصري للمحاكم في المملكة.',
-          ),
-          _buildSection(
-            'اتصل بنا',
-            'إذا كان لديك أي أسئلة حول هذه الشروط والأحكام، يرجى التواصل معنا عبر صفحة "اتصل بنا" أو عبر البريد الإلكتروني: legal@coupons.com',
-          ),
-          const SizedBox(height: 40),
+      width: double.infinity,
+      padding: const EdgeInsets.all(40),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05), blurRadius: 10),
         ],
       ),
+      child: child,
     );
   }
 
-  Widget _buildSection(String title, String content) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: Constants.primaryColor,
-              fontFamily: 'Tajawal',
-            ),
+  Widget _buildPolicyPoint(String title, String body) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'Tajawal',
+            color: Constants.primaryColor,
           ),
-          const SizedBox(height: 12),
-          Text(
-            content,
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.grey[700],
-              height: 1.8,
-              fontFamily: 'Tajawal',
-            ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          body,
+          textAlign: TextAlign.justify,
+          style: const TextStyle(
+            fontSize: 15,
+            fontFamily: 'Tajawal',
+            height: 1.8,
+            color: Colors.black87,
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 24),
+      ],
     );
   }
 }

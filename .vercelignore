@@ -1,0 +1,40 @@
+# Build outputs
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Platform folders (غير مطلوبة للويب)
+android/
+ios/
+linux/
+macos/
+windows/
+
+# Git
+.git/
+.gitignore
+
+# Test files
+test/
+coverage/
+
+# Other
+*.log
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# Keep only web build
+!build/web/

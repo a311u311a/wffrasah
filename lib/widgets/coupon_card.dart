@@ -33,11 +33,13 @@ class _CouponCardState extends State<CouponCard> {
     });
   }
 
-  void _shareCoupon(BuildContext context) {
+  Future<void> _shareCoupon(BuildContext context) async {
     final localizations = AppLocalizations.of(context)!;
-    Share.share(
-      '${localizations.translate('coupon_code')}: ${widget.coupon.code}\n'
-      '${localizations.translate('store')}: ${widget.coupon.name}',
+    await SharePlus.instance.share(
+      ShareParams(
+          text:
+              '${localizations.translate('coupon_code')}: ${widget.coupon.code}\n'
+              '${localizations.translate('store')}: ${widget.coupon.name}'),
     );
   }
 
@@ -69,7 +71,7 @@ class _CouponCardState extends State<CouponCard> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
             )
           ],
@@ -125,7 +127,8 @@ class _CouponCardState extends State<CouponCard> {
                           'assets/icon/share.svg',
                           height: 18,
                           width: 18,
-                          color: Colors.white,
+                          colorFilter: const ColorFilter.mode(
+                              Colors.white, BlendMode.srcIn),
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -148,14 +151,16 @@ class _CouponCardState extends State<CouponCard> {
                                       key: const ValueKey('fav_active'),
                                       height: 18,
                                       width: 18,
-                                      color: const Color(0xFFFFD700),
+                                      colorFilter: const ColorFilter.mode(
+                                          Color(0xFFFFD700), BlendMode.srcIn),
                                     )
                                   : SvgPicture.asset(
                                       'assets/icon/star.svg',
                                       key: const ValueKey('fav_inactive'),
                                       height: 18,
                                       width: 18,
-                                      color: Colors.white,
+                                      colorFilter: const ColorFilter.mode(
+                                          Colors.white, BlendMode.srcIn),
                                     ),
                             ),
                           );
@@ -335,9 +340,10 @@ class _Pill extends StatelessWidget {
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.55),
+        color: Colors.black.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
+        border:
+            Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
       ),
       child: child,
     );

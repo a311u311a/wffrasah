@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'constants.dart';
+import 'models/store.dart';
 import 'providers/locale_provider.dart';
 import 'providers/theme_provider.dart';
 import 'localization/app_localizations.dart';
@@ -18,6 +19,12 @@ import 'web_screens/web_admin_screen.dart';
 import 'web_screens/web_signin_screen.dart';
 import 'web_screens/web_signup_screen.dart';
 import 'web_screens/web_coupons_screen.dart';
+import 'web_screens/web_store_detail_screen.dart';
+import 'web_screens/web_menu_screen.dart';
+import 'web_screens/web_change_password_screen.dart';
+import 'web_screens/web_edit_profile_screen.dart';
+import 'web_screens/web_notifications_history_screen.dart';
+import 'web_screens/web_delete_account_screen.dart';
 
 /// التطبيق الرئيسي للويب
 class WebApp extends StatelessWidget {
@@ -30,9 +37,8 @@ class WebApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'كوبونات - أفضل العروض والخصومات',
+      title: 'ربحان - أفضل العروض والخصومات',
       theme: themeProvider.getTheme.copyWith(
-        useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
           seedColor: Constants.primaryColor,
           brightness: Brightness.light,
@@ -65,27 +71,83 @@ class WebApp extends StatelessWidget {
       // Initial Route
       initialRoute: '/',
 
-      // Routes
-      routes: {
-        '/': (context) => const WebHomeScreen(),
-        '/stores': (context) => const WebStoresScreen(),
-        '/coupons': (context) => const WebCouponsScreen(),
-        '/offers': (context) => const WebOffersScreen(),
-        '/favorites': (context) => const WebFavoritesScreen(),
-        '/about': (context) => const WebAboutScreen(),
-        '/contact': (context) => const WebContactScreen(),
-        '/faq': (context) => const WebFaqScreen(),
-        '/privacy': (context) => const WebPrivacyScreen(),
-        '/terms': (context) => const WebTermsScreen(),
-        '/admin': (context) => const WebAdminScreen(),
-        '/signin': (context) => const WebSignInScreen(),
-        '/signup': (context) => const WebSignUpScreen(),
-      },
+      // Dynamic Route Generation
+      onGenerateRoute: (settings) {
+        // Handle store detail pages
+        if (settings.name != null && settings.name!.startsWith('/store/')) {
+          final store = settings.arguments;
+          if (store != null && store is Store) {
+            return MaterialPageRoute(
+              builder: (context) => WebStoreDetailScreen(store: store),
+              settings: settings,
+            );
+          }
+        }
 
-      // Unknown Route
-      onUnknownRoute: (settings) {
+        // Handle static routes
+        Widget screen;
+        switch (settings.name) {
+          case '/':
+            screen = const WebHomeScreen();
+            break;
+          case '/stores':
+            screen = const WebStoresScreen();
+            break;
+          case '/coupons':
+            screen = const WebCouponsScreen();
+            break;
+          case '/offers':
+            screen = const WebOffersScreen();
+            break;
+          case '/favorites':
+            screen = const WebFavoritesScreen();
+            break;
+          case '/about':
+            screen = const WebAboutScreen();
+            break;
+          case '/contact':
+            screen = const WebContactScreen();
+            break;
+          case '/faq':
+            screen = const WebFaqScreen();
+            break;
+          case '/privacy':
+            screen = const WebPrivacyScreen();
+            break;
+          case '/terms':
+            screen = const WebTermsScreen();
+            break;
+          case '/admin':
+            screen = const WebAdminScreen();
+            break;
+          case '/signin':
+            screen = const WebSignInScreen();
+            break;
+          case '/signup':
+            screen = const WebSignUpScreen();
+            break;
+          case '/menu':
+            screen = const WebMenuScreen();
+            break;
+          case '/change-password':
+            screen = const WebChangePasswordScreen();
+            break;
+          case '/edit-profile':
+            screen = const WebEditProfileScreen();
+            break;
+          case '/notifications':
+            screen = const WebNotificationsHistoryScreen();
+            break;
+          case '/delete-account':
+            screen = const WebDeleteAccountScreen();
+            break;
+          default:
+            screen = const WebHomeScreen();
+        }
+
         return MaterialPageRoute(
-          builder: (context) => const WebHomeScreen(),
+          builder: (context) => screen,
+          settings: settings,
         );
       },
     );

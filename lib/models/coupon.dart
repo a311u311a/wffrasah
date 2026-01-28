@@ -21,6 +21,7 @@ class Coupon {
   final List<String> tags;
 
   final DateTime? createdAt;
+  final DateTime? expiryDate;
 
   Coupon({
     required this.id,
@@ -36,6 +37,7 @@ class Coupon {
     required this.web,
     required this.tags,
     required this.createdAt,
+    this.expiryDate,
   });
 
   /// من Supabase (DB) مع اختيار الاسم/الوصف حسب اللغة
@@ -59,6 +61,7 @@ class Coupon {
     final tags = _parseTags(row['tags']);
 
     final createdAt = _parseDate(row['created_at']);
+    final expiryDate = _parseDate(row['expiry_date']);
 
     final displayName = isAr
         ? (nameAr.isNotEmpty ? nameAr : nameEn)
@@ -82,6 +85,7 @@ class Coupon {
       web: web,
       tags: tags,
       createdAt: createdAt,
+      expiryDate: expiryDate,
     );
   }
 
@@ -111,6 +115,7 @@ class Coupon {
       'web': web,
       'tags': tags, // نخزنها كـ List
       'created_at': createdAt?.toIso8601String(),
+      'expiry_date': expiryDate?.toIso8601String(),
     };
   }
 
@@ -138,7 +143,7 @@ class Coupon {
   }
 
   /// يدعم tags كـ:
-  /// - List<dynamic>
+  /// - `List<dynamic>`
   /// - String JSON مثل '["a","b"]'
   /// - String CSV مثل 'a,b,c'
   /// - null

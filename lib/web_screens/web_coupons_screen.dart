@@ -135,7 +135,7 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFFEC4899).withOpacity(0.1),
+            const Color(0xFFEC4899).withValues(alpha: 0.1),
             Colors.white,
           ],
         ),
@@ -149,7 +149,7 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEC4899).withOpacity(0.1),
+                  color: const Color(0xFFEC4899).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -204,7 +204,7 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -337,11 +337,11 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
                     colors: isPrimary
                         ? [
                             const Color(0xFFEC4899),
-                            const Color(0xFFEC4899).withOpacity(0.8),
+                            const Color(0xFFEC4899).withValues(alpha: 0.8),
                           ]
                         : [
                             const Color(0xFF6366F1),
-                            const Color(0xFF6366F1).withOpacity(0.8),
+                            const Color(0xFF6366F1).withValues(alpha: 0.8),
                           ],
                   )
                 : null,
@@ -361,7 +361,7 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
                       color: (isPrimary
                               ? const Color(0xFFEC4899)
                               : const Color(0xFF6366F1))
-                          .withOpacity(0.3),
+                          .withValues(alpha: 0.3),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),

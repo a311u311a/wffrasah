@@ -73,7 +73,7 @@ class _OffersScreenState extends State<OffersScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Constants.primaryColor.withOpacity(0.1),
+              Constants.primaryColor.withValues(alpha: 0.1),
               Colors.white,
             ],
           ),

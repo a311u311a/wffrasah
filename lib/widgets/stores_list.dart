@@ -143,8 +143,8 @@ class StoresList extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: isSelected
-                  ? Constants.primaryColor.withOpacity(0.2)
-                  : Colors.black.withOpacity(0.05),
+                  ? Constants.primaryColor.withValues(alpha: 0.2)
+                  : Colors.black.withValues(alpha: 0.05),
               blurRadius: isSelected ? 6 : 2,
               offset: const Offset(0, 3),
             ),
@@ -190,8 +190,8 @@ class StoresList extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: isSelected
-                  ? Constants.primaryColor.withOpacity(0.2)
-                  : Colors.black.withOpacity(0.05),
+                  ? Constants.primaryColor.withValues(alpha: 0.2)
+                  : Colors.black.withValues(alpha: 0.05),
               blurRadius: isSelected ? 6 : 4,
               offset: const Offset(0, 3),
             ),

@@ -49,7 +49,8 @@ class _WebOfferCardState extends State<WebOfferCard> {
                 end: Alignment.bottomRight,
                 colors: [
                   Colors.white,
-                  Colors.orange.withOpacity(0.03), // لون مختلف قليلاً للعروض
+                  Colors.orange
+                      .withValues(alpha: 0.03), // لون مختلف قليلاً للعروض
                 ],
               ),
             ),
@@ -77,7 +78,7 @@ class _WebOfferCardState extends State<WebOfferCard> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.orange.withOpacity(0.1),
+                            color: Colors.orange.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: const Text(
@@ -121,7 +122,7 @@ class _WebOfferCardState extends State<WebOfferCard> {
         aspectRatio: 16 / 9,
         child: CachedNetworkImage(
           imageUrl: widget.offer.image,
-          fit: BoxFit.cover,
+          fit: BoxFit.fill,
           placeholder: (context, url) => Container(
             color: Colors.grey[200],
             child: const Center(
@@ -227,9 +228,11 @@ class _WebOfferCardState extends State<WebOfferCard> {
     );
   }
 
-  void _share() {
-    Share.share(
-      'شاهد هذا العرض المميز: ${widget.offer.name}\n${widget.offer.web}',
+  Future<void> _share() async {
+    await SharePlus.instance.share(
+      ShareParams(
+          text:
+              'شاهد هذا العرض المميز: ${widget.offer.name}\n${widget.offer.web}'),
     );
   }
 

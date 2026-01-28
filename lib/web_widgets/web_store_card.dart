@@ -47,7 +47,7 @@ class _WebStoreCardState extends State<WebStoreCard> {
                   colors: [
                     Colors.white,
                     isHovered
-                        ? Constants.primaryColor.withOpacity(0.05)
+                        ? Constants.primaryColor.withValues(alpha: 0.05)
                         : Colors.white,
                   ],
                 ),
@@ -82,7 +82,8 @@ class _WebStoreCardState extends State<WebStoreCard> {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Constants.primaryColor.withOpacity(isHovered ? 0.3 : 0.1),
+            color:
+                Constants.primaryColor.withValues(alpha: isHovered ? 0.3 : 0.1),
             blurRadius: isHovered ? 12 : 8,
             offset: const Offset(0, 4),
           ),
@@ -133,7 +134,7 @@ class _WebStoreCardState extends State<WebStoreCard> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: Constants.primaryColor.withOpacity(0.1),
+        color: Constants.primaryColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(

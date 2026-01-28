@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../localization/app_localizations.dart';
-import '../Login Signup/Widget/snackbar.dart';
+import '../screens/login_signup/widgets/snackbar.dart';
 import '../models/coupon.dart';
 import '../models/offers.dart';
 import '../providers/favorites_provider.dart';
@@ -69,7 +69,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                             direction: DismissDirection.endToStart,
                             background: Container(
                               decoration: BoxDecoration(
-                                color: Colors.redAccent.withOpacity(0.9),
+                                color: Colors.redAccent.withValues(alpha: 0.9),
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               alignment: Alignment.centerRight,
@@ -128,7 +128,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Constants.primaryColor.withOpacity(0.1),
+              Constants.primaryColor.withValues(alpha: 0.1),
               Colors.white,
             ],
           ),

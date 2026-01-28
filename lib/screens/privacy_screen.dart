@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
+import '../localization/app_localizations.dart';
 
 class PrivacyScreen extends StatelessWidget {
   const PrivacyScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: Text('سياسة الخصوصية',
+        title: Text(t?.translate('privacy_title') ?? 'Privacy Policy',
             style: TextStyle(
               color: Constants.primaryColor,
               fontFamily: 'Tajawal',
@@ -30,7 +33,7 @@ class PrivacyScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'سياسة الخصوصية',
+                    t?.translate('privacy_title') ?? 'Privacy Policy',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -39,8 +42,9 @@ class PrivacyScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text(
-                    'نحن نحترم خصوصيتك ونلتزم بحماية بياناتك الشخصية عند استخدامك لتطبيق عرض الكوبونات والعروض ("التطبيق"). توضح هذه السياسة كيفية جمع واستخدام وحماية المعلومات.',
+                  Text(
+                    t?.translate('privacy_intro') ??
+                        'We respect the privacy...',
                     textAlign: TextAlign.justify,
                     style: TextStyle(
                       fontSize: 14,
@@ -50,56 +54,80 @@ class PrivacyScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   _buildPolicyPoint(
-                    '1. المعلومات التي نقوم بجمعها',
-                    'قد نقوم بجمع الأنواع التالية من المعلومات:\n\n'
-                        '• معلومات شخصية: مثل البريد الإلكتروني أو رقم الهاتف في حال إنشاء حساب.\n'
-                        '• معلومات غير شخصية: مثل نوع الجهاز، نظام التشغيل، وإحصاءات الاستخدام داخل التطبيق.\n'
-                        '• معلومات الموقع (اختياري): فقط في حال منح الإذن، لتحسين العروض القريبة منك.',
+                    t?.translate('privacy_point1_title') ?? 'Privacy Policy',
+                    t?.translate('privacy_point1_body') ??
+                        'This document aims to...',
                   ),
                   _buildPolicyPoint(
-                    '2. كيفية استخدام المعلومات',
-                    'نستخدم المعلومات للأغراض التالية:\n\n'
-                        '• عرض الكوبونات والعروض المناسبة لك.\n'
-                        '• تحسين تجربة المستخدم وأداء التطبيق.\n'
-                        '• التواصل معك بخصوص التحديثات أو العروض (عند موافقتك).\n'
-                        '• الامتثال للمتطلبات القانونية.',
+                    t?.translate('privacy_point2_title') ?? 'Personal Data',
+                    t?.translate('privacy_point2_body') ??
+                        'The term "personal data"...',
                   ),
                   _buildPolicyPoint(
-                    '3. مشاركة المعلومات',
-                    'نحن لا نبيع بياناتك الشخصية. قد نشارك بعض المعلومات مع:\n\n'
-                        '• شركاء العروض فقط لغرض تفعيل الكوبونات.\n'
-                        '• مزودي الخدمات التقنية (مثل الاستضافة والتحليلات).\n'
-                        '• الجهات القانونية عند الطلب الرسمي.',
+                    t?.translate('privacy_point3_title') ??
+                        'Collection of Personal Data',
+                    t?.translate('privacy_point3_body') ??
+                        'The data that Rbhan may collect...',
                   ),
                   _buildPolicyPoint(
-                    '4. حماية البيانات',
-                    'نطبق إجراءات أمنية تقنية وتنظيمية مناسبة لحماية معلوماتك من الوصول غير المصرح به أو الفقدان أو التعديل.',
+                    t?.translate('privacy_point4_title') ??
+                        'Collected Data May Include',
+                    t?.translate('privacy_point4_body') ??
+                        'Identity: Full name...',
                   ),
                   _buildPolicyPoint(
-                    '5. حقوق المستخدم',
-                    'يحق لك:\n\n'
-                        '• الوصول إلى بياناتك أو تعديلها أو حذفها.\n'
-                        '• سحب الموافقة على جمع بعض البيانات.\n'
-                        '• إيقاف الإشعارات التسويقية في أي وقت.',
+                    t?.translate('privacy_point5_title') ??
+                        'Security of Personal Data',
+                    t?.translate('privacy_point5_body') ??
+                        'We implement strict measures...',
                   ),
                   _buildPolicyPoint(
-                    '6. ملفات تعريف الارتباط (Cookies)',
-                    'قد نستخدم ملفات تعريف الارتباط وتقنيات مشابهة لتحسين الأداء وتحليل الاستخدام.',
+                    t?.translate('privacy_point6_title') ??
+                        'Use of Personal Data',
+                    t?.translate('privacy_point6_body') ??
+                        'We do not sell or trade...',
                   ),
                   _buildPolicyPoint(
-                    '7. التعديلات على سياسة الخصوصية',
-                    'نحتفظ بالحق في تحديث هذه السياسة، وسيتم إشعارك عند أي تعديل جوهري.',
+                    t?.translate('privacy_point7_title') ??
+                        'Sharing Personal Data',
+                    t?.translate('privacy_point7_body') ??
+                        'We may share your data with...',
                   ),
                   _buildPolicyPoint(
-                    '8. التواصل معنا',
-                    'للاستفسارات المتعلقة بالخصوصية، يرجى التواصل عبر البريد الإلكتروني أو صفحة الدعم داخل التطبيق.',
+                    t?.translate('privacy_point8_title') ?? 'Newsletters',
+                    t?.translate('privacy_point8_body') ??
+                        'We may send you promotional...',
+                  ),
+                  _buildPolicyPoint(
+                    t?.translate('privacy_point9_title') ??
+                        'Disclosure to Digital Ad Providers',
+                    t?.translate('privacy_point9_body') ??
+                        'Rbhan may cooperate with...',
+                  ),
+                  _buildPolicyPoint(
+                    t?.translate('privacy_point10_title') ??
+                        'Update Personal Data',
+                    t?.translate('privacy_point10_body') ??
+                        'You can update your data...',
+                  ),
+                  _buildPolicyPoint(
+                    t?.translate('privacy_point11_title') ??
+                        'Your Rights to Access and Withdraw Consent',
+                    t?.translate('privacy_point11_body') ??
+                        'You can request access...',
+                  ),
+                  _buildPolicyPoint(
+                    t?.translate('privacy_point12_title') ??
+                        'Deletion of Personal Data',
+                    t?.translate('privacy_point12_body') ??
+                        'To request deletion...',
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 20),
             Text(
-              '© ${DateTime.now().year} جميع الحقوق محفوظة. كوبونات التخفيضات',
+              '© ${DateTime.now().year} ${t?.translate('rights_reserved_rbhan') ?? "All rights reserved. Rbhan App & Website"}',
               style: TextStyle(
                   fontSize: 10, color: Colors.grey[400], fontFamily: 'Tajawal'),
             ),
@@ -117,7 +145,8 @@ class PrivacyScreen extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05), blurRadius: 10),
         ],
       ),
       child: child,

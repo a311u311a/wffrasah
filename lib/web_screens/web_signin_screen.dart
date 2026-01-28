@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../Login Signup/Widget/snackbar.dart';
+import '../screens/login_signup/widgets/snackbar.dart';
 import '../constants.dart';
 import '../services/authentication.dart';
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
+import '../localization/app_localizations.dart';
 
 /// صفحة تسجيل الدخول للويب
 class WebSignInScreen extends StatefulWidget {
@@ -54,7 +55,9 @@ class _WebSignInScreenState extends State<WebSignInScreen> {
 
   Future<void> _ensureUserRow() async {
     final user = _supabase.auth.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      return;
+    }
 
     final payload = <String, dynamic>{
       'id': user.id,
@@ -80,7 +83,9 @@ class _WebSignInScreenState extends State<WebSignInScreen> {
 
   Future<void> _navigateToHome() async {
     final user = _supabase.auth.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      return;
+    }
 
     await _ensureUserRow();
 
@@ -97,7 +102,9 @@ class _WebSignInScreenState extends State<WebSignInScreen> {
       debugPrint('isAdmin check failed: $e');
     }
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     // للويب: نوجه للصفحة المناسبة
     Navigator.pushNamedAndRemoveUntil(
@@ -108,13 +115,14 @@ class _WebSignInScreenState extends State<WebSignInScreen> {
   }
 
   Future<void> loginUser() async {
+    final t = AppLocalizations.of(context);
     final email = emailController.text.trim();
     final pass = passwordController.text.trim();
 
     if (email.isEmpty || pass.isEmpty) {
       showSnackBar(
         context,
-        "يرجى إدخال البريد الإلكتروني وكلمة المرور",
+        t?.translate('fill_all_fields') ?? "Please fill in all fields",
         isError: true,
       );
       return;
@@ -131,21 +139,35 @@ class _WebSignInScreenState extends State<WebSignInScreen> {
           await _navigateToHome();
         }
       } else {
-        if (!mounted) return;
-        showSnackBar(context, 'فشل تسجيل الدخول', isError: true);
+        if (!mounted) {
+          return;
+        }
+        showSnackBar(context, t?.translate('login_failed') ?? 'Login failed',
+            isError: true);
       }
     } on AuthException catch (e) {
-      if (!mounted) return;
-      showSnackBar(context, e.message, isError: true);
+      if (!mounted) {
+        return;
+      }
+      String msg = e.message;
+      if (msg.contains('Invalid login credentials')) {
+        msg = t?.translate('login_error') ?? 'Invalid email or password';
+      }
+      showSnackBar(context, msg, isError: true);
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       showSnackBar(context, 'فشل تسجيل الدخول: $e', isError: true);
     } finally {
-      if (mounted) setState(() => isLoading = false);
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 
   Future<void> signInWithGoogle() async {
+    final t = AppLocalizations.of(context);
     // على الويب، لا نستخدم isLoading الرئيسي لأنه سيتم إعادة توجيه الصفحة
     // استخدام متغير منفصل لعرض مؤشر التحميل على الزر فقط
     setState(() => isGoogleLoading = true);
@@ -157,19 +179,24 @@ class _WebSignInScreenState extends State<WebSignInScreen> {
       // وعند العودة، سيتم التعامل مع الجلسة من خلال _authSub في initState
       // لذلك لا نحتاج إلى التنقل هنا
     } on AuthException catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       setState(() => isGoogleLoading = false);
       showSnackBar(
         context,
-        'فشل تسجيل الدخول بـ Google: ${e.message}',
+        '${t?.translate('google_signin_failed')}: ${e.message}',
         isError: true,
       );
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       setState(() => isGoogleLoading = false);
       showSnackBar(
         context,
-        'حدث خطأ أثناء تسجيل الدخول بـ Google',
+        t?.translate('google_signin_error_generic') ??
+            'An error occurred during Google Sign-In',
         isError: true,
       );
     }
@@ -193,6 +220,7 @@ class _WebSignInScreenState extends State<WebSignInScreen> {
   }
 
   Widget _buildContent() {
+    final t = AppLocalizations.of(context);
     return Container(
       padding: ResponsivePadding.page(context),
       constraints: const BoxConstraints(maxWidth: 500),
@@ -224,7 +252,7 @@ class _WebSignInScreenState extends State<WebSignInScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'مرحباً بعودتك!',
+                  t?.translate('welcome') ?? 'Welcome',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey[600],
@@ -237,7 +265,7 @@ class _WebSignInScreenState extends State<WebSignInScreen> {
                 // البريد الإلكتروني
                 _buildTextField(
                   emailController,
-                  'البريد الإلكتروني',
+                  t?.translate('email') ?? 'Email',
                   Icons.email_rounded,
                 ),
                 const SizedBox(height: 20),
@@ -245,7 +273,7 @@ class _WebSignInScreenState extends State<WebSignInScreen> {
                 // كلمة المرور
                 _buildTextField(
                   passwordController,
-                  'كلمة المرور',
+                  t?.translate('password') ?? 'Password',
                   Icons.lock_rounded,
                   isPassword: true,
                 ),
@@ -256,14 +284,13 @@ class _WebSignInScreenState extends State<WebSignInScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {
-                      // TODO: Implement forgot password
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                             content: Text('استعادة كلمة المرور قريباً')),
                       );
                     },
                     child: Text(
-                      'نسيت كلمة المرور؟',
+                      t?.translate('forgot_password') ?? 'Forgot Password?',
                       style: TextStyle(
                         color: Constants.primaryColor,
                         fontFamily: 'Tajawal',
@@ -286,8 +313,8 @@ class _WebSignInScreenState extends State<WebSignInScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text(
-                          'تسجيل الدخول',
+                        child: Text(
+                          t?.translate('sign_in') ?? 'Sign In',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -320,8 +347,9 @@ class _WebSignInScreenState extends State<WebSignInScreen> {
                       : Image.asset('assets/image/google.png', height: 24),
                   label: Text(
                     isGoogleLoading
-                        ? 'جاري التحميل...'
-                        : 'تسجيل الدخول بـ Google',
+                        ? (t?.translate('loading') ?? 'Loading...')
+                        : (t?.translate('sign_in_google') ??
+                            'Sign in with Google'),
                     style: const TextStyle(
                       fontFamily: 'Tajawal',
                       fontWeight: FontWeight.w600,
@@ -336,7 +364,8 @@ class _WebSignInScreenState extends State<WebSignInScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'لا تملك حساب؟ ',
+                      t?.translate('dont_have_account') ??
+                          "Don't have an account? ",
                       style: TextStyle(
                         color: Colors.grey[700],
                         fontFamily: 'Tajawal',
@@ -345,7 +374,7 @@ class _WebSignInScreenState extends State<WebSignInScreen> {
                     GestureDetector(
                       onTap: () => Navigator.pushNamed(context, '/signup'),
                       child: Text(
-                        'سجّل الآن',
+                        t?.translate('sign_up') ?? 'Sign Up',
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           color: Constants.primaryColor,

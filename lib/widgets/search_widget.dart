@@ -80,13 +80,14 @@ class _SearchWidgetState extends State<SearchWidget> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: _isFocused
-                      ? Constants.primaryColor.withOpacity(0.35)
-                      : Colors.black.withOpacity(0.06),
+                      ? Constants.primaryColor.withValues(alpha: 0.35)
+                      : Colors.black.withValues(alpha: 0.06),
                   width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(_isFocused ? 0.08 : 0.04),
+                    color: Colors.black
+                        .withValues(alpha: _isFocused ? 0.08 : 0.04),
                     blurRadius: _isFocused ? 16 : 10,
                     offset: const Offset(0, 8),
                   ),
@@ -112,7 +113,7 @@ class _SearchWidgetState extends State<SearchWidget> {
                 decoration: InputDecoration(
                   hintText: widget.hintText,
                   hintStyle: TextStyle(
-                    color: Colors.black.withOpacity(0.35),
+                    color: Colors.black.withValues(alpha: 0.35),
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                     height: 1.0, // ✅ مهم للهينت
@@ -131,7 +132,7 @@ class _SearchWidgetState extends State<SearchWidget> {
                       height: 34,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: Constants.primaryColor.withOpacity(0.10),
+                        color: Constants.primaryColor.withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
@@ -153,7 +154,7 @@ class _SearchWidgetState extends State<SearchWidget> {
                           onPressed: _clear,
                           icon: Icon(
                             Icons.close_rounded,
-                            color: Colors.black.withOpacity(0.45),
+                            color: Colors.black.withValues(alpha: 0.45),
                           ),
                           splashRadius: 18,
                         )

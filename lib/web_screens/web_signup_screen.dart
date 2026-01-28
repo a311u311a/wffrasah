@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../constants.dart';
 import '../services/authentication.dart';
-import '../Login Signup/Widget/snackbar.dart';
+import '../screens/login_signup/widgets/snackbar.dart';
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
+import '../localization/app_localizations.dart';
 
 /// صفحة التسجيل للويب
 class WebSignUpScreen extends StatefulWidget {
@@ -35,21 +36,29 @@ class _WebSignUpScreenState extends State<WebSignUpScreen> {
   }
 
   Future<void> _signup() async {
+    final t = AppLocalizations.of(context);
     final name = _nameCtrl.text.trim();
     final email = _emailCtrl.text.trim();
     final pass = _passCtrl.text.trim();
     final confirm = _confirmCtrl.text.trim();
 
     if (name.isEmpty || email.isEmpty || pass.isEmpty || confirm.isEmpty) {
-      showSnackBar(context, 'الرجاء إكمال جميع الحقول', isError: true);
+      showSnackBar(context,
+          t?.translate('fill_all_fields') ?? 'Please fill in all fields',
+          isError: true);
       return;
     }
     if (pass != confirm) {
-      showSnackBar(context, 'كلمة المرور غير متطابقة', isError: true);
+      showSnackBar(context,
+          t?.translate('passwords_do_not_match') ?? 'Passwords do not match',
+          isError: true);
       return;
     }
     if (pass.length < 6) {
-      showSnackBar(context, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
+      showSnackBar(
+          context,
+          t?.translate('registration_error') ??
+              'Password must be at least 6 characters',
           isError: true);
       return;
     }
@@ -66,7 +75,8 @@ class _WebSignUpScreenState extends State<WebSignUpScreen> {
       final user = res.user;
       if (user == null) {
         if (!mounted) return;
-        showSnackBar(context, 'فشل إنشاء الحساب', isError: true);
+        showSnackBar(context, t?.translate('signup_failed') ?? 'Sign up failed',
+            isError: true);
         return;
       }
 
@@ -86,7 +96,7 @@ class _WebSignUpScreenState extends State<WebSignUpScreen> {
 
       showSnackBar(
         context,
-        'تم إنشاء الحساب بنجاح ✅',
+        t?.translate('signup_success') ?? 'Account created successfully ✅',
         isError: false,
       );
 
@@ -94,10 +104,16 @@ class _WebSignUpScreenState extends State<WebSignUpScreen> {
       Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
     } on AuthException catch (e) {
       if (!mounted) return;
-      showSnackBar(context, 'خطأ: ${e.message}', isError: true);
+      String msg = e.message;
+      if (msg.contains('User already registered') ||
+          msg.contains('already registered')) {
+        msg = t?.translate('email_already_exists') ?? 'Email already exists';
+      }
+      showSnackBar(context, msg, isError: true);
     } catch (e) {
       if (!mounted) return;
-      showSnackBar(context, 'خطأ: $e', isError: true);
+      showSnackBar(context, '${t?.translate('error_prefix') ?? 'Error: '}$e',
+          isError: true);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -121,6 +137,7 @@ class _WebSignUpScreenState extends State<WebSignUpScreen> {
   }
 
   Widget _buildContent() {
+    final t = AppLocalizations.of(context);
     return Container(
       padding: ResponsivePadding.page(context),
       constraints: const BoxConstraints(maxWidth: 500),
@@ -141,7 +158,7 @@ class _WebSignUpScreenState extends State<WebSignUpScreen> {
               children: [
                 // العنوان
                 Text(
-                  'إنشاء حساب جديد',
+                  t?.translate('sign_up') ?? 'Sign Up',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.w900,
@@ -152,7 +169,7 @@ class _WebSignUpScreenState extends State<WebSignUpScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'انضم إلينا الآن! ',
+                  t?.translate('Sign up now..') ?? 'Join us now!',
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey[600],
@@ -165,7 +182,7 @@ class _WebSignUpScreenState extends State<WebSignUpScreen> {
                 // الاسم
                 _field(
                   controller: _nameCtrl,
-                  label: 'الاسم',
+                  label: t?.translate('name') ?? 'Name',
                   icon: Icons.person_rounded,
                 ),
                 const SizedBox(height: 20),
@@ -173,7 +190,7 @@ class _WebSignUpScreenState extends State<WebSignUpScreen> {
                 // البريد الإلكتروني
                 _field(
                   controller: _emailCtrl,
-                  label: 'البريد الإلكتروني',
+                  label: t?.translate('email') ?? 'Email',
                   icon: Icons.email_rounded,
                   keyboardType: TextInputType.emailAddress,
                 ),
@@ -182,7 +199,7 @@ class _WebSignUpScreenState extends State<WebSignUpScreen> {
                 // كلمة المرور
                 _field(
                   controller: _passCtrl,
-                  label: 'كلمة المرور',
+                  label: t?.translate('password') ?? 'Password',
                   icon: Icons.lock_rounded,
                   obscure: !_showPass,
                   suffix: IconButton(
@@ -197,7 +214,7 @@ class _WebSignUpScreenState extends State<WebSignUpScreen> {
                 // تأكيد كلمة المرور
                 _field(
                   controller: _confirmCtrl,
-                  label: 'تأكيد كلمة المرور',
+                  label: t?.translate('confirm_password') ?? 'Confirm Password',
                   icon: Icons.lock_rounded,
                   obscure: !_showConfirm,
                   suffix: IconButton(
@@ -223,8 +240,8 @@ class _WebSignUpScreenState extends State<WebSignUpScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text(
-                          'إنشاء الحساب',
+                        child: Text(
+                          t?.translate('register') ?? 'Register',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -240,7 +257,8 @@ class _WebSignUpScreenState extends State<WebSignUpScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'لديك حساب بالفعل؟ ',
+                      t?.translate('already_have_account') ??
+                          'Already have an account? ',
                       style: TextStyle(
                         color: Colors.grey[700],
                         fontFamily: 'Tajawal',
@@ -249,7 +267,7 @@ class _WebSignUpScreenState extends State<WebSignUpScreen> {
                     GestureDetector(
                       onTap: () => Navigator.pushNamed(context, '/signin'),
                       child: Text(
-                        'سجّل الدخول',
+                        t?.translate('login_here') ?? 'Login here',
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           color: Constants.primaryColor,

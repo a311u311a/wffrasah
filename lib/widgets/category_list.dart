@@ -29,7 +29,9 @@ class CategoryList extends StatelessWidget {
         stream: supabase.from('offers').stream(primaryKey: ['id']),
         builder: (context, offersSnapshot) {
           if (offersSnapshot.hasError) return const SizedBox();
-          if (!offersSnapshot.hasData) return const CustomLoadingIndicator();
+          if (!offersSnapshot.hasData) {
+            return const CustomLoadingIndicator();
+          }
 
           final offerRows =
               (offersSnapshot.data ?? []).cast<Map<String, dynamic>>();
@@ -52,8 +54,9 @@ class CategoryList extends StatelessWidget {
                         localizations?.translate('error_loading_categories') ??
                             'خطأ في تحميل الفئات');
               }
-              if (!categorySnapshot.hasData)
+              if (!categorySnapshot.hasData) {
                 return const CustomLoadingIndicator();
+              }
 
               final categoryRows =
                   (categorySnapshot.data ?? []).cast<Map<String, dynamic>>();
@@ -65,7 +68,9 @@ class CategoryList extends StatelessWidget {
                   .where((category) => activeCategoryIds.contains(category.id))
                   .toList();
 
-              if (categories.isEmpty) return const SizedBox();
+              if (categories.isEmpty) {
+                return const SizedBox();
+              }
 
               return Padding(
                 padding: const EdgeInsets.only(top: 8.0, left: 8, right: 8),
@@ -93,7 +98,7 @@ class CategoryList extends StatelessWidget {
   Widget _buildCategoryItem(Category category, bool isSelected) {
     return GestureDetector(
       onTap: () => onCategorySelected(category.id),
-      child: Container(
+      child: SizedBox(
         width: 68,
         child: Column(
           children: [
@@ -110,16 +115,22 @@ class CategoryList extends StatelessWidget {
                 ),
               ),
               child: category.image.isNotEmpty
-                  ? Image.network(
-                      category.image,
-                      width: 35,
-                      height: 35,
-                      color: isSelected ? Colors.white : Constants.primaryColor,
-                      errorBuilder: (context, error, stackTrace) => Icon(
-                        Icons.category_outlined,
-                        size: 35,
-                        color:
-                            isSelected ? Colors.white : Constants.primaryColor,
+                  ? ColorFiltered(
+                      colorFilter: ColorFilter.mode(
+                        isSelected ? Colors.white : Constants.primaryColor,
+                        BlendMode.srcIn,
+                      ),
+                      child: Image.network(
+                        category.image,
+                        width: 35,
+                        height: 35,
+                        errorBuilder: (context, error, stackTrace) => Icon(
+                          Icons.category_outlined,
+                          size: 35,
+                          color: isSelected
+                              ? Colors.white
+                              : Constants.primaryColor,
+                        ),
                       ),
                     )
                   : Icon(
@@ -150,7 +161,7 @@ class CategoryList extends StatelessWidget {
     final localizations = AppLocalizations.of(context);
     return GestureDetector(
       onTap: () => onCategorySelected(null),
-      child: Container(
+      child: SizedBox(
         width: 68,
         child: Column(
           children: [

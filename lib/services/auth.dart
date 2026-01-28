@@ -3,13 +3,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:coupon/screens/signup.dart';
-import '../Login Signup/Widget/button.dart';
+import 'package:rbhan/screens/signup.dart';
+import '../screens/login_signup/widgets/button.dart';
 import '../constants.dart';
 import '../localization/app_localizations.dart';
-import '../screens/admin_screen.dart';
+import '../screens/admin/admin_screen.dart';
 import '../widgets/bottom_navigation_bar.dart';
-import '../Login Signup/Widget/snackbar.dart';
+import '../screens/login_signup/widgets/snackbar.dart';
 import '../Password Forgot/forgot_password.dart';
 
 class SignIn extends StatefulWidget {
@@ -24,8 +24,7 @@ class _SignInState extends State<SignIn> {
 
   // ✅ لازم يطابق: package + AndroidManifest intent-filter + Supabase Redirect URLs
   // غيّري com.example.coupon لباكيج تطبيقك الحقيقي
-  static const String _mobileRedirectUrl =
-      'com.example.coupon://login-callback/';
+  static const String _mobileRedirectUrl = 'com.rbhan.app://login-callback/';
 
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -65,7 +64,10 @@ class _SignInState extends State<SignIn> {
       await _supabase.from('users').upsert({
         'id': user.id,
         'email': user.email,
-        'name': (user.userMetadata?['name'] ?? user.userMetadata?['full_name'] ?? '').toString(),
+        'name': (user.userMetadata?['name'] ??
+                user.userMetadata?['full_name'] ??
+                '')
+            .toString(),
         // لو عندك default now() في DB ممكن تشيلي created_at من هنا
         'created_at': DateTime.now().toIso8601String(),
         'is_admin': false,
@@ -96,7 +98,7 @@ class _SignInState extends State<SignIn> {
       MaterialPageRoute(
         builder: (_) => admin ? const AdminScreen() : const BottomNavBar(),
       ),
-          (_) => false,
+      (_) => false,
     );
   }
 
@@ -117,7 +119,7 @@ class _SignInState extends State<SignIn> {
 
     try {
       final res =
-      await _supabase.auth.signInWithPassword(email: email, password: pass);
+          await _supabase.auth.signInWithPassword(email: email, password: pass);
 
       if (res.user != null) {
         // ✅ تأكد من public.users
@@ -153,7 +155,7 @@ class _SignInState extends State<SignIn> {
       showSnackBar(context, e.message, isError: true);
     } catch (e) {
       if (!mounted) return;
-      showSnackBar(context, 'Google Sign-In failed: $e', isError: true);
+      showSnackBar(context, 'فشل تسجيل الدخول عبر جوجل: $e', isError: true);
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
@@ -162,7 +164,7 @@ class _SignInState extends State<SignIn> {
   void _goBackToMenu() {
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const BottomNavBar(initialIndex: 4)),
-          (_) => false,
+      (_) => false,
     );
   }
 
@@ -233,9 +235,9 @@ class _SignInState extends State<SignIn> {
               isLoading
                   ? const CircularProgressIndicator()
                   : MyButtons(
-                onTap: loginUser,
-                text: t?.translate('sign_in') ?? 'Sign In',
-              ),
+                      onTap: loginUser,
+                      text: t?.translate('sign_in') ?? 'Sign In',
+                    ),
 
               const SizedBox(height: 20),
 
@@ -294,11 +296,11 @@ class _SignInState extends State<SignIn> {
   }
 
   Widget _buildTextField(
-      TextEditingController ctrl,
-      String label,
-      IconData icon, {
-        bool isPassword = false,
-      }) {
+    TextEditingController ctrl,
+    String label,
+    IconData icon, {
+    bool isPassword = false,
+  }) {
     return TextField(
       controller: ctrl,
       obscureText: isPassword && !_isPasswordVisible,
@@ -307,12 +309,12 @@ class _SignInState extends State<SignIn> {
         prefixIcon: Icon(icon, color: Constants.primaryColor),
         suffixIcon: isPassword
             ? IconButton(
-          icon: Icon(
-            _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-          ),
-          onPressed: () =>
-              setState(() => _isPasswordVisible = !_isPasswordVisible),
-        )
+                icon: Icon(
+                  _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                ),
+                onPressed: () =>
+                    setState(() => _isPasswordVisible = !_isPasswordVisible),
+              )
             : null,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),

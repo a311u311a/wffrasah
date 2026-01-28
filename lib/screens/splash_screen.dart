@@ -10,7 +10,7 @@ class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  _SplashScreenState createState() => _SplashScreenState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen>
@@ -42,7 +42,51 @@ class _SplashScreenState extends State<SplashScreen>
     //  });
 
     Future.delayed(const Duration(seconds: 4), () {
-      if (mounted) {
+      if (!mounted) return;
+
+      // 🔍 نتحقق مما إذا كنا قد انتقلنا بالفعل (بسبب استعادة كلمة المرور مثلاً)
+      // ولكن الطريقة الأحدث والأضمن هي التحقق من حالة الـ Recovery في الـ Session
+      // حالياً Supabase لا يعطي flag مباشر في الـ Session، لكن الحدث أعلاه هو الأهم.
+
+      // نتحقق إذا كان هناك "dialog" أو "route" جديد تم فتحه فوق الـ Splash
+      // ولكن للتبسيط: سنفحص إذا كان هناك "recovery" event وصل للتو.
+      // المشكلة أن الـ Listen stream يعمل بشكل غير متزامن.
+
+      // الحل العملي:
+      // ببساطة، نقوم بالتحقق من الـ Session العادي.
+      // إذا كان المستخدم قادماً من رابط Recovery، فإن الحدث passwordRecovery سيُطلق
+      // وغالباً سيسبق هذا الـ Future أو يأتي معه.
+
+      // لتجنب التعارض، يمكننا التحقق: هل المستخدم logged in "و" هل الـ link type هو recovery؟
+      // للأسف الـ Link type غير متاح بسهولة هنا.
+
+      // سنعتمد على أن `pushAndRemoveUntil` في الـ listener سيلغي أي navigation آخر
+      // ولكن إذا سبق الـ Future الـ Listener، فإن الـ Listener سيعمل "بعد" الانتقال للصفحة الرئيسية.
+      // لذا سننتقل للصفحة الرئيسية، والـ Listener (بما أنه Global أو مستمر) يجب أن يكون في مكان لا يموت.
+      // ⚠️ ولكن لحظة: الـ Splash سيموت (dispose) عند الانتقال!
+      // إذن الـ listener سيموت ولن يعمل إذا تأخر الحدث.
+
+      // ✅ الحل الصحيح: نقل الـ Listener إلى الـ `main.dart` أو `MyApp` ليكون Global
+      // أو جعل الـ Splash ينتظر قليلاً للتأكد.
+
+      // بما أننا في Splash، سنقوم بالتوجيه العادي، ولكن سنستخدم `pushReplacement`
+      // إذا وصل حدث Recovery "بعد" الانتقال، فلن يتم التقاطه لأن الـ Splash disposed.
+
+      // لذلك: أفضل مكان لمعالجة الـ Deep Links هو في الـ root widget أو استخدام `go_router`.
+      // لكن بما أننا نستخدم Navigator عادي:
+
+      final session = Supabase.instance.client.auth.currentSession;
+      if (session != null) {
+        // المستخدم مسجل دخول
+        // هل يمكننا معرفة هل هو recovery session؟
+        // ليس بسهولة، ولكن الـ listener المفروض التقطه.
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+              builder: (context) => const BottomNavBar(initialIndex: 2)),
+        );
+      } else {
         Navigator.pushReplacement(
           context,
           PageRouteBuilder(
@@ -78,7 +122,7 @@ class _SplashScreenState extends State<SplashScreen>
             colors: [
               Colors.white,
               Constants.primaryColor
-                  .withOpacity(0.05), // لمحة خفيفة من لون هويتك
+                  .withValues(alpha: 0.05), // لمحة خفيفة من لون هويتك
             ],
           ),
         ),
@@ -93,7 +137,7 @@ class _SplashScreenState extends State<SplashScreen>
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Constants.primaryColor.withOpacity(0.1),
+                    color: Constants.primaryColor.withValues(alpha: 0.1),
                     blurRadius: 50,
                     spreadRadius: 5,
                   ),
@@ -124,7 +168,7 @@ class _SplashScreenState extends State<SplashScreen>
               child: Column(
                 children: [
                   Text(
-                    'كوبونات وخصومات',
+                    'كوبونات وعروض',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.w900, // خط سميك جداً للفخامة
@@ -135,7 +179,7 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'كل ما تحتاجه للتوفير في مكان واحد',
+                    'مع تطبيق ربحان الكل ربحان',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w400,
@@ -161,7 +205,7 @@ class _SplashScreenState extends State<SplashScreen>
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      Constants.primaryColor.withOpacity(0.5),
+                      Constants.primaryColor.withValues(alpha: 0.5),
                     ),
                   ),
                 ),

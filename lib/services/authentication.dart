@@ -1,12 +1,12 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthMethod {
   AuthMethod(this._supabase);
   final SupabaseClient _supabase;
 
-  static const String mobileRedirectUrl = 'com.example.coupon://login-callback';
+  static const String mobileRedirectUrl = 'com.rbhan.app://login-callback';
 
   Future<AuthResponse> signUp({
     required String email,
@@ -71,8 +71,7 @@ class AuthMethods {
 
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  static const String _mobileRedirectUrl =
-      'com.example.coupon://login-callback/';
+  static const String _mobileRedirectUrl = 'com.rbhan.app://login-callback/';
 
   Future<AuthResponse> signUpWithEmail({
     required String email,

@@ -1,7 +1,7 @@
 // صفحة المتاجر (تعرض كل المتاجر)
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:coupon/screens/store_coupons_screen.dart';
+import 'package:rbhan/screens/store_coupons_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../constants.dart';
@@ -49,7 +49,7 @@ class _StoresScreenState extends State<StoresScreen> {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Constants.primaryColor.withOpacity(0.1),
+                Constants.primaryColor.withValues(alpha: 0.1),
                 Colors.white,
               ],
             ),
@@ -254,7 +254,7 @@ class _StoreCardState extends State<_StoreCard>
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 10,
                       offset: const Offset(0, 5),
                     ),

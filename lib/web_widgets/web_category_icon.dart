@@ -35,13 +35,13 @@ class WebCategoryItem extends StatelessWidget {
                   end: Alignment.bottomRight,
                   colors: [
                     color,
-                    color.withOpacity(0.7),
+                    color.withValues(alpha: 0.7),
                   ],
                 ),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: color.withOpacity(0.3),
+                    color: color.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),

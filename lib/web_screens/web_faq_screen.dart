@@ -4,21 +4,32 @@ import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
 
-/// صفحة الأسئلة الشائعة للويب
+/// صفحة الأسئلة الشائعة للويب - محدثة بمحتوى التطبيق
 class WebFaqScreen extends StatelessWidget {
   const WebFaqScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[50],
       appBar: const WebNavigationBar(),
       body: SingleChildScrollView(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildHeader(context),
-            _buildContent(context),
+            Container(
+              padding: ResponsivePadding.page(context),
+              constraints: const BoxConstraints(maxWidth: 1000),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 40),
+                  _buildHeader(context),
+                  const SizedBox(height: 40),
+                  _buildContent(context),
+                  const SizedBox(height: 40),
+                ],
+              ),
+            ),
             const WebFooter(),
           ],
         ),
@@ -27,22 +38,9 @@ class WebFaqScreen extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Container(
-      padding: ResponsivePadding.page(context),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Constants.primaryColor.withOpacity(0.1),
-            Colors.white,
-          ],
-        ),
-      ),
+    return Center(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 40),
           Text(
             'الأسئلة الشائعة',
             style: TextStyle(
@@ -61,68 +59,48 @@ class WebFaqScreen extends StatelessWidget {
               fontFamily: 'Tajawal',
             ),
           ),
-          const SizedBox(height: 40),
         ],
       ),
     );
   }
 
   Widget _buildContent(BuildContext context) {
+    // قائمة الأسئلة من faq_screen.dart
     final faqs = [
       {
-        'question': 'كيف يمكنني استخدام الكوبونات؟',
+        'question': 'هل التطبيق مجاني؟',
         'answer':
-            'لاستخدام الكوبونات، قم بتصفح الكوبونات المتاحة، انقر على "نسخ الكود"، ثم انتقل إلى موقع المتجر والصق الكود عند الدفع للحصول على الخصم.',
+            'نعم، التطبيق مجاني بالكامل. نحن نحصل على عمولة بسيطة من المتاجر عند استخدامك للكوبونات عبر تطبيقنا، وهذا لا يؤثر على السعر الذي تدفعه.',
       },
       {
-        'question': 'هل جميع الكوبونات مجانية؟',
+        'question': 'كيف أستخدم كود الخصم؟',
         'answer':
-            'نعم، جميع الكوبونات المتاحة على منصتنا مجانية تماماً. نهدف إلى مساعدتك في توفير المال دون أي تكلفة إضافية.',
+            'ببساطة، اضغط على زر "نسخ الكود" ثم ألصقه في خانة الكوبون في صفحة الدفع بالمتجر.',
       },
       {
-        'question': 'كم مرة يتم تحديث الكوبونات؟',
+        'question': 'الكود لا يعمل، ماذا أفعل؟',
         'answer':
-            'نقوم بتحديث الكوبونات بشكل يومي لضمان توفر أحدث العروض والخصومات. كما نتحقق من صلاحية جميع الكوبونات بانتظام.',
+            'تأكد من قراءة شروط استخدام الكوبون (مثل الحد الأدنى للطلب والمنتجات المشمولة). إذا استمرت المشكلة، فهذا يعني أن صلاحية الكود قد انتهت.',
       },
       {
-        'question': 'ماذا أفعل إذا لم يعمل الكوبون؟',
+        'question': 'هل يمكن استخدام كود الخصم أكثر من مرة؟',
         'answer':
-            'إذا واجهت مشكلة مع كوبون معين، يرجى التواصل معنا عبر صفحة "اتصل بنا" وسنقوم بالتحقق من الأمر فوراً وتوفير بديل إن أمكن.',
+            'نعم. يختلف ذلك من متجر لآخر، ولكن في كثير من الحالات يمكن استخدام كود الخصم عدة مرات.',
       },
       {
-        'question': 'هل يمكنني استخدام أكثر من كوبون في نفس الطلب؟',
+        'question': 'هل يتم تحديث أكواد الخصم في التطبيق؟',
         'answer':
-            'يعتمد ذلك على سياسة كل متجر. معظم المتاجر تسمح باستخدام كوبون واحد فقط لكل طلب، لكن بعضها قد يسمح بدمج عدة عروض.',
-      },
-      {
-        'question': 'كيف يمكنني حفظ الكوبونات المفضلة؟',
-        'answer':
-            'يمكنك النقر على أيقونة القلب الموجودة على أي كوبون لإضافته إلى قائمة المفضلة. ستجد جميع الكوبونات المحفوظة في صفحة "المفضلة".',
-      },
-      {
-        'question': 'هل التطبيق متاح على جميع المنصات؟',
-        'answer':
-            'نعم، نوفر خدماتنا عبر الويب وتطبيقات الهاتف المحمول لأنظمة iOS و Android لتوفير أفضل تجربة ممكنة.',
-      },
-      {
-        'question': 'كيف تربحون المال إذا كانت الكوبونات مجانية؟',
-        'answer':
-            'نحصل على عمولة صغيرة من المتاجر عندما يتم استخدام الكوبونات، مما يسمح لنا بتقديم الخدمة مجاناً للمستخدمين.',
+            'نعم. يتم تحديث أكواد الخصم باستمرار لضمان توفر أحدث وأفضل العروض للمستخدمين.',
       },
     ];
 
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 900),
-      padding: ResponsivePadding.page(context),
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        children: faqs
-            .map((faq) => _FaqItem(
-                  question: faq['question']!,
-                  answer: faq['answer']!,
-                ))
-            .toList(),
-      ),
+    return Column(
+      children: faqs
+          .map((faq) => _FaqItem(
+                question: faq['question']!,
+                answer: faq['answer']!,
+              ))
+          .toList(),
     );
   }
 }
@@ -157,7 +135,7 @@ class _FaqItemState extends State<_FaqItem> {
         boxShadow: isExpanded
             ? [
                 BoxShadow(
-                  color: Constants.primaryColor.withOpacity(0.1),
+                  color: Constants.primaryColor.withValues(alpha: 0.1),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -173,7 +151,7 @@ class _FaqItemState extends State<_FaqItem> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Constants.primaryColor.withOpacity(0.1),
+                  color: Constants.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -208,6 +186,7 @@ class _FaqItemState extends State<_FaqItem> {
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: Text(
                 widget.answer,
+                textAlign: TextAlign.justify,
                 style: TextStyle(
                   fontSize: 15,
                   color: Colors.grey[700],

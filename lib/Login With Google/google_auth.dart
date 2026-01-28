@@ -10,7 +10,7 @@ class GoogleAuthService {
       OAuthProvider.google,
       // You can remove redirectTo to use default, but better to set it.
       // Make sure it matches your Android intent-filter.
-      redirectTo: 'com.example.coupon://login-callback',
+      redirectTo: 'com.rbhan.app://login-callback',
     );
   }
 

@@ -3,8 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../constants.dart';
 import '../services/authentication.dart';
 import '../widgets/bottom_navigation_bar.dart';
-import '../Login Signup/Widget/button.dart';
-import '../Login Signup/Widget/snackbar.dart';
+import '../screens/login_signup/widgets/button.dart';
+import '../screens/login_signup/widgets/snackbar.dart';
 import '../localization/app_localizations.dart';
 
 class Signup extends StatefulWidget {
@@ -42,15 +42,23 @@ class _SignupState extends State<Signup> {
     final confirm = _confirmCtrl.text.trim();
 
     if (name.isEmpty || email.isEmpty || pass.isEmpty || confirm.isEmpty) {
-      showSnackBar(context, 'رجاءً اكملي كل الحقول', isError: true);
+      showSnackBar(context,
+          t?.translate('fill_all_fields') ?? 'Please fill in all fields',
+          isError: true);
       return;
     }
     if (pass != confirm) {
-      showSnackBar(context, 'كلمة المرور غير متطابقة', isError: true);
+      showSnackBar(context,
+          t?.translate('passwords_do_not_match') ?? 'Passwords do not match',
+          isError: true);
       return;
     }
     if (pass.length < 6) {
-      showSnackBar(context, 'كلمة المرور لازم 6 أحرف على الأقل', isError: true);
+      showSnackBar(
+          context,
+          t?.translate('registration_error') ??
+              'Password must be at least 6 characters',
+          isError: true);
       return;
     }
 
@@ -67,7 +75,8 @@ class _SignupState extends State<Signup> {
       final user = res.user;
       if (user == null) {
         if (!mounted) return;
-        showSnackBar(context, 'فشل إنشاء الحساب', isError: true);
+        showSnackBar(context, t?.translate('signup_failed') ?? 'Sign up failed',
+            isError: true);
         return;
       }
 
@@ -90,7 +99,7 @@ class _SignupState extends State<Signup> {
 
       showSnackBar(
         context,
-        t?.translate('signup_success') ?? 'تم إنشاء الحساب ✅',
+        t?.translate('signup_success') ?? 'Account created successfully ✅',
         isError: false,
       );
 
@@ -100,10 +109,16 @@ class _SignupState extends State<Signup> {
       );
     } on AuthException catch (e) {
       if (!mounted) return;
-      showSnackBar(context, 'خطأ: ${e.message}', isError: true);
+      String msg = e.message;
+      if (msg.contains('User already registered') ||
+          msg.contains('already registered')) {
+        msg = t?.translate('email_already_exists') ?? 'Email already exists';
+      }
+      showSnackBar(context, msg, isError: true);
     } catch (e) {
       if (!mounted) return;
-      showSnackBar(context, 'خطأ: $e', isError: true);
+      showSnackBar(context, '${t?.translate('error_prefix') ?? 'Error: '}$e',
+          isError: true);
     } finally {
       if (mounted) setState(() => _loading = false);
     }

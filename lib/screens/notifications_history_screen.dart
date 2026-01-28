@@ -20,7 +20,8 @@ class NotificationsHistoryScreen extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          localizations?.translate('notification_center') ?? 'Notification Center',
+          localizations?.translate('notification_center') ??
+              'Notification Center',
           style: TextStyle(
             fontSize: 16,
             color: Constants.primaryColor,
@@ -41,7 +42,8 @@ class NotificationsHistoryScreen extends StatelessWidget {
             .map((data) => data.where((notification) {
                   final isBroadcast = notification['is_broadcast'] ?? false;
                   final targetUserId = notification['user_id'];
-                  return isBroadcast || (userId != null && targetUserId == userId);
+                  return isBroadcast ||
+                      (userId != null && targetUserId == userId);
                 }).toList()),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -99,7 +101,7 @@ class NotificationsHistoryScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(15),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 5),
                     ),

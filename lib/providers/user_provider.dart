@@ -56,11 +56,14 @@ class UserProvider extends ChangeNotifier {
 
       // 1. Check admins table
       try {
+        debugPrint('UserProvider: Checking admins table for id: $userId');
         final adminRow = await Supabase.instance.client
             .from('admins')
-            .select() // Select all columns
-            .eq('id', userId) // Check by Primary Key (id)
+            .select()
+            .eq('id', userId) // Reverted to 'id'
             .maybeSingle();
+
+        debugPrint('UserProvider: admins table result: $adminRow');
         if (adminRow != null) {
           foundAdmin = true;
         }
@@ -71,11 +74,14 @@ class UserProvider extends ChangeNotifier {
       // 2. Check users table if not already found
       if (!foundAdmin) {
         try {
+          debugPrint('UserProvider: Checking users table (id) for id: $userId');
           final userRow = await Supabase.instance.client
               .from('users')
               .select('is_admin')
               .eq('id', userId)
               .maybeSingle();
+
+          debugPrint('UserProvider: users table (id) result: $userRow');
 
           if (userRow != null && userRow['is_admin'] == true) {
             foundAdmin = true;
@@ -88,11 +94,15 @@ class UserProvider extends ChangeNotifier {
       // 3. Check users table (using 'uid' - legacy support)
       if (!foundAdmin) {
         try {
+          debugPrint(
+              'UserProvider: Checking users table (uid) for uid: $userId');
           final userRowUid = await Supabase.instance.client
               .from('users')
               .select('is_admin')
               .eq('uid', userId)
               .maybeSingle();
+
+          debugPrint('UserProvider: users table (uid) result: $userRowUid');
 
           if (userRowUid != null && userRowUid['is_admin'] == true) {
             foundAdmin = true;
@@ -103,6 +113,7 @@ class UserProvider extends ChangeNotifier {
       }
 
       _isAdmin = foundAdmin;
+      debugPrint('UserProvider: Final Admin Status: $_isAdmin');
     } catch (e) {
       debugPrint('UserProvider: Global error checking role: $e');
       _isAdmin = false;

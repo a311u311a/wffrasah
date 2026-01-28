@@ -69,7 +69,7 @@ class _CouponScreenState extends State<CouponScreen> {
             end: Alignment.bottomCenter,
             colors: [
               // ✅ إصلاح المشكلة هنا
-              Constants.primaryColor.withOpacity(0.1),
+              Constants.primaryColor.withValues(alpha: 0.1),
               Colors.white,
             ],
           ),

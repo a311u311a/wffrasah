@@ -20,6 +20,7 @@ class Offer {
   final String image;
 
   final List<String> tags;
+  final DateTime? expiryDate;
 
   Offer({
     required this.id,
@@ -34,6 +35,7 @@ class Offer {
     required this.web,
     required this.image,
     required this.tags,
+    this.expiryDate,
   });
 
   // ✅ من Supabase
@@ -62,6 +64,9 @@ class Offer {
       web: _asString(data['web']),
       image: _asString(data['image']),
       tags: _parseTags(data['tags']),
+      expiryDate: data['expiry_date'] != null
+          ? DateTime.tryParse(data['expiry_date'].toString())
+          : null,
     );
   }
 
@@ -90,6 +95,8 @@ class Offer {
       'web': web,
       'image': image,
       'tags': tags,
+      'expiryDate': expiryDate?.toIso8601String(), // For local consistency
+      'expiry_date': expiryDate?.toIso8601String(), // For Supabase consistency
     };
   }
 

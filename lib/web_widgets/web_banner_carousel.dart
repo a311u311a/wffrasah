@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../models/store.dart';
+import '../models/carousel.dart';
 import '../constants.dart';
 import 'responsive_layout.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-/// بنر متحرك احترافي يعرض صور المتاجر
+/// بنر متحرك بتصميم سينمائي حديث
 class WebBannerCarousel extends StatefulWidget {
-  final List<Store> stores;
-  final Function(String storeId)? onStoreTap;
+  final List<Carousel> items;
 
   const WebBannerCarousel({
     super.key,
-    required this.stores,
-    this.onStoreTap,
+    required this.items,
   });
 
   @override
@@ -27,215 +26,208 @@ class _WebBannerCarouselState extends State<WebBannerCarousel> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.stores.isEmpty) {
+    if (widget.items.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    // فلترة المتاجر التي لديها صور فقط
-    final storesWithImages =
-        widget.stores.where((store) => store.image.isNotEmpty).toList();
+    // فلترة العناصر التي لديها صور فقط
+    final itemsWithImages =
+        widget.items.where((item) => item.image.isNotEmpty).toList();
 
-    if (storesWithImages.isEmpty) {
+    if (itemsWithImages.isEmpty) {
       return const SizedBox.shrink();
     }
 
     // تحديد الارتفاع حسب حجم الشاشة
     final double bannerHeight = ResponsiveLayout.isDesktop(context)
-        ? 500
+        ? 380
         : ResponsiveLayout.isTablet(context)
-            ? 400
-            : 300;
+            ? 300
+            : 200;
 
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: bannerHeight,
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          // الـ Carousel
-          CarouselSlider.builder(
-            carouselController: _carouselController,
-            itemCount: storesWithImages.length,
-            itemBuilder: (context, index, realIndex) {
-              return _buildBannerItem(storesWithImages[index], bannerHeight);
-            },
-            options: CarouselOptions(
-              height: bannerHeight,
-              viewportFraction: 1.0,
-              autoPlay: true,
-              autoPlayInterval: const Duration(seconds: 5),
-              autoPlayAnimationDuration: const Duration(milliseconds: 1000),
-              autoPlayCurve: Curves.easeInOutCubic,
-              enlargeCenterPage: false,
-              onPageChanged: (index, reason) {
-                setState(() {
-                  _currentIndex = index;
-                });
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(
+          children: [
+            // الـ Carousel
+            CarouselSlider.builder(
+              carouselController: _carouselController,
+              itemCount: itemsWithImages.length,
+              itemBuilder: (context, index, realIndex) {
+                return _buildBannerItem(itemsWithImages[index], bannerHeight);
               },
+              options: CarouselOptions(
+                height: bannerHeight,
+                viewportFraction: 1.0,
+                autoPlay: true,
+                autoPlayInterval: const Duration(seconds: 5),
+                autoPlayAnimationDuration: const Duration(milliseconds: 800),
+                autoPlayCurve: Curves.fastOutSlowIn,
+                onPageChanged: (index, reason) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+              ),
             ),
-          ),
 
-          // النقاط المؤشرة (Dots Indicator)
-          Positioned(
-            bottom: 20,
-            left: 0,
-            right: 0,
-            child: _buildDotsIndicator(storesWithImages.length),
-          ),
+            // مؤشرات التقدم
+            Positioned(
+              bottom: 20,
+              left: 30, // تغيير المكان لليسار
+              child: _buildIndicators(itemsWithImages.length),
+            ),
 
-          // أزرار التنقل (للشاشات الكبيرة)
-          if (ResponsiveLayout.isDesktop(context)) ...[
-            _buildNavigationButton(
-              isLeft: false,
-              onPressed: () => _carouselController.previousPage(),
-            ),
-            _buildNavigationButton(
-              isLeft: true,
-              onPressed: () => _carouselController.nextPage(),
-            ),
+            // أزرار التنقل (شفافة وكبيرة على الجوانب)
+            if (ResponsiveLayout.isDesktop(context)) ...[
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                child: _buildSideNavButton(
+                  icon: Icons.arrow_back_ios_new_rounded,
+                  onPressed: () => _carouselController.previousPage(),
+                ),
+              ),
+              Positioned(
+                right: 0,
+                top: 0,
+                bottom: 0,
+                child: _buildSideNavButton(
+                  icon: Icons.arrow_forward_ios_rounded,
+                  onPressed: () => _carouselController.nextPage(),
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildBannerItem(Store store, double height) {
+  Widget _buildBannerItem(Carousel item, double height) {
     return InkWell(
-      onTap:
-          widget.onStoreTap != null ? () => widget.onStoreTap!(store.id) : null,
+      onTap: () async {
+        if (item.web.isNotEmpty) {
+          final Uri url = Uri.parse(item.web);
+          if (!await launchUrl(url)) {
+            // ignore: use_build_context_synchronously
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Could not launch ${item.web}')),
+            );
+          }
+        }
+      },
       child: Stack(
         fit: StackFit.expand,
         children: [
           // الصورة
           CachedNetworkImage(
-            imageUrl: store.image,
+            imageUrl: item.image,
             fit: BoxFit.cover,
             placeholder: (context, url) => Container(
-              color: Colors.grey[200],
-              child: Center(
-                child: CircularProgressIndicator(
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(Constants.primaryColor),
-                ),
-              ),
+              color: Colors.grey[900],
             ),
             errorWidget: (context, url, error) => Container(
-              color: Colors.grey[300],
-              child: Icon(
-                Icons.store_rounded,
-                size: 100,
-                color: Colors.grey[400],
+              color: Colors.grey[900],
+              child: const Icon(Icons.broken_image,
+                  color: Colors.white24, size: 50),
+            ),
+          ),
+
+          // تدرج لوني قوي (Cinematic Gradient)
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withValues(alpha: 0.1),
+                  Colors.black.withValues(alpha: 0.8),
+                ],
+                stops: const [0.4, 0.7, 1.0],
               ),
             ),
           ),
 
-          // Gradient Overlay من الأسفل
+          // المحتوى النصي
           Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: height * 0.5,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.4),
-                    Colors.black.withOpacity(0.7),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // معلومات المتجر
-          Positioned(
-            bottom: 60,
-            right: 40,
+            bottom: 40,
+            right: 40, // RTL alignment
             left: 40,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                // اسم المتجر
-                Text(
-                  store.name,
-                  style: TextStyle(
-                    fontSize: ResponsiveLayout.isDesktop(context) ? 48 : 32,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
-                    fontFamily: 'Tajawal',
-                    shadows: [
-                      Shadow(
-                        color: Colors.black.withOpacity(0.5),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 12),
-
-                // وصف المتجر
-                if (store.description.isNotEmpty)
-                  Text(
-                    store.description,
-                    style: TextStyle(
-                      fontSize: ResponsiveLayout.isDesktop(context) ? 18 : 16,
-                      color: Colors.white.withOpacity(0.95),
-                      fontFamily: 'Tajawal',
-                      height: 1.5,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black.withOpacity(0.5),
-                          blurRadius: 8,
-                          offset: const Offset(0, 1),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (item.name.isNotEmpty)
+                        Text(
+                          item.name,
+                          style: TextStyle(
+                            fontSize:
+                                ResponsiveLayout.isDesktop(context) ? 42 : 28,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            fontFamily: 'Tajawal',
+                            height: 1.1,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withValues(alpha: 0.5),
+                                blurRadius: 20,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ],
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                const SizedBox(height: 20),
-
-                // زر "تصفح العروض"
-                ElevatedButton.icon(
-                  onPressed: widget.onStoreTap != null
-                      ? () => widget.onStoreTap!(store.id)
-                      : null,
-                  icon: const Icon(Icons.local_offer_rounded, size: 20),
-                  label: const Text(
-                    'تصفح العروض',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                      fontFamily: 'Tajawal',
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Constants.primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 16,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 8,
-                    shadowColor: Constants.primaryColor.withOpacity(0.5),
+                      const SizedBox(height: 16),
+                      // زر الإجراء (Call to Action)
+                      if (item.web.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Constants.primaryColor,
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Constants.primaryColor
+                                    .withValues(alpha: 0.4),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                'تسوق الآن',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'Tajawal',
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Icon(
+                                Icons.arrow_forward_rounded,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ],
@@ -246,65 +238,46 @@ class _WebBannerCarouselState extends State<WebBannerCarousel> {
     );
   }
 
-  Widget _buildDotsIndicator(int count) {
+  Widget _buildIndicators(int count) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(count, (index) {
         final isActive = index == _currentIndex;
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          width: isActive ? 32 : 8,
-          height: 8,
+          margin: const EdgeInsets.only(right: 6),
+          width: isActive ? 24 : 8,
+          height: 6,
           decoration: BoxDecoration(
             color: isActive
                 ? Constants.primaryColor
-                : Colors.white.withOpacity(0.5),
-            borderRadius: BorderRadius.circular(4),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
+                : Colors.white.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(3),
           ),
         );
       }),
     );
   }
 
-  Widget _buildNavigationButton({
-    required bool isLeft,
+  Widget _buildSideNavButton({
+    required IconData icon,
     required VoidCallback onPressed,
   }) {
-    return Positioned(
-      top: 0,
-      bottom: 0,
-      left: isLeft ? null : 20,
-      right: isLeft ? 20 : null,
-      child: Center(
+    return InkWell(
+      onTap: onPressed,
+      child: Container(
+        width: 60,
+        height: double.infinity,
+        alignment: Alignment.center,
         child: Container(
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.black.withValues(alpha: 0.2),
             shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
           ),
-          child: IconButton(
-            onPressed: onPressed,
-            icon: Icon(
-              isLeft ? Icons.chevron_left : Icons.chevron_right,
-              size: 32,
-            ),
-            color: Constants.primaryColor,
-            padding: const EdgeInsets.all(12),
-            constraints: const BoxConstraints(minWidth: 56, minHeight: 56),
+          child: Icon(
+            icon,
+            color: Colors.white.withValues(alpha: 0.8),
+            size: 24,
           ),
         ),
       ),

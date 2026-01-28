@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import '../constants.dart';
 import '../localization/app_localizations.dart';
@@ -7,7 +8,7 @@ import '../providers/locale_provider.dart';
 import '../providers/user_provider.dart';
 import 'responsive_layout.dart';
 
-/// شريط تنقل احترافي للويب
+/// شريط تنقل احترافي وعصري للويب
 class WebNavigationBar extends StatefulWidget implements PreferredSizeWidget {
   const WebNavigationBar({super.key});
 
@@ -15,11 +16,10 @@ class WebNavigationBar extends StatefulWidget implements PreferredSizeWidget {
   State<WebNavigationBar> createState() => _WebNavigationBarState();
 
   @override
-  Size get preferredSize => const Size.fromHeight(70);
+  Size get preferredSize => const Size.fromHeight(80); // Increased height
 }
 
 class _WebNavigationBarState extends State<WebNavigationBar> {
-  bool isSearchExpanded = false;
   final TextEditingController searchController = TextEditingController();
 
   @override
@@ -36,26 +36,31 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
     final isArabic = localeProvider.locale.languageCode == 'ar';
 
     return Container(
-      height: 70,
+      height: 80,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withValues(alpha: 0.95), // Slight transparency
+        border: Border(
+            bottom: BorderSide(
+                color: Colors.grey.withValues(alpha: 0.1))), // Subtle border
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: ResponsiveLayout.isDesktop(context) ? 60 : 20,
+          horizontal: ResponsiveLayout.isDesktop(context) ? 80 : 20,
         ),
         child: Row(
           children: [
-            // Logo
+            // Logo + Site Name
             _buildLogo(context, isArabic),
-            const SizedBox(width: 40),
+
+            // Spacer to separate logo from nav links
+            if (ResponsiveLayout.isDesktop(context)) const SizedBox(width: 60),
 
             // Navigation Links (Desktop only)
             if (ResponsiveLayout.isDesktop(context)) ...[
@@ -64,16 +69,9 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
               const Spacer(),
             ],
 
-            // Search Icon
-            _buildSearchButton(),
-            const SizedBox(width: 16),
-
-            // Language Switcher
-            _buildLanguageSwitcher(localeProvider, isArabic),
-            const SizedBox(width: 16),
-
-            // User Account / Login
-            _buildUserSection(userProvider, localizations, isArabic),
+            // Actions Area
+            _buildActions(
+                localeProvider, userProvider, localizations, isArabic),
 
             // Mobile Menu (Tablet & Mobile)
             if (!ResponsiveLayout.isDesktop(context)) ...[
@@ -90,40 +88,26 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
     return InkWell(
       onTap: () => Navigator.pushNamed(context, '/'),
       borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Constants.primaryColor,
-                    Constants.primaryColor.withOpacity(0.7),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.local_offer_rounded,
-                color: Colors.white,
-                size: 24,
-              ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SvgPicture.asset(
+            'assets/image/Rbhan.svg',
+            height: 45, // Slightly smaller for balance
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            isArabic ? 'ربحان' : 'Rbhan',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              color: Constants.primaryColor,
+              fontFamily: 'Tajawal',
+              letterSpacing: isArabic ? 0 : 0.5,
             ),
-            const SizedBox(width: 12),
-            Text(
-              'كوبونات',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                color: Constants.primaryColor,
-                fontFamily: 'Tajawal',
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -132,32 +116,18 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
     final userProvider = Provider.of<UserProvider>(context);
 
     final allItems = [
-      {'label': 'الرئيسية', 'route': '/', 'icon': Icons.home_rounded},
-      {'label': 'المتاجر', 'route': '/stores', 'icon': Icons.store_rounded},
-      {
-        'label': 'الكوبونات',
-        'route': '/coupons',
-        'icon': Icons.confirmation_number_rounded
-      },
-      {
-        'label': 'العروض',
-        'route': '/offers',
-        'icon': Icons.local_offer_rounded
-      },
-      {
-        'label': 'المفضلة',
-        'route': '/favorites',
-        'icon': Icons.favorite_rounded
-      },
+      {'label': 'الرئيسية', 'route': '/'},
+      {'label': 'المتاجر', 'route': '/stores'},
+      {'label': 'الكوبونات', 'route': '/coupons'},
+      {'label': 'العروض', 'route': '/offers'},
+      {'label': 'المفضلة', 'route': '/favorites'},
       {
         'label': 'لوحة التحكم',
         'route': '/admin',
-        'icon': Icons.admin_panel_settings_rounded,
-        'adminOnly': true, // علامة للعناصر الخاصة بالإدارة فقط
+        'adminOnly': true,
       },
     ];
 
-    // تصفية العناصر: إخفاء لوحة التحكم إذا لم يكن المستخدم أدمن
     final items = allItems.where((item) {
       if (item['adminOnly'] == true) {
         return userProvider.isAdmin;
@@ -168,45 +138,35 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
+        mainAxisAlignment:
+            MainAxisAlignment.start, // Align left/right based on locale
         children: items.map((item) {
           final isCurrent =
               ModalRoute.of(context)?.settings.name == item['route'];
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             child: TextButton(
               onPressed: () =>
                   Navigator.pushNamed(context, item['route'] as String),
               style: TextButton.styleFrom(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                 ),
+                foregroundColor:
+                    isCurrent ? Constants.primaryColor : Colors.grey[700],
                 backgroundColor: isCurrent
-                    ? Constants.primaryColor.withOpacity(0.1)
+                    ? Constants.primaryColor.withValues(alpha: 0.05)
                     : Colors.transparent,
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    item['icon'] as IconData,
-                    size: 20,
-                    color:
-                        isCurrent ? Constants.primaryColor : Colors.grey[700],
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    item['label'] as String,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w600,
-                      color:
-                          isCurrent ? Constants.primaryColor : Colors.grey[700],
-                      fontFamily: 'Tajawal',
-                    ),
-                  ),
-                ],
+              child: Text(
+                item['label'] as String,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w500,
+                  fontFamily: 'Tajawal',
+                ),
               ),
             ),
           );
@@ -215,64 +175,76 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
     );
   }
 
-  Widget _buildSearchButton() {
-    return IconButton(
-      onPressed: () {
-        // TODO: Implement search
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ميزة البحث قادمة قريباً')),
-        );
-      },
-      icon: Icon(Icons.search_rounded, color: Constants.primaryColor),
-      tooltip: 'بحث',
+  Widget _buildActions(
+    LocaleProvider localeProvider,
+    UserProvider userProvider,
+    AppLocalizations? localizations,
+    bool isArabic,
+  ) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Search Icon
+        IconButton(
+          onPressed: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('ميزة البحث قادمة قريباً')),
+            );
+          },
+          icon: Icon(Icons.search_rounded, color: Colors.grey[600]),
+          tooltip: 'بحث',
+          hoverColor: Constants.primaryColor.withValues(alpha: 0.05),
+          style: IconButton.styleFrom(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        ),
+        const SizedBox(width: 8),
+
+        // Language Switcher
+        _buildLanguageSwitcher(localeProvider, isArabic),
+        const SizedBox(width: 20),
+
+        // User Account Link
+        _buildUserButton(userProvider, localizations, isArabic),
+      ],
     );
   }
 
   Widget _buildLanguageSwitcher(LocaleProvider localeProvider, bool isArabic) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      decoration: BoxDecoration(
-        color: Constants.primaryColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildLanguageButton('ع', isArabic, () {
-            localeProvider.setLocale(const Locale('ar'));
-          }),
-          _buildLanguageButton('EN', !isArabic, () {
-            localeProvider.setLocale(const Locale('en'));
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLanguageButton(String label, bool isActive, VoidCallback onTap) {
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        localeProvider
+            .setLocale(isArabic ? const Locale('en') : const Locale('ar'));
+      },
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: isActive ? Constants.primaryColor : Colors.transparent,
+          color: Colors.grey[100],
           borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[200]!),
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: isActive ? Colors.white : Constants.primaryColor,
-            fontFamily: 'Tajawal',
-          ),
+        child: Row(
+          children: [
+            Icon(Icons.language_rounded, size: 16, color: Colors.grey[700]),
+            const SizedBox(width: 6),
+            Text(
+              isArabic ? 'English' : 'العربية',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[800],
+                fontFamily: 'Tajawal',
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildUserSection(
+  Widget _buildUserButton(
     UserProvider userProvider,
     AppLocalizations? localizations,
     bool isArabic,
@@ -281,73 +253,116 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
 
     if (user != null) {
       return PopupMenuButton(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: Constants.primaryColor.withOpacity(0.1),
-              child: Icon(
-                Icons.person_rounded,
-                color: Constants.primaryColor,
-                size: 20,
+        offset: const Offset(0, 50),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 8,
+        shadowColor: Colors.black.withValues(alpha: 0.2),
+        constraints: const BoxConstraints.tightFor(width: 200),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: Colors.grey[200]!),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: Constants.primaryColor.withValues(alpha: 0.1),
+                backgroundImage: user.userMetadata?['avatar_url'] != null
+                    ? NetworkImage(user.userMetadata!['avatar_url'])
+                    : null,
+                child: user.userMetadata?['avatar_url'] == null
+                    ? Icon(Icons.person_rounded,
+                        size: 20, color: Constants.primaryColor)
+                    : null,
               ),
-            ),
-            const SizedBox(width: 8),
-            if (ResponsiveLayout.isDesktop(context))
-              Text(
-                user.email ?? 'مستخدم',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Constants.primaryColor,
-                  fontFamily: 'Tajawal',
+              if (ResponsiveLayout.isDesktop(context)) ...[
+                const SizedBox(width: 10),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 100),
+                  child: Text(
+                    user.userMetadata?['full_name'] ?? 'مستخدم',
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                      fontFamily: 'Tajawal',
+                    ),
+                  ),
                 ),
-              ),
-          ],
+                const SizedBox(width: 12),
+                Icon(Icons.keyboard_arrow_down_rounded,
+                    size: 18, color: Colors.grey[500]),
+                const SizedBox(width: 4),
+              ],
+            ],
+          ),
         ),
         itemBuilder: (context) => <PopupMenuEntry>[
           PopupMenuItem(
-            child: const Text('الملف الشخصي'),
-            onTap: () {},
+            child:
+                _buildPopupItem(Icons.person_outline_rounded, 'الملف الشخصي'),
+            onTap: () => Future.delayed(
+                Duration.zero, () => Navigator.pushNamed(context, '/menu')),
           ),
           PopupMenuItem(
-            child: const Text('الإعدادات'),
-            onTap: () {},
+            child: _buildPopupItem(Icons.edit_outlined, 'تعديل الملف الشخصي'),
+            onTap: () => Future.delayed(Duration.zero,
+                () => Navigator.pushNamed(context, '/edit-profile')),
           ),
           const PopupMenuDivider(),
           PopupMenuItem(
-            child: const Text('تسجيل الخروج'),
-            onTap: () {
-              // TODO: Implement sign out
+            child: _buildPopupItem(Icons.logout_rounded, 'تسجيل الخروج',
+                isDestructive: true),
+            onTap: () async {
+              await Supabase.instance.client.auth.signOut();
+              if (context.mounted)
+                Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
             },
           ),
         ],
       );
     } else {
-      return ElevatedButton.icon(
+      return ElevatedButton(
         onPressed: () => Navigator.pushNamed(context, '/signin'),
-        icon: const Icon(Icons.login_rounded, size: 18),
-        label: Text(
-          ResponsiveLayout.isDesktop(context) ? 'تسجيل الدخول' : '',
-          style: const TextStyle(
-            fontWeight: FontWeight.w700,
-            fontFamily: 'Tajawal',
-          ),
-        ),
         style: ElevatedButton.styleFrom(
           backgroundColor: Constants.primaryColor,
           foregroundColor: Colors.white,
-          padding: EdgeInsets.symmetric(
-            horizontal: ResponsiveLayout.isDesktop(context) ? 24 : 12,
-            vertical: 12,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+        child: const Text(
+          'تسجيل الدخول',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontFamily: 'Tajawal',
+            fontSize: 15,
           ),
         ),
       );
     }
+  }
+
+  Widget _buildPopupItem(IconData icon, String title,
+      {bool isDestructive = false}) {
+    return Row(
+      children: [
+        Icon(icon,
+            size: 20, color: isDestructive ? Colors.red : Colors.grey[700]),
+        const SizedBox(width: 12),
+        Text(title,
+            style: TextStyle(
+                fontFamily: 'Tajawal',
+                color: isDestructive ? Colors.red : Colors.grey[800],
+                fontWeight: FontWeight.w500)),
+      ],
+    );
   }
 
   Widget _buildMobileMenu(AppLocalizations? localizations, bool isArabic) {
@@ -355,10 +370,13 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
       onPressed: () {
         showModalBottomSheet(
           context: context,
+          backgroundColor: Colors.white,
+          shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
           builder: (context) => _buildMobileMenuSheet(localizations, isArabic),
         );
       },
-      icon: Icon(Icons.menu_rounded, color: Constants.primaryColor),
+      icon: Icon(Icons.menu_rounded, color: Colors.grey[800]),
     );
   }
 
@@ -366,48 +384,40 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
     final userProvider = Provider.of<UserProvider>(context);
 
     final allItems = [
-      {'label': 'الرئيسية', 'route': '/', 'icon': Icons.home_rounded},
-      {'label': 'المتاجر', 'route': '/stores', 'icon': Icons.store_rounded},
+      {'label': 'الرئيسية', 'route': '/', 'icon': Icons.home_outlined},
+      {'label': 'المتاجر', 'route': '/stores', 'icon': Icons.store_outlined},
       {
         'label': 'الكوبونات',
         'route': '/coupons',
-        'icon': Icons.confirmation_number_rounded
+        'icon': Icons.local_activity_outlined
       },
       {
         'label': 'العروض',
         'route': '/offers',
-        'icon': Icons.local_offer_rounded
+        'icon': Icons.local_offer_outlined
       },
       {
         'label': 'المفضلة',
         'route': '/favorites',
-        'icon': Icons.favorite_rounded
+        'icon': Icons.favorite_border
       },
-      {'label': 'من نحن', 'route': '/about', 'icon': Icons.info_rounded},
-      {
-        'label': 'اتصل بنا',
-        'route': '/contact',
-        'icon': Icons.contact_mail_rounded
-      },
-      {'label': 'الأسئلة الشائعة', 'route': '/faq', 'icon': Icons.help_rounded},
+      {'label': 'من نحن', 'route': '/about', 'icon': Icons.info_outline},
+      {'label': 'اتصل بنا', 'route': '/contact', 'icon': Icons.mail_outline},
       {
         'label': 'لوحة التحكم',
         'route': '/admin',
-        'icon': Icons.admin_panel_settings_rounded,
-        'adminOnly': true, // علامة للعناصر الخاصة بالإدارة فقط
+        'icon': Icons.admin_panel_settings_outlined,
+        'adminOnly': true
       },
     ];
 
-    // تصفية العناصر: إخفاء لوحة التحكم إذا لم يكن المستخدم أدمن
     final items = allItems.where((item) {
-      if (item['adminOnly'] == true) {
-        return userProvider.isAdmin;
-      }
+      if (item['adminOnly'] == true) return userProvider.isAdmin;
       return true;
     }).toList();
 
-    return Container(
-      padding: const EdgeInsets.all(20),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 20),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: items.map((item) {

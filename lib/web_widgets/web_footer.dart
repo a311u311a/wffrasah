@@ -97,7 +97,7 @@ class WebFooter extends StatelessWidget {
                 gradient: LinearGradient(
                   colors: [
                     Constants.primaryColor,
-                    Constants.primaryColor.withOpacity(0.7),
+                    Constants.primaryColor.withValues(alpha: 0.7),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(10),
@@ -110,7 +110,7 @@ class WebFooter extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Text(
-              'كوبونات',
+              'ربحان',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w900,
@@ -153,14 +153,12 @@ class WebFooter extends StatelessWidget {
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: Constants.primaryColor.withOpacity(0.1),
+        color: Constants.primaryColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
       ),
       child: IconButton(
         icon: Icon(icon, size: 20, color: Constants.primaryColor),
-        onPressed: () {
-          // TODO: Open URL
-        },
+        onPressed: () {},
       ),
     );
   }
@@ -179,10 +177,10 @@ class WebFooter extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        _buildFooterLink('الرئيسية', '/'),
-        _buildFooterLink('المتاجر', '/stores'),
-        _buildFooterLink('العروض', '/offers'),
-        _buildFooterLink('المفضلة', '/favorites'),
+        _buildFooterLink(context, 'الرئيسية', '/'),
+        _buildFooterLink(context, 'المتاجر', '/stores'),
+        _buildFooterLink(context, 'العروض', '/offers'),
+        _buildFooterLink(context, 'المفضلة', '/favorites'),
       ],
     );
   }
@@ -201,10 +199,10 @@ class WebFooter extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        _buildFooterLink('من نحن', '/about'),
-        _buildFooterLink('سياسة الخصوصية', '/privacy'),
-        _buildFooterLink('الشروط والأحكام', '/terms'),
-        _buildFooterLink('الأسئلة الشائعة', '/faq'),
+        _buildFooterLink(context, 'من نحن', '/about'),
+        _buildFooterLink(context, 'سياسة الخصوصية', '/privacy'),
+        _buildFooterLink(context, 'الشروط والأحكام', '/terms'),
+        _buildFooterLink(context, 'الأسئلة الشائعة', '/faq'),
       ],
     );
   }
@@ -233,12 +231,12 @@ class WebFooter extends StatelessWidget {
     );
   }
 
-  Widget _buildFooterLink(String text, String route) {
+  Widget _buildFooterLink(BuildContext context, String text, String route) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: () {
-          // TODO: Navigate to route
+          Navigator.pushNamed(context, route);
         },
         child: Text(
           text,
@@ -275,7 +273,7 @@ class WebFooter extends StatelessWidget {
   Widget _buildCopyright() {
     return Center(
       child: Text(
-        '© ${DateTime.now().year} كوبونات. جميع الحقوق محفوظة.',
+        '© ${DateTime.now().year} ربحان. جميع الحقوق محفوظة.',
         style: TextStyle(
           fontSize: 13,
           color: Colors.grey[600],

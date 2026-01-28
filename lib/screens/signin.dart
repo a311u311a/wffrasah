@@ -2,12 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../Login Signup/Widget/button.dart';
-import '../Login Signup/Widget/snackbar.dart';
+import '../screens/login_signup/widgets/button.dart';
+import '../screens/login_signup/widgets/snackbar.dart';
 import '../Password Forgot/forgot_password.dart';
 import '../constants.dart';
 import '../localization/app_localizations.dart';
-import '../screens/admin_screen.dart';
+import 'admin/admin_screen.dart';
 import '../widgets/bottom_navigation_bar.dart';
 import '../services/authentication.dart';
 import 'signup.dart';
@@ -113,13 +113,14 @@ class _SignInState extends State<SignIn> {
   }
 
   Future<void> loginUser() async {
+    final t = AppLocalizations.of(context);
     final email = emailController.text.trim();
     final pass = passwordController.text.trim();
 
     if (email.isEmpty || pass.isEmpty) {
       showSnackBar(
         context,
-        "يرجى إدخال البريد الإلكتروني وكلمة المرور",
+        t?.translate('fill_all_fields') ?? "Please fill in all fields",
         isError: true,
       );
       return;
@@ -137,20 +138,27 @@ class _SignInState extends State<SignIn> {
         }
       } else {
         if (!mounted) return;
-        showSnackBar(context, 'فشل تسجيل الدخول', isError: true);
+        showSnackBar(context, t?.translate('login_failed') ?? 'Login failed',
+            isError: true);
       }
     } on AuthException catch (e) {
       if (!mounted) return;
-      showSnackBar(context, e.message, isError: true);
+      String msg = e.message;
+      if (msg.contains('Invalid login credentials')) {
+        msg = t?.translate('login_error') ?? 'Invalid email or password';
+      }
+      showSnackBar(context, msg, isError: true);
     } catch (e) {
       if (!mounted) return;
-      showSnackBar(context, 'فشل تسجيل الدخول: $e', isError: true);
+      showSnackBar(context, '${t?.translate('login_failed')}: $e',
+          isError: true);
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
   }
 
   Future<void> signInWithGoogle() async {
+    final t = AppLocalizations.of(context);
     setState(() => isLoading = true);
 
     try {
@@ -160,7 +168,8 @@ class _SignInState extends State<SignIn> {
       showSnackBar(context, e.message, isError: true);
     } catch (e) {
       if (!mounted) return;
-      showSnackBar(context, 'Google Sign-In failed: $e', isError: true);
+      showSnackBar(context, '${t?.translate('google_signin_failed')}: $e',
+          isError: true);
     } finally {
       if (mounted) setState(() => isLoading = false);
     }

@@ -1,0 +1,86 @@
+﻿Initialized native services in: C:\Users\maxlo\.gradle\native
+Initialized jansi services in: C:\Users\maxlo\.gradle\native
+Received JVM installation metadata from 'C:\Program Files\Java\jdk-23': {JAVA_HOME=C:\Program Files\Java\jdk-23, JAVA_VERSION=23.0.2, JAVA_VENDOR=Oracle Corporation, RUNTIME_NAME=Java(TM) SE Runtime Environment, RUNTIME_VERSION=23.0.2+7-58, VM_NAME=Java HotSpot(TM) 64-Bit Server VM, VM_VERSION=23.0.2+7-58, VM_VENDOR=Oracle Corporation, OS_ARCH=amd64}
+Found daemon DaemonInfo{pid=5508, address=[8f7aa30e-db02-4fc9-a2e8-27cc8ebcbac2 port:49413, addresses:[/127.0.0.1]], state=Idle, lastBusy=1769539458808, context=DefaultDaemonContext[uid=6948a489-7b5d-4933-838d-a596d9e8261c,javaHome=C:\Program Files\Android\Android Studio\jbr,javaVersion=21,daemonRegistryDir=C:\Users\maxlo\.gradle\daemon,pid=5508,idleTimeout=10800000,priority=NORMAL,applyInstrumentationAgent=true,nativeServicesMode=ENABLED,daemonOpts=-XX:MaxMetaspaceSize=2G,-XX:+HeapDumpOnOutOfMemoryError,--add-opens=java.base/java.util=ALL-UNNAMED,--add-opens=java.base/java.lang=ALL-UNNAMED,--add-opens=java.base/java.lang.invoke=ALL-UNNAMED,--add-opens=java.prefs/java.util.prefs=ALL-UNNAMED,--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED,--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED,--add-opens=java.base/java.nio.charset=ALL-UNNAMED,--add-opens=java.base/java.net=ALL-UNNAMED,--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED,-Xmx4G,-Dfile.encoding=UTF-8,-Duser.country=US,-Duser.language=en,-Duser.variant]} however its context does not match the desired criteria.
+JVM is incompatible.
+Wanted: DaemonRequestContext{jvmCriteria=C:\Program Files\Java\jdk-23 (no JDK specified, using current Java home), daemonOpts=[-XX:MaxMetaspaceSize=2G, -XX:+HeapDumpOnOutOfMemoryError, --add-opens=java.base/java.util=ALL-UNNAMED, --add-opens=java.base/java.lang=ALL-UNNAMED, --add-opens=java.base/java.lang.invoke=ALL-UNNAMED, --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED, --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED, --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED, --add-opens=java.base/java.nio.charset=ALL-UNNAMED, --add-opens=java.base/java.net=ALL-UNNAMED, --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED, -Xmx4G, -Dfile.encoding=UTF-8, -Duser.country=US, -Duser.language=en, -Duser.variant], applyInstrumentationAgent=true, nativeServicesMode=ENABLED, priority=NORMAL}
+Actual: DefaultDaemonContext[uid=6948a489-7b5d-4933-838d-a596d9e8261c,javaHome=C:\Program Files\Android\Android Studio\jbr,javaVersion=21,daemonRegistryDir=C:\Users\maxlo\.gradle\daemon,pid=5508,idleTimeout=10800000,priority=NORMAL,applyInstrumentationAgent=true,nativeServicesMode=ENABLED,daemonOpts=-XX:MaxMetaspaceSize=2G,-XX:+HeapDumpOnOutOfMemoryError,--add-opens=java.base/java.util=ALL-UNNAMED,--add-opens=java.base/java.lang=ALL-UNNAMED,--add-opens=java.base/java.lang.invoke=ALL-UNNAMED,--add-opens=java.prefs/java.util.prefs=ALL-UNNAMED,--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED,--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED,--add-opens=java.base/java.nio.charset=ALL-UNNAMED,--add-opens=java.base/java.net=ALL-UNNAMED,--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED,-Xmx4G,-Dfile.encoding=UTF-8,-Duser.country=US,-Duser.language=en,-Duser.variant]
+
+  Looking for a different daemon...
+The client will now receive all logging from the daemon (pid: 22288). The daemon log file: C:\Users\maxlo\.gradle\daemon\8.9\daemon-22288.out.log
+Starting 5th build in daemon [uptime: 39 mins 47.809 secs, performance: 100%, GC rate: 0.00/s, heap usage: 0% of 4 GiB, non-heap usage: 3% of 2 GiB]
+Using 8 worker leases.
+Now considering [C:\Users\maxlo\StudioProjects\rbhan\android, C:\srs\flutter\packages\flutter_tools\gradle] as hierarchies to watch
+Watching the file system is configured to be enabled if available
+File system watching is active
+Starting Build
+Now considering [C:\srs\flutter\packages\flutter_tools\gradle, C:\Users\maxlo\StudioProjects\rbhan\android] as hierarchies to watch
+
+> Configure project :gradle
+Evaluating project ':gradle' using build file 'C:\srs\flutter\packages\flutter_tools\gradle\build.gradle.kts'.
+Resolve mutations for :gradle:compileJava (Thread[#222,Execution worker,5,main]) started.
+:gradle:compileJava (Thread[#222,Execution worker,5,main]) started.
+
+> Task :gradle:compileJava NO-SOURCE
+Skipping task ':gradle:compileJava' as it has no source files and no previous output files.
+Resolve mutations for :gradle:compileGroovy (Thread[#222,Execution worker,5,main]) started.
+:gradle:compileGroovy (Thread[#222,Execution worker,5,main]) started.
+This JVM does not support getting OS memory, so no OS memory status updates will be broadcast
+
+> Task :gradle:compileGroovy
+Caching disabled for task ':gradle:compileGroovy' because:
+  Build cache is disabled
+Task ':gradle:compileGroovy' is not up-to-date because:
+  Task has failed previously.
+The input changes require a full rebuild for incremental task ':gradle:compileGroovy'.
+Compilation mode: in-process compilation
+Starting process 'Gradle Worker Daemon 5'. Working directory: C:\Users\maxlo\.gradle\workers Command: C:\Program Files\Java\jdk-23\bin\java.exe --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED @C:\Users\maxlo\.gradle\.tmp\gradle-worker-classpath11021513712798057877txt -Xmx512m -Dfile.encoding=UTF-8 -Duser.country=US -Duser.language=en -Duser.variant worker.org.gradle.process.internal.worker.GradleWorkerMain 'Gradle Worker Daemon 5'
+Successfully started process 'Gradle Worker Daemon 5'
+Started Gradle worker daemon (0.817 secs) with fork options DaemonForkOptions{executable=C:\Program Files\Java\jdk-23\bin\java.exe, minHeapSize=null, maxHeapSize=null, jvmArgs=[--add-opens=java.base/java.lang=ALL-UNNAMED, --add-opens=java.base/java.lang.invoke=ALL-UNNAMED, --add-opens=java.base/java.util=ALL-UNNAMED, --add-opens=java.prefs/java.util.prefs=ALL-UNNAMED, --add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED, --add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED], keepAliveMode=SESSION}.
+
+> Task :gradle:compileGroovy FAILED
+.\gradlew.bat : 
+At line:1 char:1
++ .\gradlew.bat 
+bundleRelease --info 2>&1 
+| Out-File -FilePath 
+gradle_l ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~
+    + CategoryInfo         
+     : NotSpecified: (:St  
+  ring) [], RemoteExcept   
+ ion
+    + FullyQualifiedErrorI 
+   d : NativeCommandError
+ 
+FAILURE: Build failed with 
+an exception.
+
+* What went wrong:
+Execution failed for task 
+':gradle:compileGroovy'.
+> BUG! exception in phase 
+'semantic analysis' in 
+source unit 'C:\srs\flutter
+\packages\flutter_tools\gra
+dle\src\main\groovy\app_plu
+gin_loader.groovy' 
+Unsupported class file 
+major version 67
+
+* Try:
+> Run with --stacktrace 
+option to get the stack 
+trace.
+> Run with --debug option 
+to get more log output.
+> Run with --scan to get 
+full insights.
+> Get more help at 
+https://help.gradle.org.
+
+BUILD FAILED in 9s
+1 actionable task: 1 executed
+Watched directory hierarchies: [C:\srs\flutter\packages\flutter_tools\gradle]
+Stopped 1 worker daemon(s).

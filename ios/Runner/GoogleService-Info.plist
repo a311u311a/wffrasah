@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>314843853869-9ei03c2d3eab0hmst74kdab812p5s5kd.apps.googleusercontent.com</string>
+	<string>314843853869-n3gvefd45sak5ugg8994juepk8qdirur.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.314843853869-9ei03c2d3eab0hmst74kdab812p5s5kd</string>
+	<string>com.googleusercontent.apps.314843853869-n3gvefd45sak5ugg8994juepk8qdirur</string>
 	<key>ANDROID_CLIENT_ID</key>
-	<string>314843853869-hr3v1cl1nfcfcs2q3bk9eqf5l6s91kfj.apps.googleusercontent.com</string>
+	<string>314843853869-8vco1mkivn0pduh4c237j1ghhhojp9c1.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
 	<string>AIzaSyBtRC28Gffuc-P9W1zDYTghFdb87hySlrk</string>
 	<key>GCM_SENDER_ID</key>
@@ -15,7 +15,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.example.coupon</string>
+	<string>com.rbhan.app</string>
 	<key>PROJECT_ID</key>
 	<string>coupon-d52b2</string>
 	<key>STORAGE_BUCKET</key>
@@ -31,6 +31,8 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:314843853869:ios:ee83d8a70d78df7b4f74a4</string>
+	<string>1:314843853869:ios:88efec8fa83e86b14f74a4</string>
+	<key>DATABASE_URL</key>
+	<string>https://coupon-d52b2-default-rtdb.firebaseio.com</string>
 </dict>
 </plist>
