@@ -166,8 +166,8 @@ class _OffersCardState extends State<OffersCard> {
 
                           // Favorite
                           _IconActionPill(
-                            onTap: () =>
-                                favoriteProvider.toggleFavorite(widget.offer),
+                            onTap: () => favoriteProvider.toggleFavorite(
+                                widget.offer, context),
                             child: AnimatedSwitcher(
                               duration: const Duration(milliseconds: 260),
                               transitionBuilder: (child, anim) =>

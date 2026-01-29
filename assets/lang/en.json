@@ -211,5 +211,9 @@
   "passwords_not_match": "Passwords do not match",
   "save_password": "Save Password",
   "password_updated": "Password updated successfully",
-  "error_oops": "An error occurred"
+  "error_oops": "An error occurred",
+  "login_required": "Login Required",
+  "login_to_add_favorites": "Please login to add items to favorites",
+  "go_to_login": "Login",
+  "added_to_favorites": "Added to favorites"
 }

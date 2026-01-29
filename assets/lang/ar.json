@@ -211,5 +211,9 @@
   "passwords_not_match": "كلمتا المرور غير متطابقتين",
   "save_password": "حفظ كلمة المرور",
   "password_updated": "تم تحديث كلمة المرور بنجاح",
-  "error_oops": "حدث خطأ"
+  "error_oops": "حدث خطأ",
+  "login_required": "يجب تسجيل الدخول أولاً",
+  "login_to_add_favorites": "الرجاء تسجيل الدخول لإضافة العناصر إلى المفضلة",
+  "go_to_login": "تسجيل الدخول",
+  "added_to_favorites": "تمت الإضافة إلى المفضلة"
 }

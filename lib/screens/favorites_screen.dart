@@ -93,7 +93,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                               ),
                             ),
                             onDismissed: (direction) {
-                              favoriteProvider.toggleFavorite(item);
+                              favoriteProvider.toggleFavorite(item, context);
                               showSnackBar(
                                 context,
                                 localizations

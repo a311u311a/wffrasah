@@ -139,8 +139,8 @@ class _CouponCardState extends State<CouponCard> {
                           final isFavorite =
                               favoriteProvider.isFavorite(widget.coupon.id);
                           return _IconActionPill(
-                            onTap: () =>
-                                favoriteProvider.toggleFavorite(widget.coupon),
+                            onTap: () => favoriteProvider.toggleFavorite(
+                                widget.coupon, context),
                             child: AnimatedSwitcher(
                               duration: const Duration(milliseconds: 260),
                               transitionBuilder: (child, anim) =>
