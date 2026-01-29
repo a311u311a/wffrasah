@@ -167,7 +167,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
             icon: Icons.storefront_rounded,
             color: Colors.blueGrey,
             onTap: () {
-              _showComingSoon();
+              Navigator.pushNamed(context, '/admin/stores');
             },
           ),
           const SizedBox(height: 16),
@@ -178,7 +178,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
             icon: Icons.confirmation_number_outlined,
             color: Colors.deepPurple,
             onTap: () {
-              _showComingSoon();
+              Navigator.pushNamed(context, '/admin/coupons');
             },
           ),
           const SizedBox(height: 16),
@@ -189,7 +189,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
             icon: Icons.local_offer_rounded,
             color: Colors.orange,
             onTap: () {
-              _showComingSoon();
+              Navigator.pushNamed(context, '/admin/offers');
             },
           ),
           const SizedBox(height: 16),
@@ -200,7 +200,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
             icon: Icons.photo_library_outlined,
             color: Colors.teal,
             onTap: () {
-              _showComingSoon();
+              Navigator.pushNamed(context, '/admin/carousel');
             },
           ),
           const SizedBox(height: 16),
@@ -211,7 +211,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
             icon: Icons.notifications_active_rounded,
             color: Colors.redAccent,
             onTap: () {
-              _showComingSoon();
+              Navigator.pushNamed(context, '/admin/notifications');
             },
           ),
 
@@ -344,15 +344,6 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  void _showComingSoon() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('هذه الميزة قيد التطوير للنسخة الكاملة للويب'),
-        duration: Duration(seconds: 2),
       ),
     );
   }

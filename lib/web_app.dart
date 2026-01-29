@@ -25,6 +25,11 @@ import 'web_screens/web_change_password_screen.dart';
 import 'web_screens/web_edit_profile_screen.dart';
 import 'web_screens/web_notifications_history_screen.dart';
 import 'web_screens/web_delete_account_screen.dart';
+import 'web_screens/web_admin_stores_screen.dart';
+import 'web_screens/web_admin_coupons_screen.dart';
+import 'web_screens/web_admin_offers_screen.dart';
+import 'web_screens/web_admin_carousel_screen.dart';
+import 'web_screens/web_admin_notifications_screen.dart';
 
 /// التطبيق الرئيسي للويب
 class WebApp extends StatelessWidget {
@@ -140,6 +145,21 @@ class WebApp extends StatelessWidget {
             break;
           case '/delete-account':
             screen = const WebDeleteAccountScreen();
+            break;
+          case '/admin/stores':
+            screen = const WebAdminStoresScreen();
+            break;
+          case '/admin/coupons':
+            screen = const WebAdminCouponsScreen();
+            break;
+          case '/admin/offers':
+            screen = const WebAdminOffersScreen();
+            break;
+          case '/admin/carousel':
+            screen = const WebAdminCarouselScreen();
+            break;
+          case '/admin/notifications':
+            screen = const WebAdminNotificationsScreen();
             break;
           default:
             screen = const WebHomeScreen();

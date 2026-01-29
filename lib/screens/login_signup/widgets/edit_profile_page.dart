@@ -154,7 +154,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(fontWeight: FontWeight.normal),
+      labelStyle: const TextStyle(
+        color: Colors.black54,
+        fontWeight: FontWeight.normal,
+      ),
       prefixIcon: Icon(icon, color: Constants.primaryColor, size: 20),
       filled: true,
       fillColor: readOnly ? Colors.grey[200] : Colors.white,
@@ -237,7 +240,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
               const SizedBox(height: 40),
               TextFormField(
-                style: const TextStyle(fontWeight: FontWeight.normal),
+                style: const TextStyle(
+                  color: Colors.black54,
+                  fontWeight: FontWeight.normal,
+                ),
                 controller: _nameController,
                 decoration: _buildInputDecoration(
                   appLocalizations.translate('full_name'),
@@ -250,7 +256,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
               const SizedBox(height: 20),
               TextFormField(
-                style: const TextStyle(fontWeight: FontWeight.normal),
+                style: const TextStyle(
+                  color: Colors.black54,
+                  fontWeight: FontWeight.normal,
+                ),
                 controller: _emailController,
                 readOnly: true,
                 decoration: _buildInputDecoration(
@@ -295,6 +304,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         ),
                 ),
               ),
+              const SizedBox(height: 20),
               TextButton(
                 onPressed: _deleteAccountDialog,
                 child: Text(
@@ -341,7 +351,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
         const SizedBox(width: 10),
         Expanded(
           child: TextFormField(
-            style: const TextStyle(fontWeight: FontWeight.normal),
+            style: const TextStyle(
+              color: Colors.black54,
+              fontWeight: FontWeight.normal,
+            ),
             controller: _phoneController,
             keyboardType: TextInputType.phone,
             decoration: _buildInputDecoration(
