@@ -51,6 +51,18 @@
 		<array>
 			<string>mailto</string>
 		</array>
+		<!-- URL types for Deep Linking -->
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>com.rbhan.app</string>
+				</array>
+			</dict>
+		</array>
 		<!-- Photo/Camera usage descriptions required by iOS for image picker / camera access -->
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>يحتاج التطبيق الوصول إلى مكتبة الصور لاختيار صورة المتجر أو صورة الكوبون.</string>

@@ -6,7 +6,7 @@ class AuthMethod {
   AuthMethod(this._supabase);
   final SupabaseClient _supabase;
 
-  static const String mobileRedirectUrl = 'com.rbhan.app://login-callback';
+  static const String mobileRedirectUrl = 'com.rbhan.app://login-callback/';
 
   Future<AuthResponse> signUp({
     required String email,
@@ -32,17 +32,16 @@ class AuthMethod {
 
   Future<void> signInWithGoogle() async {
     if (kIsWeb) {
-      // على الويب: استخدام platformRedirectTo ولا نستخدم authScreenLaunchMode
+      // على الويب: استخدام الإعدادات الافتراضية
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: Uri.base.origin,
       );
     } else {
-      // على التطبيق: استخدام deep link مع externalApplication
+      // على التطبيق: استخدام inAppWebView للبقاء داخل التطبيق
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: '$mobileRedirectUrl/',
-        authScreenLaunchMode: LaunchMode.externalApplication,
+        redirectTo: mobileRedirectUrl,
+        authScreenLaunchMode: LaunchMode.inAppWebView,
       );
     }
   }
@@ -113,17 +112,16 @@ class AuthMethods {
 
   Future<void> signInWithGoogle() async {
     if (kIsWeb) {
-      // على الويب: استخدام Uri.base.origin للحصول على الرابط الحالي
+      // على الويب: استخدام الإعدادات الافتراضية
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: Uri.base.origin,
       );
     } else {
-      // على التطبيق: استخدام deep link
+      // على التطبيق: استخدام inAppWebView للبقاء داخل التطبيق
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: _mobileRedirectUrl,
-        authScreenLaunchMode: LaunchMode.externalApplication,
+        authScreenLaunchMode: LaunchMode.inAppWebView,
       );
     }
   }

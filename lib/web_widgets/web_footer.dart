@@ -200,8 +200,10 @@ class WebFooter extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         _buildFooterLink(context, 'من نحن', '/about'),
-        _buildFooterLink(context, 'سياسة الخصوصية', '/privacy'),
-        _buildFooterLink(context, 'الشروط والأحكام', '/terms'),
+        _buildFooterLink(
+            context, 'Privacy Policy | سياسة الخصوصية', '/privacy'),
+        _buildFooterLink(
+            context, 'Terms and Conditions | الشروط والأحكام', '/terms'),
         _buildFooterLink(context, 'الأسئلة الشائعة', '/faq'),
       ],
     );

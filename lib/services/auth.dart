@@ -140,15 +140,19 @@ class _SignInState extends State<SignIn> {
   Future<void> signInWithGoogle() async {
     setState(() => isLoading = true);
     try {
-      // ✅ للويب: خليها null (Supabase يتولى الـ redirect)
-      // ✅ للجوال: deep link (عشان نتجنب file:///)
-      final String? redirectTo = kIsWeb ? null : _mobileRedirectUrl;
-
-      await _supabase.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: redirectTo,
-        authScreenLaunchMode: LaunchMode.externalApplication,
-      );
+      if (kIsWeb) {
+        // ✅ للويب: استخدام الإعدادات الافتراضية
+        await _supabase.auth.signInWithOAuth(
+          OAuthProvider.google,
+        );
+      } else {
+        // ✅ للجوال: استخدام inAppWebView للبقاء داخل التطبيق
+        await _supabase.auth.signInWithOAuth(
+          OAuthProvider.google,
+          redirectTo: _mobileRedirectUrl,
+          authScreenLaunchMode: LaunchMode.inAppWebView,
+        );
+      }
       // ✅ لا نعمل navigate هنا، لأن Google يرجع عن طريق onAuthStateChange
     } on AuthException catch (e) {
       if (!mounted) return;
