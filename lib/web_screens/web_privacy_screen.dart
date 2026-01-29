@@ -40,7 +40,7 @@ class WebPrivacyScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'سياسة الخصوصية – ربحان',
+                          'سياسة الخصوصية – موقع وتطبيقربحان',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
