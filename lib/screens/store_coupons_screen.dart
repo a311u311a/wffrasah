@@ -158,13 +158,10 @@ class _StoreCouponsScreenState extends State<StoreCouponsScreen> {
               _buildSectionHeader(context, 'coupons', 'كوبونات الخصم',
                   topPadding: 24),
               SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.only(bottom: 16),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: CouponCard(coupon: _coupons[index]),
-                    ),
+                    (context, index) => CouponCard(coupon: _coupons[index]),
                     childCount: _coupons.length,
                   ),
                 ),
@@ -174,13 +171,10 @@ class _StoreCouponsScreenState extends State<StoreCouponsScreen> {
               _buildSectionHeader(context, 'offers', 'العروض المتاحة',
                   topPadding: hasCoupons ? 20 : 24),
               SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.only(bottom: 16),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: OffersCard(offer: _offers[index]),
-                    ),
+                    (context, index) => OffersCard(offer: _offers[index]),
                     childCount: _offers.length,
                   ),
                 ),
