@@ -1,4 +1,3 @@
-import 'package:rbhan/constants.dart';
 import 'package:flutter/material.dart';
 
 void showSnackBar(BuildContext context, String text, {bool isError = false}) {
@@ -15,7 +14,7 @@ void showSnackBar(BuildContext context, String text, {bool isError = false}) {
         ),
       ),
       behavior: SnackBarBehavior.floating,
-      backgroundColor: isError ? Colors.redAccent : Constants.primaryColor,
+      backgroundColor: isError ? Colors.redAccent : Colors.green.shade600,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),

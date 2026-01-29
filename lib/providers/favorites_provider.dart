@@ -7,6 +7,9 @@ import 'package:provider/provider.dart';
 import '../models/coupon.dart';
 import '../models/offers.dart';
 import '../localization/app_localizations.dart';
+import '../screens/signin.dart';
+import '../screens/login_signup/widgets/snackbar.dart';
+import '../constants.dart';
 import 'user_provider.dart';
 
 class FavoriteProvider with ChangeNotifier {
@@ -95,12 +98,9 @@ class FavoriteProvider with ChangeNotifier {
 
         // إظهار رسالة نجاح
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(localizations.translate('removed_from_favorites')),
-              duration: const Duration(seconds: 2),
-              backgroundColor: Colors.orange,
-            ),
+          showSnackBar(
+            context,
+            localizations.translate('removed_from_favorites'),
           );
         }
       } else {
@@ -109,24 +109,19 @@ class FavoriteProvider with ChangeNotifier {
 
         // إظهار رسالة نجاح
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(localizations.translate('added_to_favorites')),
-              duration: const Duration(seconds: 2),
-              backgroundColor: Colors.green,
-            ),
+          showSnackBar(
+            context,
+            localizations.translate('added_to_favorites'),
           );
         }
       }
     } catch (e) {
       debugPrint('Error toggling favorite: $e');
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(localizations.translate('error_occurred')),
-            duration: const Duration(seconds: 2),
-            backgroundColor: Colors.red,
-          ),
+        showSnackBar(
+          context,
+          localizations.translate('error_occurred'),
+          isError: true,
         );
       }
     }
@@ -239,20 +234,116 @@ class FavoriteProvider with ChangeNotifier {
   void _showLoginRequiredMessage(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(localizations.translate('login_to_add_favorites')),
-        duration: const Duration(seconds: 3),
-        backgroundColor: Colors.orange.shade700,
-        action: SnackBarAction(
-          label: localizations.translate('go_to_login'),
-          textColor: Colors.white,
-          onPressed: () {
-            // الانتقال لصفحة تسجيل الدخول
-            Navigator.pushNamed(context, '/login');
-          },
-        ),
-      ),
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 8,
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200, width: 1),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header: X في اليمين
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.close,
+                          color: Colors.black54, size: 20),
+                      onPressed: () => Navigator.of(context).pop(),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+
+                // أيقونة القفل
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Constants.primaryColor.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.lock_outline,
+                    color: Constants.primaryColor,
+                    size: 40,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // العنوان
+                Text(
+                  localizations.translate('login_required'),
+                  style: const TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+
+                // الرسالة
+                Text(
+                  localizations.translate('login_to_add_favorites'),
+                  style: TextStyle(
+                    fontFamily: 'Tajawal',
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+
+                // زر تسجيل الدخول
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const SignIn()),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Constants.primaryColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      localizations.translate('go_to_login'),
+                      style: const TextStyle(
+                        fontFamily: 'Tajawal',
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
