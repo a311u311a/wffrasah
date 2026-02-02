@@ -306,13 +306,21 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
           PopupMenuItem(
             child:
                 _buildPopupItem(Icons.person_outline_rounded, 'الملف الشخصي'),
-            onTap: () => Future.delayed(
-                Duration.zero, () => Navigator.pushNamed(context, '/menu')),
+            onTap: () async {
+              await Future.delayed(Duration.zero);
+              if (context.mounted) {
+                Navigator.pushNamed(context, '/menu');
+              }
+            },
           ),
           PopupMenuItem(
             child: _buildPopupItem(Icons.edit_outlined, 'تعديل الملف الشخصي'),
-            onTap: () => Future.delayed(Duration.zero,
-                () => Navigator.pushNamed(context, '/edit-profile')),
+            onTap: () async {
+              await Future.delayed(Duration.zero);
+              if (context.mounted) {
+                Navigator.pushNamed(context, '/edit-profile');
+              }
+            },
           ),
           const PopupMenuDivider(),
           PopupMenuItem(
@@ -320,8 +328,9 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
                 isDestructive: true),
             onTap: () async {
               await Supabase.instance.client.auth.signOut();
-              if (context.mounted)
+              if (context.mounted) {
                 Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
+              }
             },
           ),
         ],

@@ -272,7 +272,7 @@ class FavoriteProvider with ChangeNotifier {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Constants.primaryColor.withOpacity(0.1),
+                    color: Constants.primaryColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(

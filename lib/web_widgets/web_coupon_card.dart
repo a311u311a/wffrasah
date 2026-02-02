@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // ✅ Clipboard الرسمي
 import 'package:provider/provider.dart';
-import 'package:clipboard/clipboard.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:vector_math/vector_math_64.dart' as vector;
 
 import '../constants.dart';
 import '../models/coupon.dart';
@@ -27,6 +28,9 @@ class WebCouponCard extends StatefulWidget {
 class _WebCouponCardState extends State<WebCouponCard> {
   bool isHovered = false;
 
+  // ✅ يمنع ضغطات النسخ المتكررة بسرعة
+  bool _copyLock = false;
+
   @override
   Widget build(BuildContext context) {
     final favoriteProvider = Provider.of<FavoriteProvider>(context);
@@ -38,8 +42,9 @@ class _WebCouponCardState extends State<WebCouponCard> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         transform: Matrix4.identity()
-          ..translate(0.0, isHovered ? -10.0 : 0.0)
-          ..scale(isHovered ? 1.02 : 1.0),
+          ..translateByVector3(
+              vector.Vector3(0.0, isHovered ? -10.0 : 0.0, 0.0))
+          ..scaleByVector3(vector.Vector3.all(isHovered ? 1.02 : 1.0)),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
@@ -89,15 +94,10 @@ class _WebCouponCardState extends State<WebCouponCard> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    // ✅ حذفنا: اسم المتجر + أيقونة المتجر
-
                                     _buildTitle(maxLines: 2),
                                     const SizedBox(height: 6),
-
                                     _buildDescription(maxLines: 3),
-
                                     const Spacer(),
-
                                     if (widget.coupon.code.isNotEmpty) ...[
                                       const SizedBox(height: 10),
                                       _buildCouponCode(),
@@ -105,7 +105,6 @@ class _WebCouponCardState extends State<WebCouponCard> {
                                     ] else ...[
                                       const SizedBox(height: 10),
                                     ],
-
                                     _buildActions(isFavorite, favoriteProvider),
                                   ],
                                 ),
@@ -181,7 +180,7 @@ class _WebCouponCardState extends State<WebCouponCard> {
           ),
         ),
 
-        // Favorite icon
+        // Favorite icon (عرض فقط)
         Positioned(
           top: 12,
           right: 12,
@@ -360,11 +359,25 @@ class _WebCouponCardState extends State<WebCouponCard> {
     );
   }
 
-  void _copyCode() async {
-    if (widget.coupon.code.isNotEmpty) {
-      await FlutterClipboard.copy(widget.coupon.code);
+  Future<void> _copyCode() async {
+    if (widget.coupon.code.isEmpty) {
+      // إذا ما فيه كود، افتح الرابط فقط لو موجود
+      if (widget.coupon.web.isNotEmpty) {
+        await _launchURL(widget.coupon.web);
+      }
+      return;
+    }
+
+    if (_copyLock) return;
+    _copyLock = true;
+
+    try {
+      await Clipboard.setData(ClipboardData(text: widget.coupon.code));
+      HapticFeedback.lightImpact();
+
       if (!mounted) return;
 
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -386,28 +399,46 @@ class _WebCouponCardState extends State<WebCouponCard> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          duration: const Duration(seconds: 3),
+          duration: const Duration(seconds: 2),
         ),
       );
-    }
 
-    if (widget.coupon.web.isNotEmpty) {
-      _launchURL(widget.coupon.web);
+      // بعد النسخ افتح الرابط لو موجود
+      if (widget.coupon.web.isNotEmpty) {
+        await _launchURL(widget.coupon.web);
+      }
+    } finally {
+      Future.delayed(const Duration(milliseconds: 350), () {
+        _copyLock = false;
+      });
     }
   }
 
   Future<void> _share() async {
     await SharePlus.instance.share(
       ShareParams(
-          text: '${widget.coupon.name}\n'
-              '${widget.coupon.code.isNotEmpty ? "كود الخصم: ${widget.coupon.code}" : ""}'),
+        text: '${widget.coupon.name}\n'
+            '${widget.coupon.code.isNotEmpty ? "كود الخصم: ${widget.coupon.code}" : ""}',
+      ),
     );
   }
 
   Future<void> _launchURL(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    final raw = url.trim();
+    if (raw.isEmpty) return;
+
+    // ✅ محاولة parse آمنة + إضافة https إذا المستخدم مخزن بدون scheme
+    Uri? uri = Uri.tryParse(raw);
+    if (uri == null) return;
+
+    if (!uri.hasScheme) {
+      uri = Uri.tryParse('https://$raw');
+      if (uri == null) return;
     }
+
+    final ok = await canLaunchUrl(uri);
+    if (!ok) return;
+
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }

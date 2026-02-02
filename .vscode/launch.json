@@ -5,18 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "coupon",
+            "name": "rbhan",
             "request": "launch",
             "type": "dart"
         },
         {
-            "name": "coupon (profile mode)",
+            "name": "rbhan (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "coupon (release mode)",
+            "name": "rbhan (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"

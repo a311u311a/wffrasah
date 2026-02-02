@@ -11,7 +11,8 @@ import '../web_widgets/web_footer.dart';
 
 /// صفحة إدارة الكوبونات على الويب
 class WebAdminCouponsScreen extends StatefulWidget {
-  const WebAdminCouponsScreen({super.key});
+  final bool isEmbedded;
+  const WebAdminCouponsScreen({super.key, this.isEmbedded = false});
 
   @override
   State<WebAdminCouponsScreen> createState() => _WebAdminCouponsScreenState();
@@ -581,6 +582,14 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.isEmbedded) {
+      return SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: _buildContent(),
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: const WebNavigationBar(),

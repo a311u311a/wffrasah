@@ -211,7 +211,8 @@ class _WebOfferCardState extends State<_WebOfferCard> {
       onExit: (_) => setState(() => isHovered = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        transform: Matrix4.identity()..translate(0.0, isHovered ? -8.0 : 0.0),
+        transform: Matrix4.identity()
+          ..translateByDouble(0.0, isHovered ? -8.0 : 0.0, 0.0, 0.0),
         child: Card(
           elevation: isHovered ? 12 : 4,
           shape: RoundedRectangleBorder(

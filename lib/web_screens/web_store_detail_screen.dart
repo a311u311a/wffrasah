@@ -313,49 +313,54 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
           ),
         ],
       ),
-      child: TabBar(
-        controller: _tabController,
-        labelColor: Colors.white,
-        unselectedLabelColor: Constants.primaryColor,
-        indicator: BoxDecoration(
-          color: Constants.primaryColor,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        indicatorSize: TabBarIndicatorSize.tab,
-        labelStyle: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
-          fontFamily: 'Tajawal',
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          fontFamily: 'Tajawal',
-        ),
-        tabs: [
-          Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.confirmation_number_rounded, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                    'كوبونات الخصم ${hasCoupons ? '(${_coupons.length})' : ''}'),
-              ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Material(
+          child: TabBar(
+            controller: _tabController,
+            labelColor: Colors.white,
+            unselectedLabelColor: Constants.primaryColor,
+            indicator: BoxDecoration(
+              color: Constants.primaryColor,
+              borderRadius: BorderRadius.circular(16),
             ),
-          ),
-          Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.local_offer_rounded, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                    'العروض المتاحة ${hasOffers ? '(${_offers.length})' : ''}'),
-              ],
+            indicatorSize: TabBarIndicatorSize.tab,
+            labelStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'Tajawal',
             ),
+            unselectedLabelStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              fontFamily: 'Tajawal',
+            ),
+            tabs: [
+              Tab(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.confirmation_number_rounded, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                        'كوبونات الخصم ${hasCoupons ? '(${_coupons.length})' : ''}'),
+                  ],
+                ),
+              ),
+              Tab(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.local_offer_rounded, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                        'العروض المتاحة ${hasOffers ? '(${_offers.length})' : ''}'),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

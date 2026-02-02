@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../constants.dart';
 import '../widgets/bottom_navigation_bar.dart';
-import 'package:flutter_native_splash/flutter_native_splash.dart';
 import '../services/notification_service.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -15,7 +15,7 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+  late final AnimationController _controller;
 
   // أنيميشن إضافي للنصوص لتظهر بسلاسة (Fade In)
   double _opacity = 0.0;
@@ -23,83 +23,40 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
-    FlutterNativeSplash.remove();
+
     _controller = AnimationController(vsync: this);
 
-    // Initialize Firebase (System/Background only)
-    NotificationService.initFirebase();
+    // ✅ شغّل تهيئة Firebase بعد أول فريم لتقليل التقطيع (Skipped frames)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationService.initFirebase();
+    });
 
     // تفعيل ظهور النص بعد نصف ثانية من بدء الأنميشن
     Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) setState(() => _opacity = 1.0);
+      if (!mounted) return;
+      setState(() => _opacity = 1.0);
     });
 
-    // إظهار رمز الـ FCM للتجربة
-    // Future.delayed(const Duration(seconds: 1), () {
-    //  if (mounted) {
-    //     NotificationService.showTokenDialog(context);
-    //   }
-    //  });
-
+    // الانتقال بعد 4 ثواني
     Future.delayed(const Duration(seconds: 4), () {
       if (!mounted) return;
 
-      // 🔍 نتحقق مما إذا كنا قد انتقلنا بالفعل (بسبب استعادة كلمة المرور مثلاً)
-      // ولكن الطريقة الأحدث والأضمن هي التحقق من حالة الـ Recovery في الـ Session
-      // حالياً Supabase لا يعطي flag مباشر في الـ Session، لكن الحدث أعلاه هو الأهم.
-
-      // نتحقق إذا كان هناك "dialog" أو "route" جديد تم فتحه فوق الـ Splash
-      // ولكن للتبسيط: سنفحص إذا كان هناك "recovery" event وصل للتو.
-      // المشكلة أن الـ Listen stream يعمل بشكل غير متزامن.
-
-      // الحل العملي:
-      // ببساطة، نقوم بالتحقق من الـ Session العادي.
-      // إذا كان المستخدم قادماً من رابط Recovery، فإن الحدث passwordRecovery سيُطلق
-      // وغالباً سيسبق هذا الـ Future أو يأتي معه.
-
-      // لتجنب التعارض، يمكننا التحقق: هل المستخدم logged in "و" هل الـ link type هو recovery؟
-      // للأسف الـ Link type غير متاح بسهولة هنا.
-
-      // سنعتمد على أن `pushAndRemoveUntil` في الـ listener سيلغي أي navigation آخر
-      // ولكن إذا سبق الـ Future الـ Listener، فإن الـ Listener سيعمل "بعد" الانتقال للصفحة الرئيسية.
-      // لذا سننتقل للصفحة الرئيسية، والـ Listener (بما أنه Global أو مستمر) يجب أن يكون في مكان لا يموت.
-      // ⚠️ ولكن لحظة: الـ Splash سيموت (dispose) عند الانتقال!
-      // إذن الـ listener سيموت ولن يعمل إذا تأخر الحدث.
-
-      // ✅ الحل الصحيح: نقل الـ Listener إلى الـ `main.dart` أو `MyApp` ليكون Global
-      // أو جعل الـ Splash ينتظر قليلاً للتأكد.
-
-      // بما أننا في Splash، سنقوم بالتوجيه العادي، ولكن سنستخدم `pushReplacement`
-      // إذا وصل حدث Recovery "بعد" الانتقال، فلن يتم التقاطه لأن الـ Splash disposed.
-
-      // لذلك: أفضل مكان لمعالجة الـ Deep Links هو في الـ root widget أو استخدام `go_router`.
-      // لكن بما أننا نستخدم Navigator عادي:
-
       final session = Supabase.instance.client.auth.currentSession;
-      if (session != null) {
-        // المستخدم مسجل دخول
-        // هل يمكننا معرفة هل هو recovery session؟
-        // ليس بسهولة، ولكن الـ listener المفروض التقطه.
 
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-              builder: (context) => const BottomNavBar(initialIndex: 2)),
-        );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            transitionDuration: const Duration(milliseconds: 800),
-            pageBuilder: (context, animation, secondaryAnimation) =>
-                const BottomNavBar(initialIndex: 2),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-          ),
-        );
-      }
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          transitionDuration: const Duration(milliseconds: 800),
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              const BottomNavBar(initialIndex: 2),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        ),
+      );
+
+      // ignore: unused_local_variable
+      final _ = session;
     });
   }
 
@@ -121,15 +78,14 @@ class _SplashScreenState extends State<SplashScreen>
             end: Alignment.bottomCenter,
             colors: [
               Colors.white,
-              Constants.primaryColor
-                  .withValues(alpha: 0.05), // لمحة خفيفة من لون هويتك
+              Constants.primaryColor.withValues(alpha: 0.05),
             ],
           ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Spacer(flex: 2), // دفع المحتوى للمنتصف بتوازن
+            const Spacer(flex: 2),
 
             // حاوية الأنيميشن مع ظل ناعم خلف الـ Lottie
             Container(
@@ -171,9 +127,9 @@ class _SplashScreenState extends State<SplashScreen>
                     'كوبونات وعروض',
                     style: TextStyle(
                       fontSize: 32,
-                      fontWeight: FontWeight.w900, // خط سميك جداً للفخامة
+                      fontWeight: FontWeight.w900,
                       color: Constants.primaryColor,
-                      fontFamily: 'Tajawal', // استخدام الخط الذي أضفته
+                      fontFamily: 'Tajawal',
                       letterSpacing: 1.2,
                     ),
                   ),

@@ -6,7 +6,8 @@ import '../../../constants.dart';
 import '../../../services/notification_service.dart';
 
 class AdminNotificationsScreen extends StatefulWidget {
-  const AdminNotificationsScreen({super.key});
+  final bool isEmbedded;
+  const AdminNotificationsScreen({super.key, this.isEmbedded = false});
 
   @override
   State<AdminNotificationsScreen> createState() =>
@@ -115,18 +116,6 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
       if (_pickedImage != null) {
         imageUrl = await _uploadImage();
       }
-      // Also save to Supabase for record keeping?
-      // User said "separate", so maybe they want ONLY push?
-      // Usually "record" is good practice.
-      // But adhering strictly to "separation": Push is Push.
-      // However, usually we want an audit trail.
-      // Let's do JUST Push as requested, or maybe Insert but don't call it In-App?
-      // Re-reading: "زرين واحد لارسال الاشعارات داخل التطبيق والثاني ارسالل اشعارات خارج التطبيق"
-      // Interpretation:
-      // Btn 1: Insert to Supabase (shows in App).
-      // Btn 2: Send to FCM (shows in System).
-
-      // Let's implement pure Push call here.
 
       final success = await NotificationService.sendPushNotification(
         title: title,
@@ -181,8 +170,12 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Basic localization handling or static text if translation missing
-
+    if (widget.isEmbedded) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: _buildContent(),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -201,198 +194,202 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text(
-                  'إرسال إشعار فوري للمستخدمين',
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 30),
+      body: _buildContent(),
+    );
+  }
 
-                // Image Picker Widget
-                GestureDetector(
-                  onTap: _pickImage,
-                  child: Container(
-                    height: 150,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50], // Lighter grey
-                      borderRadius: BorderRadius.circular(15),
-                      border: Border.all(
-                        color: _pickedImage != null
-                            ? Constants.primaryColor
-                            : Colors.grey[300]!,
-                        width: 1.5,
-                      ),
-                      image: _pickedImage != null
-                          ? DecorationImage(
-                              image: FileImage(File(_pickedImage!.path)),
-                              fit: BoxFit.cover,
-                            )
-                          : null,
+  Widget _buildContent() {
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'إرسال إشعار فوري للمستخدمين',
+                style: TextStyle(color: Colors.grey, fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 30),
+
+              // Image Picker Widget
+              GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  height: 150,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50], // Lighter grey
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(
+                      color: _pickedImage != null
+                          ? Constants.primaryColor
+                          : Colors.grey[300]!,
+                      width: 1.5,
                     ),
-                    child: _pickedImage == null
-                        ? Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.add_a_photo,
-                                  size: 40,
-                                  color: Constants.primaryColor
-                                      .withValues(alpha: 0.5)),
-                              const SizedBox(height: 10),
-                              const Text('إرفاق صورة (اختياري)',
-                                  style: TextStyle(color: Colors.grey)),
-                            ],
+                    image: _pickedImage != null
+                        ? DecorationImage(
+                            image: FileImage(File(_pickedImage!.path)),
+                            fit: BoxFit.cover,
                           )
-                        : Stack(
-                            children: [
-                              Positioned(
-                                top: 5,
-                                right: 5,
-                                child: GestureDetector(
-                                  onTap: () =>
-                                      setState(() => _pickedImage = null),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: const BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(Icons.close,
-                                        size: 20, color: Colors.red),
+                        : null,
+                  ),
+                  child: _pickedImage == null
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add_a_photo,
+                                size: 40,
+                                color: Constants.primaryColor
+                                    .withValues(alpha: 0.5)),
+                            const SizedBox(height: 10),
+                            const Text('إرفاق صورة (اختياري)',
+                                style: TextStyle(color: Colors.grey)),
+                          ],
+                        )
+                      : Stack(
+                          children: [
+                            Positioned(
+                              top: 5,
+                              right: 5,
+                              child: GestureDetector(
+                                onTap: () =>
+                                    setState(() => _pickedImage = null),
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
                                   ),
+                                  child: const Icon(Icons.close,
+                                      size: 20, color: Colors.red),
                                 ),
                               ),
-                            ],
-                          ),
-                  ),
+                            ),
+                          ],
+                        ),
                 ),
-                const SizedBox(height: 20),
+              ),
+              const SizedBox(height: 20),
 
-                TextFormField(
-                  controller: _titleController,
-                  cursorColor: Constants.primaryColor,
-                  decoration: InputDecoration(
-                    labelText: 'عنوان الإشعار',
-                    labelStyle: TextStyle(color: Constants.primaryColor),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Colors.grey),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide:
-                          BorderSide(color: Constants.primaryColor, width: 2),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[50],
+              TextFormField(
+                controller: _titleController,
+                cursorColor: Constants.primaryColor,
+                decoration: InputDecoration(
+                  labelText: 'عنوان الإشعار',
+                  labelStyle: TextStyle(color: Constants.primaryColor),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: Colors.grey),
                   ),
-                  validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
-                ),
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: _bodyController,
-                  maxLines: 4,
-                  cursorColor: Constants.primaryColor,
-                  decoration: InputDecoration(
-                    labelText: 'نص الرسالة',
-                    labelStyle: TextStyle(color: Constants.primaryColor),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Colors.grey),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide:
-                          BorderSide(color: Constants.primaryColor, width: 2),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[50],
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
                   ),
-                  validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide:
+                        BorderSide(color: Constants.primaryColor, width: 2),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[50],
                 ),
-                const SizedBox(height: 40),
-                Row(
-                  children: [
-                    // زر إرسال داخل التطبيق
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: _isLoading ? null : _sendInApp,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange, // لون مميز للداخلي
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        icon: const Icon(Icons.notifications_active,
-                            color: Colors.white),
-                        label: _isLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                    color: Colors.white, strokeWidth: 2))
-                            : const Text(
-                                'إرسال إشعار\nداخل التطبيق',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                      ),
-                    ),
-                    const SizedBox(width: 15),
-                    // زر إرسال خارج التطبيق
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: _isLoading ? null : _sendPush,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Constants.primaryColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        icon: const Icon(Icons.notifications_active,
-                            color: Colors.white),
-                        label: _isLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                    color: Colors.white, strokeWidth: 2))
-                            : const Text(
-                                'إرسال إشعار\nخارج التطبيق ',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ],
+                validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
+              ),
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: _bodyController,
+                maxLines: 4,
+                cursorColor: Constants.primaryColor,
+                decoration: InputDecoration(
+                  labelText: 'نص الرسالة',
+                  labelStyle: TextStyle(color: Constants.primaryColor),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: Colors.grey),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide:
+                        BorderSide(color: Constants.primaryColor, width: 2),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[50],
                 ),
-              ],
-            ),
+                validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
+              ),
+              const SizedBox(height: 40),
+              Row(
+                children: [
+                  // زر إرسال داخل التطبيق
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _isLoading ? null : _sendInApp,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange, // لون مميز للداخلي
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      icon: const Icon(Icons.notifications_active,
+                          color: Colors.white),
+                      label: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2))
+                          : const Text(
+                              'إرسال إشعار\nداخل التطبيق',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(width: 15),
+                  // زر إرسال خارج التطبيق
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _isLoading ? null : _sendPush,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Constants.primaryColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      icon: const Icon(Icons.notifications_active,
+                          color: Colors.white),
+                      label: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2))
+                          : const Text(
+                              'إرسال إشعار\nخارج التطبيق ',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),

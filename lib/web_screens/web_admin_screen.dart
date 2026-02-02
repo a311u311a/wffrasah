@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../constants.dart';
-import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
+import 'web_admin_stores_screen.dart';
+import 'web_admin_coupons_screen.dart';
+import 'web_admin_offers_screen.dart';
+import 'web_admin_carousel_screen.dart';
+import 'web_admin_notifications_screen.dart';
 
-/// لوحة التحكم للويب (Admin Panel)
 class WebAdminScreen extends StatefulWidget {
+  static const routeName = '/admin';
+
   const WebAdminScreen({super.key});
 
   @override
@@ -14,336 +18,215 @@ class WebAdminScreen extends StatefulWidget {
 }
 
 class _WebAdminScreenState extends State<WebAdminScreen> {
-  final _supabase = Supabase.instance.client;
+  int _selectedIndex = 0;
 
-  /// Stream للحصول على عدد العناصر من كل جدول
-  Stream<int> _countStream(String tableName) {
-    return _supabase
-        .from(tableName)
-        .stream(primaryKey: ['id']).map((rows) => rows.length);
-  }
+  final List<Widget> _pages = [
+    const WebAdminStoresScreen(isEmbedded: true),
+    const WebAdminCouponsScreen(isEmbedded: true),
+    const WebAdminOffersScreen(isEmbedded: true),
+    const WebAdminCarouselScreen(isEmbedded: true),
+    const WebAdminNotificationsScreen(isEmbedded: true),
+  ];
+
+  final List<String> _titles = [
+    'إدارة المتاجر',
+    'إدارة الكوبونات',
+    'إدارة العروض',
+    'بنر الصور',
+    'الإشعارات',
+  ];
+
+  final List<IconData> _icons = [
+    Icons.storefront_rounded,
+    Icons.confirmation_number_rounded,
+    Icons.local_offer_rounded,
+    Icons.view_carousel_rounded,
+    Icons.notifications_active_rounded,
+  ];
 
   @override
   Widget build(BuildContext context) {
+    // Assuming RTL directionality is handled by the higher-level app theme or Directionality widget.
+    // In RTL, Row adds children from Right to Left.
+    // So Sidebar should be first content-wise to appear on the Right.
+    // Wait, in RTL, Row children are: [First, Second] -> First is on Right, Second is on Left.
+    // So yes, Sidebar first.
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF9F9F9),
       appBar: const WebNavigationBar(),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildHeader(),
-            _buildContent(),
-            const WebFooter(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      padding: ResponsivePadding.page(context),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Constants.primaryColor.withValues(alpha: 0.1),
-            Colors.white,
-          ],
-        ),
-      ),
-      child: Column(
+      body: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 40),
-          Row(
-            children: [
-              Icon(
-                Icons.admin_panel_settings_rounded,
-                color: Constants.primaryColor,
-                size: ResponsiveLayout.isDesktop(context) ? 48 : 36,
-              ),
-              const SizedBox(width: 16),
-              Text(
-                'لوحة التحكم',
-                style: TextStyle(
-                  fontSize: ResponsiveLayout.isDesktop(context) ? 42 : 32,
-                  fontWeight: FontWeight.w900,
-                  color: Constants.primaryColor,
-                  fontFamily: 'Tajawal',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'إدارة محتوى التطبيق والمتاجر والكوبونات',
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey[700],
-              fontFamily: 'Tajawal',
-            ),
-          ),
-          const SizedBox(height: 40),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContent() {
-    return Container(
-      padding: ResponsivePadding.page(context),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // نظرة عامة
-          Text(
-            'نظرة عامة',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-              color: Constants.primaryColor,
-              fontFamily: 'Tajawal',
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // إحصائيات
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: ResponsiveLayout.isDesktop(context) ? 4 : 2,
-            crossAxisSpacing: 20,
-            mainAxisSpacing: 20,
-            childAspectRatio: 1.5,
-            children: [
-              _buildStatCard(
-                'المتاجر',
-                _countStream('stores'),
-                Colors.blue,
-                Icons.storefront_rounded,
-              ),
-              _buildStatCard(
-                'الكوبونات',
-                _countStream('coupons'),
-                Colors.deepPurple,
-                Icons.confirmation_number_rounded,
-              ),
-              _buildStatCard(
-                'العروض',
-                _countStream('offers'),
-                Colors.orange,
-                Icons.local_offer_rounded,
-              ),
-              _buildStatCard(
-                'البنرات',
-                _countStream('carousel'),
-                Colors.teal,
-                Icons.photo_library_rounded,
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 40),
-
-          // إدارة المحتوى
-          Text(
-            'إدارة المحتوى',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-              color: Constants.primaryColor,
-              fontFamily: 'Tajawal',
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // أزرار الإدارة
-          _buildAdminButton(
-            title: 'إدارة وإضافة المتاجر',
-            subtitle: 'إضافة متجر جديد، تعديل، أو حذف',
-            icon: Icons.storefront_rounded,
-            color: Colors.blueGrey,
-            onTap: () {
-              Navigator.pushNamed(context, '/admin/stores');
-            },
-          ),
-          const SizedBox(height: 16),
-
-          _buildAdminButton(
-            title: 'إدارة وإضافة الكوبونات',
-            subtitle: 'التحكم في أكواد الخصم المتاحة',
-            icon: Icons.confirmation_number_outlined,
-            color: Colors.deepPurple,
-            onTap: () {
-              Navigator.pushNamed(context, '/admin/coupons');
-            },
-          ),
-          const SizedBox(height: 16),
-
-          _buildAdminButton(
-            title: 'إدارة وإضافة العروض',
-            subtitle: 'نشر عرض أو خصم جديد للمستخدمين',
-            icon: Icons.local_offer_rounded,
-            color: Colors.orange,
-            onTap: () {
-              Navigator.pushNamed(context, '/admin/offers');
-            },
-          ),
-          const SizedBox(height: 16),
-
-          _buildAdminButton(
-            title: 'إدارة شريط الصور (Carousel)',
-            subtitle: 'تعديل السلايدر الرئيسي في الصفحة الرئيسية',
-            icon: Icons.photo_library_outlined,
-            color: Colors.teal,
-            onTap: () {
-              Navigator.pushNamed(context, '/admin/carousel');
-            },
-          ),
-          const SizedBox(height: 16),
-
-          _buildAdminButton(
-            title: 'إرسال إشعارات للمستخدمين',
-            subtitle: 'إرسال رسائل تنبيه لجميع مستخدمي التطبيق',
-            icon: Icons.notifications_active_rounded,
-            color: Colors.redAccent,
-            onTap: () {
-              Navigator.pushNamed(context, '/admin/notifications');
-            },
-          ),
-
-          const SizedBox(height: 40),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(
-    String title,
-    Stream<int> stream,
-    Color color,
-    IconData icon,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
+          // --- Sidebar ---
           Container(
-            padding: const EdgeInsets.all(12),
+            width: 280,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: color, size: 32),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              fontFamily: 'Tajawal',
-            ),
-          ),
-          const SizedBox(height: 8),
-          StreamBuilder<int>(
-            stream: stream,
-            builder: (context, snapshot) {
-              return Text(
-                '${snapshot.data ?? 0}',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w900,
-                  color: color,
-                  fontFamily: 'Tajawal',
+              color: Colors.white,
+              border: Border(
+                left: BorderSide(
+                    color: Colors.grey[200]!), // Left border for RTL sidebar
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  blurRadius: 10,
+                  offset: const Offset(-2, 0), // Shadow to the left
                 ),
-              );
-            },
+              ],
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 30),
+                // Sidebar Header / User Info could go here
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor:
+                            Constants.primaryColor.withValues(alpha: 0.1),
+                        child: Icon(Icons.admin_panel_settings,
+                            color: Constants.primaryColor),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'لوحة التحكم',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Tajawal',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Divider(height: 40),
+
+                // Navigation Items
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: _titles.length,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemBuilder: (context, index) {
+                      final isSelected = _selectedIndex == index;
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? Constants.primaryColor.withValues(alpha: 0.1)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: ListTile(
+                          onTap: () => setState(() => _selectedIndex = index),
+                          leading: Icon(
+                            _icons[index],
+                            color: isSelected
+                                ? Constants.primaryColor
+                                : Colors.grey[600],
+                          ),
+                          title: Text(
+                            _titles[index],
+                            style: TextStyle(
+                              color: isSelected
+                                  ? Constants.primaryColor
+                                  : Colors.grey[800],
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              fontFamily: 'Tajawal',
+                              fontSize: 15,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 4),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                // Footer in Sidebar (Optional)
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(
+                    'الإصدار 1.0.0',
+                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // --- Main Content Area ---
+          Expanded(
+            child: Column(
+              children: [
+                Expanded(
+                  child: IndexedStack(
+                    index: _selectedIndex,
+                    children: _pages,
+                  ),
+                ),
+                const WebFooter(),
+                // The WebFooter is usually big.
+                // For admin dashboard, maybe a smaller footer or none in the content area?
+                // The requirements said: "WebNavigationBar and WebFooter to be retained in the main WebAdminScreen"
+                // So I will place it at the bottom.
+                // But the content area usually scrolls.
+                // If I put it here, it will be at the bottom of the screen if content is short,
+                // but if content is long, the page should scroll.
+                // The `_pages` usually have their own ScrollView (like WebAdminStoresScreen).
+                // If they have their own scroll view, putting footer outside might be weird.
+                // However, `WebAdminStoresScreen` has `Scaffold` body: `SingleChildScrollView`.
+                // If I wrap that in `Expanded`, the `SingleChildScrollView` works.
+                // But `WebFooter` needs to be *at the end* of the scrollable content.
+                // The current implementation of sub-screens (e.g., WebAdminStoresScreen) puts `WebFooter` inside its own `build` method if NOT embedded.
+                // If embedded, it returns `_buildContent()`.
+                // `_buildContent()` in `WebAdminStoresScreen` does NOT contain the footer.
+                // So I need to add the footer *here*, in the main admin screen.
+                // BUT, the sub-screens are scrollable.
+                // If I construct `Column(children: [Expanded(child: Page), Footer])`, the footer is fixed at bottom.
+                // This might take up too much vertical space if the footer is tall.
+                // Also, if the page content scrolls, the footer should usually be at the END of the scroll.
+                // Since the sub-screens control their scroll view, injecting the footer into *their* scroll view is hard without modifying them to accept a "footer widget" or "bottom sliver".
+                //
+                // Alternative:
+                // Wrapping the sub-screen in a `Column` inside a `SingleChildScrollView` here?
+                // No, sub-screens have their own scroll views (e.g. for DataTable).
+                // Nested scroll views are messy.
+                //
+                // Let's look at `WebAdminStoresScreen` again.
+                // It has `SingleChildScrollView` -> `Column` -> `[_buildHeader(), _buildContent(), WebFooter()]`.
+                // When embedded, it returns `_buildContent()` which is just a Container/Column.
+                // `_buildContent` is NOT scrollable itself?
+                // Wait, `WebAdminStoresScreen.dart`:
+                // body: SingleChildScrollView( child: Column( ... _buildContent() ... ) )
+                // `_buildContent()` returns a `Container` with a `Column`.
+                // So `_buildContent()` is NOT scrollable.
+                // This means when embedded, the returned usage is NOT scrollable.
+                // PERFECT!
+                // This means I can wrap the Switched Page in a `SingleChildScrollView` HERE in `WebAdminScreen`.
+                //
+                // So:
+                // Expanded(
+                //   child: SingleChildScrollView(
+                //     child: Column(
+                //       children: [
+                //         Padding(padding: ..., child: _pages[_selectedIndex]), // The content
+                //         const WebFooter(),
+                //       ],
+                //     ),
+                //   ),
+                // )
+              ],
+            ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildAdminButton({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.05),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withValues(alpha: 0.2)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: Colors.white, size: 24),
-              ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        fontFamily: 'Tajawal',
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 13,
-                        fontFamily: 'Tajawal',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.arrow_back_ios,
-                size: 16,
-                color: Colors.grey[400],
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

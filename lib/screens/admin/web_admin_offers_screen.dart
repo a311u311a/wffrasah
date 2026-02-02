@@ -7,16 +7,15 @@ import '../../models/offers.dart';
 import '../../constants.dart';
 import '../login_signup/widgets/snackbar.dart';
 
-class AdminOfferScreen extends StatefulWidget {
+class WebAdminOfferScreen extends StatefulWidget {
   final Offer? offer;
-  final bool isEmbedded;
-  const AdminOfferScreen({super.key, this.offer, this.isEmbedded = false});
+  const WebAdminOfferScreen({super.key, this.offer});
 
   @override
-  State<AdminOfferScreen> createState() => _AdminOfferScreenState();
+  State<WebAdminOfferScreen> createState() => _WebAdminOfferScreenState();
 }
 
-class _AdminOfferScreenState extends State<AdminOfferScreen> {
+class _WebAdminOfferScreenState extends State<WebAdminOfferScreen> {
   final _supabase = Supabase.instance.client;
 
   bool get isAdmin => true;
@@ -67,12 +66,6 @@ class _AdminOfferScreenState extends State<AdminOfferScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.isEmbedded) {
-      return Scaffold(
-        backgroundColor: const Color(0xFFFBFBFB),
-        body: _buildBody(),
-      );
-    }
     return Scaffold(
       backgroundColor: const Color(0xFFFBFBFB),
       appBar: AppBar(
@@ -89,115 +82,108 @@ class _AdminOfferScreenState extends State<AdminOfferScreen> {
         iconTheme: IconThemeData(color: Constants.primaryColor),
         elevation: 0,
       ),
-      body: _buildBody(),
-    );
-  }
-
-  Widget _buildBody() {
-    return Column(
-      children: [
-        if (widget.isEmbedded) const SizedBox(height: 20),
-        Padding(
-          padding: const EdgeInsets.all(20),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [
-                Constants.primaryColor,
-                Constants.primaryColor.withValues(alpha: 0.8),
-              ]),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Constants.primaryColor.withValues(alpha: 0.3),
-                  blurRadius: 15,
-                  offset: const Offset(0, 8),
-                )
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => _showOfferForm(context),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [
+                  Constants.primaryColor,
+                  Constants.primaryColor.withValues(alpha: 0.8),
+                ]),
                 borderRadius: BorderRadius.circular(12),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 18),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.add_circle_outline, color: Colors.white),
-                      SizedBox(width: 12),
-                      Text(
-                        'إضافة عرض جديد',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                boxShadow: [
+                  BoxShadow(
+                    color: Constants.primaryColor.withValues(alpha: 0.3),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  )
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _showOfferForm(context),
+                  borderRadius: BorderRadius.circular(12),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 18),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.add_circle_outline, color: Colors.white),
+                        SizedBox(width: 12),
+                        Text(
+                          'إضافة عرض جديد',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
+          Expanded(
+            child: StreamBuilder<List<Map<String, dynamic>>>(
+              stream: _supabase.from('offers').stream(
+                  primaryKey: ['id']).order('created_at', ascending: false),
+              builder: (context, offerSnapshot) {
+                if (!offerSnapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-        // ✅ عرض كل العروض مباشرة
-        Expanded(
-          child: StreamBuilder<List<Map<String, dynamic>>>(
-            stream: _supabase.from('offers').stream(
-                primaryKey: ['id']).order('created_at', ascending: false),
-            builder: (context, offerSnapshot) {
-              if (!offerSnapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              final offers = offerSnapshot.data!;
-              if (offers.isEmpty) {
-                return Center(
-                  child: Text('لا توجد عروض حالياً',
-                      style: TextStyle(color: Colors.grey[400])),
-                );
-              }
-
-              return ListView.builder(
-                padding: const EdgeInsets.only(bottom: 20),
-                itemCount: offers.length,
-                itemBuilder: (context, index) {
-                  final data = offers[index];
-
-                  final tags = (data['tags'] is List)
-                      ? List<String>.from(data['tags'])
-                      : <String>[];
-
-                  final offerModel = Offer(
-                    id: data['id'].toString(),
-                    name: (data['name_ar'] ?? data['name'] ?? '').toString(),
-                    nameAr: (data['name_ar'] ?? '').toString(),
-                    nameEn: (data['name_en'] ?? '').toString(),
-                    description:
-                        (data['description_ar'] ?? data['description'] ?? '')
-                            .toString(),
-                    descriptionAr: (data['description_ar'] ?? '').toString(),
-                    descriptionEn: (data['description_en'] ?? '').toString(),
-                    image: (data['image'] ?? '').toString(),
-                    web: (data['web'] ?? '').toString(),
-                    tags: tags,
-                    categoryId:
-                        (data['category_id'] ?? data['categoryId'] ?? '')
-                            .toString(),
-                    expiryDate: data['expiry_date'] != null
-                        ? DateTime.tryParse(data['expiry_date'].toString())
-                        : null,
+                final offers = offerSnapshot.data!;
+                if (offers.isEmpty) {
+                  return Center(
+                    child: Text('لا توجد عروض حالياً',
+                        style: TextStyle(color: Colors.grey[400])),
                   );
+                }
 
-                  return _offerCard(offerModel, data['id'].toString());
-                },
-              );
-            },
+                return ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  itemCount: offers.length,
+                  itemBuilder: (context, index) {
+                    final data = offers[index];
+
+                    final tags = (data['tags'] is List)
+                        ? List<String>.from(data['tags'])
+                        : <String>[];
+
+                    final offerModel = Offer(
+                      id: data['id'].toString(),
+                      name: (data['name_ar'] ?? data['name'] ?? '').toString(),
+                      nameAr: (data['name_ar'] ?? '').toString(),
+                      nameEn: (data['name_en'] ?? '').toString(),
+                      description:
+                          (data['description_ar'] ?? data['description'] ?? '')
+                              .toString(),
+                      descriptionAr: (data['description_ar'] ?? '').toString(),
+                      descriptionEn: (data['description_en'] ?? '').toString(),
+                      image: (data['image'] ?? '').toString(),
+                      web: (data['web'] ?? '').toString(),
+                      tags: tags,
+                      categoryId:
+                          (data['category_id'] ?? data['categoryId'] ?? '')
+                              .toString(),
+                      expiryDate: data['expiry_date'] != null
+                          ? DateTime.tryParse(data['expiry_date'].toString())
+                          : null,
+                    );
+
+                    return _offerCard(offerModel, data['id'].toString());
+                  },
+                );
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -349,7 +335,6 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
 
   String? _selectedCategoryId, _selectedCategoryName;
 
-  // ✅ ربط العرض بالمتجر (offers.store_id = stores.slug)
   String? _selectedStoreId;
   String? _selectedStoreName;
   String? _selectedStoreImage;
@@ -656,7 +641,6 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
         padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
         child: Column(
           children: [
-            // --- Header (Pinned) ---
             Container(
               width: 40,
               height: 4,
@@ -675,9 +659,7 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
               ),
             ),
             const SizedBox(height: 15),
-            const Divider(), // Optional: Separator
-
-            // --- Scrollable Body ---
+            const Divider(),
             Expanded(
               child: SingleChildScrollView(
                 child: Form(
@@ -685,8 +667,6 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                   child: Column(
                     children: [
                       const SizedBox(height: 10),
-
-                      // صورة العرض
                       GestureDetector(
                         onTap: () async {
                           final XFile? image = await _picker.pickImage(
@@ -763,8 +743,6 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                         ),
                       ),
                       const SizedBox(height: 25),
-
-                      // ✅ اختيار المتجر (يحفظ slug)
                       InkWell(
                         onTap: () => _showStorePicker(context),
                         child: Container(
@@ -803,9 +781,7 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                           ),
                         ),
                       ),
-
                       const SizedBox(height: 15),
-                      // اختيار الفئة
                       InkWell(
                         onTap: () => _showCategoryPicker(context),
                         child: Container(
@@ -823,14 +799,9 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
-                                  (_selectedCategoryId == null ||
-                                          _selectedCategoryId!.isEmpty)
-                                      ? 'اختر الفئة'
-                                      : (_selectedCategoryName ??
-                                          _selectedCategoryId!),
+                                  _selectedCategoryName ?? 'فئة العرض',
                                   style: TextStyle(
-                                    color: (_selectedCategoryId == null ||
-                                            _selectedCategoryId!.isEmpty)
+                                    color: _selectedCategoryName == null
                                         ? Colors.black54
                                         : Colors.black54,
                                     fontSize: 14,
@@ -844,36 +815,73 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                           ),
                         ),
                       ),
-
-                      const SizedBox(height: 25),
-                      _buildTextField(
-                          _descArCtrl, 'وصف العرض (عربي)', Icons.description,
-                          maxLines: 3),
                       const SizedBox(height: 15),
-                      _buildTextField(
-                          _descEnCtrl,
-                          'Offer Description (English)',
-                          Icons.description_outlined,
-                          maxLines: 3),
-                      const SizedBox(height: 15),
-                      _buildTextField(
-                          _codeCtrl, 'كوبون الخصم (اختياري)', Icons.pin),
-                      const SizedBox(height: 15),
-                      _buildTextField(
-                          _webCtrl, 'رابط العرض (نسخ الرابط)', Icons.link),
-
-                      const SizedBox(height: 15),
-
-                      // تاريخ الانتهاء
                       InkWell(
                         onTap: () async {
-                          final picked = await showDatePicker(
+                          DateTime selected =
+                              _selectedExpiryDate ?? DateTime.now();
+                          final picked = await showModalBottomSheet(
                             context: context,
-                            initialDate: _selectedExpiryDate ?? DateTime.now(),
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2100),
+                            isScrollControlled: true,
+                            shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(20))),
+                            builder: (_) {
+                              return SafeArea(
+                                child: SizedBox(
+                                  height: 420,
+                                  child: Column(
+                                    children: [
+                                      const SizedBox(height: 12),
+                                      Text("اختر التاريخ",
+                                          style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: Constants.primaryColor)),
+                                      const Divider(),
+                                      Expanded(
+                                        child: CalendarDatePicker(
+                                          initialDate: selected,
+                                          firstDate: DateTime(2000),
+                                          lastDate: DateTime(2100),
+                                          onDateChanged: (d) => selected = d,
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(16),
+                                        child: SizedBox(
+                                          width: double.infinity,
+                                          child: ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  Constants.primaryColor,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 12),
+                                              shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                          12)),
+                                            ),
+                                            onPressed: () => Navigator.pop(
+                                                context, selected),
+                                            child: const Text("تأكيد",
+                                                style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 16,
+                                                    fontWeight:
+                                                        FontWeight.bold)),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
                           );
-                          if (picked != null) {
+
+                          if (picked != null && picked is DateTime) {
                             setState(() {
                               _selectedExpiryDate = picked;
                               _expiryDateCtrl.text =
@@ -881,177 +889,203 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                             });
                           }
                         },
-                        child: _buildTextField(
-                          _expiryDateCtrl,
-                          'تاريخ انتهاء العرض (اختياري)',
-                          Icons.calendar_today,
-                          readOnly: true,
-                          suffixIcon: _selectedExpiryDate != null
-                              ? IconButton(
-                                  icon: const Icon(Icons.clear,
-                                      color: Colors.red),
-                                  onPressed: () {
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 15),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[200]!),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.calendar_today,
+                                  color: Constants.primaryColor),
+                              const SizedBox(width: 12),
+                              Text(
+                                _selectedExpiryDate != null
+                                    ? '${_selectedExpiryDate!.year}-${_selectedExpiryDate!.month}-${_selectedExpiryDate!.day}'
+                                    : 'تاريخ انتهاء الصلاحية',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.normal,
+                                  color: _selectedExpiryDate != null
+                                      ? Colors.black54
+                                      : Colors.black54,
+                                ),
+                              ),
+                              const Spacer(),
+                              if (_selectedExpiryDate != null)
+                                GestureDetector(
+                                  onTap: () {
                                     setState(() {
                                       _selectedExpiryDate = null;
                                       _expiryDateCtrl.clear();
                                     });
                                   },
-                                )
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-
-                      SizedBox(
-                        width: double.infinity,
-                        height: 55,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Constants.primaryColor,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                          onPressed: _isSaving
-                              ? null
-                              : () async {
-                                  if (!_formKey.currentState!.validate()) {
-                                    return;
-                                  }
-                                  if (_selectedStoreId == null ||
-                                      _selectedStoreId!.isEmpty) {
-                                    showSnackBar(
-                                        context, 'الرجاء اختيار المتجر',
-                                        isError: true);
-                                    return;
-                                  }
-                                  if (_selectedCategoryId == null) {
-                                    showSnackBar(context, 'الرجاء اختيار الفئة',
-                                        isError: true);
-                                    return;
-                                  }
-
-                                  setState(() => _isSaving = true);
-
-                                  String imageUrl = widget.offer?.image ?? '';
-
-                                  if (_pickedOfferImage != null) {
-                                    try {
-                                      final bytes = await _pickedOfferImage!
-                                          .readAsBytes();
-                                      final fileExt = _pickedOfferImage!.path
-                                          .split('.')
-                                          .last;
-                                      final fileName =
-                                          'offers/${DateTime.now().millisecondsSinceEpoch}.$fileExt';
-                                      await _supabase.storage
-                                          .from('images')
-                                          .uploadBinary(
-                                            fileName,
-                                            bytes,
-                                            fileOptions: const FileOptions(
-                                              contentType: 'image/jpeg',
-                                            ),
-                                          );
-                                      imageUrl = _supabase.storage
-                                          .from('images')
-                                          .getPublicUrl(fileName);
-                                    } catch (e) {
-                                      if (mounted) {
-                                        showSnackBar(
-                                            context, 'فشل رفع الصورة: $e',
-                                            isError: true);
-                                      }
-                                      setState(() => _isSaving = false);
-                                      return;
-                                    }
-                                  } else if (imageUrl.isEmpty &&
-                                      _selectedStoreImage != null) {
-                                    imageUrl = _selectedStoreImage!;
-                                  }
-
-                                  final tagsList =
-                                      _codeCtrl.text.trim().isNotEmpty
-                                          ? [_codeCtrl.text.trim()]
-                                          : [];
-
-                                  final offerData = {
-                                    'name_ar': _selectedStoreName ?? '',
-                                    'name_en': _selectedStoreName ??
-                                        '', // Simplification
-                                    'description_ar': _descArCtrl.text.trim(),
-                                    'description_en': _descEnCtrl.text.trim(),
-                                    'image': imageUrl,
-                                    'web': _webCtrl.text.trim(),
-                                    'store_id': _selectedStoreId,
-                                    // Should be slug
-                                    'category_id': _selectedCategoryId,
-                                    'tags': tagsList,
-                                    'expiry_date':
-                                        _selectedExpiryDate?.toIso8601String(),
-                                    'name':
-                                        _selectedStoreName ?? 'Offer', // Legacy
-                                    'description':
-                                        _descArCtrl.text.trim(), // Legacy
-                                  };
-
-                                  try {
-                                    if (widget.offer == null) {
-                                      await _supabase
-                                          .from('offers')
-                                          .insert(offerData);
-                                      if (mounted) {
-                                        Navigator.pop(context);
-                                        showSnackBar(
-                                            context, 'تمت إضافة العرض بنجاح');
-                                      }
-                                    } else {
-                                      await _supabase
-                                          .from('offers')
-                                          .update(offerData)
-                                          .eq('id', widget.offer!.id);
-                                      if (mounted) {
-                                        Navigator.pop(context);
-                                        showSnackBar(
-                                            context, 'تم تعديل العرض بنجاح');
-                                      }
-                                    }
-                                  } catch (e) {
-                                    if (mounted) {
-                                      showSnackBar(context, 'خطأ في الحفظ: $e',
-                                          isError: true);
-                                    }
-                                  } finally {
-                                    if (mounted) {
-                                      setState(() => _isSaving = false);
-                                    }
-                                  }
-                                },
-                          child: _isSaving
-                              ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                      color: Colors.white, strokeWidth: 2))
-                              : Text(
-                                  widget.offer == null
-                                      ? 'حفظ ونشر'
-                                      : 'حفظ التعديلات',
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16),
+                                  child: const Icon(Icons.clear,
+                                      color: Colors.red, size: 20),
                                 ),
+                            ],
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 15),
+                      _buildTextField(
+                        _descArCtrl,
+                        'وصف العرض (بالعربي)',
+                        Icons.description,
+                        maxLines: 3,
+                        keyboardType: TextInputType.multiline,
+                      ),
+                      const SizedBox(height: 15),
+                      _buildTextField(
+                        _descEnCtrl,
+                        'Offer Description (English)',
+                        Icons.description_outlined,
+                        maxLines: 3,
+                        keyboardType: TextInputType.multiline,
+                      ),
+                      const SizedBox(height: 15),
+                      _buildTextField(_codeCtrl, 'كود الخصم (اختياري)',
+                          Icons.confirmation_number,
+                          isRequired: false),
+                      const SizedBox(height: 15),
+                      _buildTextField(
+                          _webCtrl, 'رابط المتجر', Icons.language_outlined),
+                      const SizedBox(height: 15),
                     ],
                   ),
                 ),
               ),
             ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('إلغاء',
+                        style: TextStyle(color: Colors.grey)),
+                  ),
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _isSaving ? null : _save,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Constants.primaryColor,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2),
+                          )
+                        : const Text(
+                            'حفظ البيانات',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                          ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (_selectedStoreId == null || _selectedStoreId!.isEmpty) {
+      showSnackBar(context, 'يرجى اختيار المتجر', isError: true);
+      return;
+    }
+    if (_selectedCategoryId == null || _selectedCategoryId!.isEmpty) {
+      showSnackBar(context, 'يرجى اختيار الفئة', isError: true);
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    String finalImageUrl = _selectedStoreImage ?? '';
+
+    if (_pickedOfferImage != null) {
+      try {
+        final fileName =
+            'offers_images/${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final bytes = await _pickedOfferImage!.readAsBytes();
+        await _supabase.storage.from('images').uploadBinary(
+              fileName,
+              bytes,
+              fileOptions: const FileOptions(contentType: 'image/jpeg'),
+            );
+        finalImageUrl = _supabase.storage.from('images').getPublicUrl(fileName);
+      } catch (e) {
+        if (mounted) {
+          showSnackBar(context, 'فشل رفع الصورة: $e', isError: true);
+          setState(() => _isSaving = false);
+        }
+        return;
+      }
+    }
+
+    final data = {
+      'name_ar': _codeCtrl.text.trim().isNotEmpty
+          ? _codeCtrl.text.trim()
+          : _descArCtrl.text.trim().split('\n').first,
+      'name_en': _codeCtrl.text.trim().isNotEmpty
+          ? _codeCtrl.text.trim()
+          : _descEnCtrl.text.trim().split('\n').first,
+      'description_ar': _descArCtrl.text.trim(),
+      'description_en': _descEnCtrl.text.trim().isEmpty
+          ? _descArCtrl.text.trim()
+          : _descEnCtrl.text.trim(),
+      'name': _codeCtrl.text.trim().isNotEmpty
+          ? _codeCtrl.text.trim()
+          : _descArCtrl.text.trim().split('\n').first,
+      'description': _descArCtrl.text.trim(),
+      'web': _webCtrl.text.trim(),
+      'category_id': _selectedCategoryId,
+      'store_id': _selectedStoreId,
+      'tags': _codeCtrl.text.trim().isEmpty
+          ? <String>[]
+          : <String>[_codeCtrl.text.trim()],
+      'image': finalImageUrl,
+      'expiry_date': _selectedExpiryDate?.toIso8601String(),
+    };
+
+    try {
+      if (widget.offer == null) {
+        await _supabase.from('offers').insert(data);
+      } else {
+        data['id'] = widget.offer!.id;
+        data.removeWhere((key, value) => value == null);
+        await _supabase.from('offers').upsert(data);
+      }
+
+      if (!mounted) return;
+      Navigator.pop(context);
+      showSnackBar(
+        context,
+        widget.offer == null ? 'تمت إضافة العرض ✅' : 'تم تحديث العرض ✅',
+      );
+    } catch (e) {
+      if (mounted) {
+        showSnackBar(context, 'حدث خطأ أثناء الحفظ: $e', isError: true);
+        setState(() => _isSaving = false);
+      }
+    }
   }
 }

@@ -552,7 +552,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                     ),
                     Switch(
                       value: provider.isNotificationsEnabled,
-                      activeColor: Constants.primaryColor,
+                      activeTrackColor: Constants.primaryColor,
                       onChanged: (value) async {
                         // فتح إعدادات الإشعارات الفرعية مباشرة
                         await AppSettings.openAppSettings(

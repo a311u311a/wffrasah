@@ -31,8 +31,9 @@ class _WebStoreCardState extends State<WebStoreCard> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           transform: Matrix4.identity()
-            ..translate(0.0, isHovered ? -4.0 : 0.0)
-            ..scale(isHovered ? 1.02 : 1.0),
+            ..translateByDouble(0.0, isHovered ? -4.0 : 0.0, 0.0, 0.0)
+            ..scaleByDouble(
+                isHovered ? 1.02 : 1.0, isHovered ? 1.02 : 1.0, 1.0, 1.0),
           child: Card(
             elevation: isHovered ? 8 : 3,
             shape: RoundedRectangleBorder(

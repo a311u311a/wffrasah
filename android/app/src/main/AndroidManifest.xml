@@ -60,15 +60,11 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <!-- تعطيل Impeller واستخدام Skia لحل مشاكل الرسوميات -->
-        <meta-data
-            android:name="io.flutter.embedding.android.EnableImpeller"
-            android:value="false" />
-
         <!-- Notification Channel ID -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="high_importance_channel" />
+
     </application>
 
     <!-- Queries -->

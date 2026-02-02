@@ -7,7 +7,8 @@ import '../../constants.dart';
 import '../login_signup/widgets/snackbar.dart';
 
 class AdminCarouselScreen extends StatefulWidget {
-  const AdminCarouselScreen({super.key});
+  final bool isEmbedded;
+  const AdminCarouselScreen({super.key, this.isEmbedded = false});
 
   @override
   State<AdminCarouselScreen> createState() => _AdminCarouselScreenState();
@@ -338,6 +339,12 @@ class _AdminCarouselScreenState extends State<AdminCarouselScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.isEmbedded) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFFBFBFB),
+        body: _buildBody(),
+      );
+    }
     return Scaffold(
       backgroundColor: const Color(0xFFFBFBFB),
       appBar: AppBar(
@@ -349,179 +356,183 @@ class _AdminCarouselScreenState extends State<AdminCarouselScreen> {
         elevation: 0,
         backgroundColor: Colors.white,
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [
-                  Constants.primaryColor,
-                  Constants.primaryColor.withValues(alpha: 0.8)
-                ]),
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    return Column(
+      children: [
+        if (widget.isEmbedded) const SizedBox(height: 20),
+        Padding(
+          padding: const EdgeInsets.all(20),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [
+                Constants.primaryColor,
+                Constants.primaryColor.withValues(alpha: 0.8)
+              ]),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                    color: Constants.primaryColor.withValues(alpha: 0.3),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8))
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: _openAddSheet,
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                      color: Constants.primaryColor.withValues(alpha: 0.3),
-                      blurRadius: 15,
-                      offset: const Offset(0, 8))
-                ],
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: _openAddSheet,
-                  borderRadius: BorderRadius.circular(12),
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 18),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.add_circle_outline, color: Colors.white),
-                        SizedBox(width: 12),
-                        Text('إضافة بنر جديد',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16)),
-                      ],
-                    ),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 18),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add_circle_outline, color: Colors.white),
+                      SizedBox(width: 12),
+                      Text('إضافة بنر جديد',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16)),
+                    ],
                   ),
                 ),
               ),
             ),
           ),
-          Expanded(
-            // ✅ استخدام Supabase Stream
-            child: StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _supabase.from('carousel').stream(primaryKey: ['id']),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(
+        ),
+        Expanded(
+          // ✅ استخدام Supabase Stream
+          child: StreamBuilder<List<Map<String, dynamic>>>(
+            stream: _supabase.from('carousel').stream(primaryKey: ['id']),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.photo_library_outlined,
+                          size: 80, color: Colors.grey[200]),
+                      const SizedBox(height: 10),
+                      const Text('لا توجد صور في الشريط حالياً',
+                          style: TextStyle(color: Colors.grey)),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(15),
+                itemCount: snapshot.data!.length,
+                itemBuilder: (context, index) {
+                  final item = snapshot.data![index];
+                  debugPrint('Carousel Item $index: $item'); // Debugging
+
+                  final imageUrl = item['image']?.toString();
+                  final name = item['name_ar'] ?? item['name'] ?? 'بدون اسم';
+                  final link = item['web'] ?? 'لا يوجد رابط';
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 15),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5)),
+                      ],
+                    ),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.photo_library_outlined,
-                            size: 80, color: Colors.grey[200]),
-                        const SizedBox(height: 10),
-                        const Text('لا توجد صور في الشريط حالياً',
-                            style: TextStyle(color: Colors.grey)),
+                        ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12)),
+                          child: (imageUrl != null && imageUrl.isNotEmpty)
+                              ? Image.network(
+                                  imageUrl,
+                                  height: 180,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      height: 180,
+                                      width: double.infinity,
+                                      color: Colors.grey[200],
+                                      child: const Icon(Icons.broken_image,
+                                          size: 50, color: Colors.grey),
+                                    );
+                                  },
+                                )
+                              : Container(
+                                  height: 180,
+                                  width: double.infinity,
+                                  color: Colors.grey[200],
+                                  child: const Icon(Icons.image_not_supported,
+                                      size: 50, color: Colors.grey),
+                                ),
+                        ),
+                        ListTile(
+                          title: Text(name,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text(link,
+                              style: const TextStyle(
+                                  fontSize: 12, color: Colors.blue)),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                  icon: const Icon(Icons.edit_note_rounded,
+                                      color: Colors.blue),
+                                  onPressed: () => _openEditSheet(item)),
+                              IconButton(
+                                  icon: const Icon(Icons.delete_sweep_outlined,
+                                      color: Colors.red),
+                                  onPressed: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        title: const Text('حذف البنّر؟'),
+                                        content: const Text(
+                                            'هل أنت متأكد من حذف هذا البنر من شريط الصور؟'),
+                                        actions: [
+                                          TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(ctx, false),
+                                              child: const Text('إلغاء')),
+                                          TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(ctx, true),
+                                              child: const Text('حذف',
+                                                  style: TextStyle(
+                                                      color: Colors.red))),
+                                        ],
+                                      ),
+                                    );
+                                    if (confirm == true) {
+                                      _deleteItem(item['id'].toString());
+                                    }
+                                  }),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.all(15),
-                  itemCount: snapshot.data!.length,
-                  itemBuilder: (context, index) {
-                    final item = snapshot.data![index];
-                    debugPrint('Carousel Item $index: $item'); // Debugging
-
-                    final imageUrl = item['image']?.toString();
-                    final name = item['name_ar'] ?? item['name'] ?? 'بدون اسم';
-                    final link = item['web'] ?? 'لا يوجد رابط';
-
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 15),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5)),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          ClipRRect(
-                            borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(12)),
-                            child: (imageUrl != null && imageUrl.isNotEmpty)
-                                ? Image.network(
-                                    imageUrl,
-                                    height: 180,
-                                    width: double.infinity,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        height: 180,
-                                        width: double.infinity,
-                                        color: Colors.grey[200],
-                                        child: const Icon(Icons.broken_image,
-                                            size: 50, color: Colors.grey),
-                                      );
-                                    },
-                                  )
-                                : Container(
-                                    height: 180,
-                                    width: double.infinity,
-                                    color: Colors.grey[200],
-                                    child: const Icon(Icons.image_not_supported,
-                                        size: 50, color: Colors.grey),
-                                  ),
-                          ),
-                          ListTile(
-                            title: Text(name,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold)),
-                            subtitle: Text(link,
-                                style: const TextStyle(
-                                    fontSize: 12, color: Colors.blue)),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                    icon: const Icon(Icons.edit_note_rounded,
-                                        color: Colors.blue),
-                                    onPressed: () => _openEditSheet(item)),
-                                IconButton(
-                                    icon: const Icon(
-                                        Icons.delete_sweep_outlined,
-                                        color: Colors.red),
-                                    onPressed: () async {
-                                      final confirm = await showDialog<bool>(
-                                        context: context,
-                                        builder: (ctx) => AlertDialog(
-                                          title: const Text('حذف البنّر؟'),
-                                          content: const Text(
-                                              'هل أنت متأكد من حذف هذا البنر من شريط الصور؟'),
-                                          actions: [
-                                            TextButton(
-                                                onPressed: () =>
-                                                    Navigator.pop(ctx, false),
-                                                child: const Text('إلغاء')),
-                                            TextButton(
-                                                onPressed: () =>
-                                                    Navigator.pop(ctx, true),
-                                                child: const Text('حذف',
-                                                    style: TextStyle(
-                                                        color: Colors.red))),
-                                          ],
-                                        ),
-                                      );
-                                      if (confirm == true) {
-                                        _deleteItem(item['id'].toString());
-                                      }
-                                    }),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
+                },
+              );
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

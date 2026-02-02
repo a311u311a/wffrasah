@@ -24,8 +24,14 @@ class _CouponCardState extends State<CouponCard> {
   // 🔹 تحكم عام بحجم الخط
   final double globalFontSize = 12;
 
-  void _copyCodeToClipboard(String code) {
-    Clipboard.setData(ClipboardData(text: code));
+  // ✅ تعديل فقط هنا: النسخ الرسمي بدون تغيير الأنيميشن
+  Future<void> _copyCodeToClipboard(String code) async {
+    if (code.trim().isEmpty) return;
+
+    await Clipboard.setData(ClipboardData(text: code));
+    HapticFeedback.lightImpact(); // اختياري - ما يغيّر الأنيميشن
+
+    if (!mounted) return;
     setState(() => isCopied = true);
 
     Future.delayed(const Duration(seconds: 5), () {
@@ -37,9 +43,10 @@ class _CouponCardState extends State<CouponCard> {
     final localizations = AppLocalizations.of(context)!;
     await SharePlus.instance.share(
       ShareParams(
-          text:
-              '${localizations.translate('coupon_code')}: ${widget.coupon.code}\n'
-              '${localizations.translate('store')}: ${widget.coupon.name}'),
+        text:
+            '${localizations.translate('coupon_code')}: ${widget.coupon.code}\n'
+            '${localizations.translate('store')}: ${widget.coupon.name}',
+      ),
     );
   }
 

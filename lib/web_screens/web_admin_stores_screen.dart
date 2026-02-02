@@ -10,7 +10,8 @@ import '../web_widgets/web_footer.dart';
 
 /// صفحة إدارة المتاجر على الويب
 class WebAdminStoresScreen extends StatefulWidget {
-  const WebAdminStoresScreen({super.key});
+  final bool isEmbedded;
+  const WebAdminStoresScreen({super.key, this.isEmbedded = false});
 
   @override
   State<WebAdminStoresScreen> createState() => _WebAdminStoresScreenState();
@@ -352,6 +353,14 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.isEmbedded) {
+      return SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: _buildContent(),
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: const WebNavigationBar(),
