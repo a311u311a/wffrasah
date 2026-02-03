@@ -135,7 +135,7 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFFEC4899).withValues(alpha: 0.1),
+            Constants.primaryColor.withValues(alpha: 0.1),
             Colors.white,
           ],
         ),
@@ -149,12 +149,12 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEC4899).withValues(alpha: 0.1),
+                  color: Constants.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.confirmation_number_rounded,
-                  color: Color(0xFFEC4899),
+                  color: Constants.primaryColor,
                   size: 32,
                 ),
               ),
@@ -164,7 +164,7 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
                 style: TextStyle(
                   fontSize: ResponsiveLayout.isDesktop(context) ? 42 : 32,
                   fontWeight: FontWeight.w900,
-                  color: const Color(0xFFEC4899),
+                  color: Constants.primaryColor,
                   fontFamily: 'Tajawal',
                 ),
               ),
@@ -334,34 +334,22 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
           decoration: BoxDecoration(
             gradient: isSelected
                 ? LinearGradient(
-                    colors: isPrimary
-                        ? [
-                            const Color(0xFFEC4899),
-                            const Color(0xFFEC4899).withValues(alpha: 0.8),
-                          ]
-                        : [
-                            const Color(0xFF6366F1),
-                            const Color(0xFF6366F1).withValues(alpha: 0.8),
-                          ],
+                    colors: [
+                      Constants.primaryColor,
+                      Constants.primaryColor.withValues(alpha: 0.8),
+                    ],
                   )
                 : null,
             color: isSelected ? null : Colors.grey[100],
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected
-                  ? (isPrimary
-                      ? const Color(0xFFEC4899)
-                      : const Color(0xFF6366F1))
-                  : Colors.grey[300]!,
+              color: isSelected ? Constants.primaryColor : Colors.grey[300]!,
               width: isSelected ? 2 : 1,
             ),
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: (isPrimary
-                              ? const Color(0xFFEC4899)
-                              : const Color(0xFF6366F1))
-                          .withValues(alpha: 0.3),
+                      color: Constants.primaryColor.withValues(alpha: 0.3),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -468,10 +456,11 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: ResponsiveGrid.columns(context, max: 4),
+              crossAxisCount: ResponsiveGrid.columns(context, max: 6),
               crossAxisSpacing: ResponsiveGrid.spacing(context),
               mainAxisSpacing: ResponsiveGrid.spacing(context),
-              childAspectRatio: 0.75,
+              childAspectRatio:
+                  0.52, // ✅ زيادة الارتفاع بشكل ملحوظ (تغيير من 0.52)
             ),
             itemCount: displayCoupons.length,
             itemBuilder: (context, index) {

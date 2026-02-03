@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../constants.dart';
 import '../models/offers.dart';
+import '../providers/favorites_provider.dart';
 
 /// بطاقة عرض (Offer) للويب
 class WebOfferCard extends StatefulWidget {
   final Offer offer;
   final String? storeName;
+  final String? storeImage; // ✅ الجديد: شعار المتجر
 
   const WebOfferCard({
     super.key,
     required this.offer,
     this.storeName,
+    this.storeImage,
   });
 
   @override
@@ -25,135 +30,199 @@ class _WebOfferCardState extends State<WebOfferCard> {
 
   @override
   Widget build(BuildContext context) {
-    // ملاحظة: نحتاج للتأكد من أن FavoriteProvider يدعم العروض (Offer) أو إنشاء واحد جديد
-    // حالياً سنفترض أنه للكوبونات فقط، لذا سنخفي زر المفضلة مؤقتاً أو نستخدم منطقاً مخصصاً
-    // final favoriteProvider = Provider.of<FavoriteProvider>(context);
-    // final isFavorite = favoriteProvider.isFavorite(widget.offer.id);
+    final favoriteProvider = Provider.of<FavoriteProvider>(context);
+    final isFavorite = favoriteProvider.isFavorite(widget.offer.id);
 
     return MouseRegion(
       onEnter: (_) => setState(() => isHovered = true),
       onExit: (_) => setState(() => isHovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        transform: Matrix4.identity()
-          ..translateByDouble(0.0, isHovered ? -8.0 : 0.0, 0.0, 0.0),
-        child: Card(
-          elevation: isHovered ? 12 : 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white,
-                  Colors.orange
-                      .withValues(alpha: 0.03), // لون مختلف قليلاً للعروض
-                ],
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // صورة العرض
-                _buildOfferImage(),
-
-                // محتوى العرض
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // اسم المتجر (إذا كان متوفراً)
-                        if (widget.storeName != null) ...[
-                          _buildStoreName(),
-                          const SizedBox(height: 8),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: _launchOffer,
+        child: SizedBox(
+          // ✅ تغطية المساحة الكاملة لضمان ثبات منطقة التفاعل
+          child: Stack(
+            children: [
+              // طبقة شفافة ثابتة لمنع الوميض
+              const Positioned.fill(
+                  child: ColoredBox(color: Colors.transparent)),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+                margin: EdgeInsets.all(isHovered ? 2 : 6),
+                transform: Matrix4.identity()
+                  ..translate(0.0, isHovered ? -4.0 : 0.0),
+                child: Card(
+                  elevation: isHovered ? 12 : 3,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.white,
+                          Constants.primaryColor.withValues(alpha: 0.03),
                         ],
-
-                        // نوع "عرض"
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // ✅ رأس البطاقة المحسّن: يظهر أولاً قبل الصورة
+                        if (widget.storeName != null ||
+                            widget.storeImage != null)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                            child: _buildStoreHeader(),
                           ),
-                          child: const Text(
-                            'عرض خاص',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.orange,
-                              fontFamily: 'Tajawal',
+
+                        // صورة العرض
+                        _buildOfferImage(isFavorite, favoriteProvider),
+
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              children: [
+                                // منطقة المحتوى القابلة للتمرير (العنوان والوصف)
+                                Expanded(
+                                  child: SingleChildScrollView(
+                                    physics: const BouncingScrollPhysics(),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        _buildTitle(),
+                                        const SizedBox(height: 8),
+                                        _buildDescription(),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                // الأزرار مثبتة دائماً في الأسفل
+                                _buildActions(),
+                              ],
                             ),
                           ),
                         ),
-                        const SizedBox(height: 8),
-
-                        // عنوان العرض
-                        _buildTitle(),
-                        const SizedBox(height: 8),
-
-                        // الوصف
-                        _buildDescription(),
-                        const Spacer(),
-
-                        // الإجراءات
-                        _buildActions(),
                       ],
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildOfferImage() {
+  Widget _buildOfferImage(bool isFavorite, FavoriteProvider favoriteProvider) {
     return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       child: AspectRatio(
-        aspectRatio: 16 / 9,
-        child: CachedNetworkImage(
-          imageUrl: widget.offer.image,
-          fit: BoxFit.fill,
-          placeholder: (context, url) => Container(
-            color: Colors.grey[200],
-            child: const Center(
-              child: CircularProgressIndicator(),
+        aspectRatio: 2.3 / 1, // ✅ تصغير الارتفاع
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: CachedNetworkImage(
+                imageUrl: widget.offer.image,
+                fit: BoxFit.fill,
+                placeholder: (context, url) => Container(
+                  color: Colors.grey[200],
+                  child: const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  color: Colors.grey[200],
+                  child: Icon(
+                    Icons.local_mall_rounded,
+                    size: 48,
+                    color: Constants.primaryColor,
+                  ),
+                ),
+              ),
             ),
-          ),
-          errorWidget: (context, url, error) => Container(
-            color: Colors.grey[200],
-            child: Icon(
-              Icons.local_mall_rounded, // أيقونة مختلفة للعروض
-              size: 48,
-              color: Colors.orange,
+            // Favorite button
+            Positioned(
+              top: 10,
+              right: 10,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    favoriteProvider.toggleFavorite(widget.offer, context);
+                    HapticFeedback.mediumImpact();
+                  },
+                  borderRadius: BorderRadius.circular(30),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.95),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      isFavorite ? Icons.favorite : Icons.favorite_border,
+                      size: 20,
+                      color: isFavorite ? Colors.red : Colors.grey[600],
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildStoreName() {
-    return Text(
-      widget.storeName ?? 'متجر',
-      style: TextStyle(
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-        color: Constants.primaryColor,
-        fontFamily: 'Tajawal',
-      ),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
+  Widget _buildStoreHeader() {
+    return Row(
+      children: [
+        if (widget.storeImage != null)
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.grey[100]!),
+              color: Colors.white,
+            ),
+            child: ClipOval(
+              child: CachedNetworkImage(
+                imageUrl: widget.storeImage!,
+                fit: BoxFit.contain,
+                errorWidget: (context, url, error) =>
+                    const Icon(Icons.store_rounded, size: 20),
+              ),
+            ),
+          ),
+        if (widget.storeImage != null) const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            widget.storeName ?? 'متجر',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: Constants.primaryColor,
+              fontFamily: 'Tajawal',
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 
@@ -206,7 +275,7 @@ class _WebOfferCardState extends State<WebOfferCard> {
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange, // لون مميز للعروض
+                  backgroundColor: Constants.primaryColor,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(

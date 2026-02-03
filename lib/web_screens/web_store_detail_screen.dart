@@ -388,10 +388,10 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: ResponsiveGrid.columns(context, max: 4),
+        crossAxisCount: ResponsiveGrid.columns(context, max: 6),
         crossAxisSpacing: ResponsiveGrid.spacing(context),
         mainAxisSpacing: ResponsiveGrid.spacing(context),
-        childAspectRatio: 0.75,
+        childAspectRatio: 0.48, // ✅ زيادة الارتفاع
       ),
       itemCount: _coupons.length,
       itemBuilder: (context, index) {
@@ -422,6 +422,7 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
         return WebOfferCard(
           offer: _offers[index],
           storeName: widget.store.name,
+          storeImage: widget.store.image, // ✅ إضافة شعار المتجر
         );
       },
     );

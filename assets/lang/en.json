@@ -215,5 +215,21 @@
   "login_required": "Login Required",
   "login_to_add_favorites": "Please login to add items to favorites",
   "go_to_login": "Login",
-  "added_to_favorites": "Added to favorites"
+  "added_to_favorites": "Added to favorites",
+  "quick_links": "Quick Links",
+  "legal_info": "Legal Information",
+  "saudi_arabia": "Saudi Arabia",
+  "favorites": "Favorites",
+  "search_hint_web": "Search for coupons and stores...",
+  "top_stores": "Top Stores",
+  "popular_stores": "Popular Stores",
+  "popular_stores_subtitle": "🛍️ Shop from the best stores and start saving",
+  "latest_coupons": "Latest Coupons",
+  "coupons_section_subtitle": "🎁 Get the best deals and discounts",
+  "latest_offers": "Latest Offers & Discounts",
+  "offers_subtitle": "🔥 Save more with the strongest exclusive and renewed offers",
+  "view_more": "View More",
+  "clear_filter": "Clear Filter",
+  "no_results_for_store": "No coupons or offers available for this store",
+  "offers_for": "Offers for"
 }

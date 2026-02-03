@@ -26,44 +26,36 @@ class _WebStoreCardState extends State<WebStoreCard> {
     return MouseRegion(
       onEnter: (_) => setState(() => isHovered = true),
       onExit: (_) => setState(() => isHovered = false),
+      cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          transform: Matrix4.identity()
-            ..translateByDouble(0.0, isHovered ? -4.0 : 0.0, 0.0, 0.0)
-            ..scaleByDouble(
-                isHovered ? 1.02 : 1.0, isHovered ? 1.02 : 1.0, 1.0, 1.0),
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+          padding: EdgeInsets.zero,
+          margin:
+              EdgeInsets.all(isHovered ? 0 : 4), // تعويض الحركة ليبقى في النطاق
+          transform: Matrix4.identity()..translate(0.0, isHovered ? -5.0 : 0.0),
           child: Card(
-            elevation: isHovered ? 8 : 3,
+            elevation: isHovered ? 12 : 3,
+            shadowColor: Constants.primaryColor.withValues(alpha: 0.2),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white,
-                    isHovered
-                        ? Constants.primaryColor.withValues(alpha: 0.05)
-                        : Colors.white,
-                  ],
-                ),
+                color: Colors.white,
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // صورة المتجر
                   _buildStoreImage(),
-                  const SizedBox(height: 8),
-
+                  const SizedBox(height: 12),
                   // اسم المتجر
                   _buildStoreName(),
-                  const SizedBox(height: 2),
-
+                  const SizedBox(height: 6),
                   // عدد الكوبونات
                   _buildCouponCount(),
                 ],

@@ -48,14 +48,21 @@ class _WebCouponCardState extends State<WebCouponCard> {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
+
+            // ✅ تظبيط الظل للكارد فقط
             boxShadow: [
               BoxShadow(
                 color: isHovered
-                    ? Constants.primaryColor.withValues(alpha: 0.3)
-                    : Colors.black.withValues(alpha: 0.08),
-                blurRadius: isHovered ? 20 : 10,
-                offset: Offset(0, isHovered ? 8 : 4),
-                spreadRadius: isHovered ? 2 : 0,
+                    ? Constants.primaryColor.withValues(alpha: 0.18)
+                    : Colors.black.withValues(alpha: 0.07),
+                blurRadius: isHovered ? 26 : 14,
+                offset: Offset(0, isHovered ? 14 : 8),
+                spreadRadius: isHovered ? 1 : 0,
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
@@ -75,43 +82,40 @@ class _WebCouponCardState extends State<WebCouponCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // ✅ الصورة
-                  _buildCouponImageFixedHeight(isFavorite),
+                  // ✅ الصورة: نفس الحجم (لا تكبر/تقص) + Padding من جميع الجهات
+                  _buildCouponImageFixedHeight(isFavorite, favoriteProvider),
 
                   // ✅ المحتوى (بدون Badge المتجر)
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          return SingleChildScrollView(
-                            physics: const BouncingScrollPhysics(),
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                minHeight: constraints.maxHeight,
-                              ),
-                              child: IntrinsicHeight(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    _buildTitle(maxLines: 2),
-                                    const SizedBox(height: 6),
-                                    _buildDescription(maxLines: 3),
-                                    const Spacer(),
-                                    if (widget.coupon.code.isNotEmpty) ...[
-                                      const SizedBox(height: 10),
-                                      _buildCouponCode(),
-                                      const SizedBox(height: 10),
-                                    ] else ...[
-                                      const SizedBox(height: 10),
-                                    ],
-                                    _buildActions(isFavorite, favoriteProvider),
-                                  ],
-                                ),
+                      padding: const EdgeInsets.all(8),
+                      child: Column(
+                        children: [
+                          // منطقة النصوص القابلة للتمرير
+                          Expanded(
+                            child: SingleChildScrollView(
+                              physics: const BouncingScrollPhysics(),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildTitle(maxLines: 2),
+                                  const SizedBox(height: 6),
+                                  _buildDescription(
+                                      maxLines:
+                                          null), // ✅ بدون حد لتمكين التمرير
+                                ],
                               ),
                             ),
-                          );
-                        },
+                          ),
+
+                          // العناصر المثبتة في الأسفل
+                          const SizedBox(height: 8),
+                          if (widget.coupon.code.isNotEmpty) ...[
+                            _buildCouponCode(),
+                            const SizedBox(height: 8),
+                          ],
+                          _buildActions(isFavorite, favoriteProvider),
+                        ],
                       ),
                     ),
                   ),
@@ -124,95 +128,94 @@ class _WebCouponCardState extends State<WebCouponCard> {
     );
   }
 
-  /// ✅ صورة بارتفاع ثابت
-  Widget _buildCouponImageFixedHeight(bool isFavorite) {
-    return Stack(
-      children: [
-        SizedBox(
-          height: 150,
-          width: double.infinity,
-          child: CachedNetworkImage(
-            imageUrl: widget.coupon.image,
-            fit: BoxFit.cover,
-            placeholder: (context, url) => Container(
-              color: Colors.grey[100],
-              child: Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation(Constants.primaryColor),
-                ),
-              ),
-            ),
-            errorWidget: (context, url, error) => Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Constants.primaryColor.withValues(alpha: 0.1),
-                    Constants.primaryColor.withValues(alpha: 0.05),
-                  ],
-                ),
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.local_offer_rounded,
-                  size: 64,
-                  color: Constants.primaryColor.withValues(alpha: 0.5),
-                ),
-              ),
-            ),
-          ),
-        ),
+  /// ✅ صورة بارتفاع ثابت (لا تكبر/لا تُقص) + بدون ظل + بدون لون + Padding من جميع الجهات
+  Widget _buildCouponImageFixedHeight(
+      bool isFavorite, FavoriteProvider favoriteProvider) {
+    const double outerPadding = 8; // ✅ Padding حول الصورة من كل الجهات
+    const double imgHeight = 150;
+    const double radius = 16;
 
-        // Gradient overlay
-        Positioned.fill(
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withValues(alpha: 0.10),
-                ],
+    return Padding(
+      padding: const EdgeInsets.all(outerPadding),
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(radius),
+            child: SizedBox(
+              height: imgHeight,
+              width: double.infinity,
+              child: CachedNetworkImage(
+                imageUrl: widget.coupon.image,
+
+                // ✅ لا تكبر ولا تقص
+                fit: BoxFit.contain,
+
+                // ✅ بدون لون خلف الصورة أثناء التحميل
+                placeholder: (context, url) => const Center(
+                  child: SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2.2),
+                  ),
+                ),
+
+                // ✅ بدون خلفية ملونة عند الخطأ
+                errorWidget: (context, url, error) => Center(
+                  child: Icon(
+                    Icons.local_offer_rounded,
+                    size: 58,
+                    color: Constants.primaryColor.withValues(alpha: 0.55),
+                  ),
+                ),
               ),
             ),
           ),
-        ),
 
-        // Favorite icon (عرض فقط)
-        Positioned(
-          top: 12,
-          right: 12,
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.95),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 8,
+          // Favorite icon (تنزيل/إضافة للمفضلة) ✅
+          Positioned(
+            top: 10,
+            right: 10,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  favoriteProvider.toggleFavorite(widget.coupon, context);
+                  HapticFeedback.mediumImpact();
+                },
+                borderRadius: BorderRadius.circular(30),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.95),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    isFavorite ? Icons.favorite : Icons.favorite_border,
+                    size: 20,
+                    color: isFavorite ? Colors.red : Colors.grey[600],
+                  ),
                 ),
-              ],
-            ),
-            child: Icon(
-              isFavorite ? Icons.favorite : Icons.favorite_border,
-              size: 20,
-              color: isFavorite ? Colors.red : Colors.grey[600],
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildTitle({int maxLines = 2}) {
     return Text(
-      widget.coupon.name,
+      widget.storeName ?? widget.coupon.name,
       style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w800,
+        fontSize: 15,
+        fontWeight: FontWeight.w700,
         color: Colors.black87,
         fontFamily: 'Tajawal',
         height: 1.2,
@@ -222,7 +225,7 @@ class _WebCouponCardState extends State<WebCouponCard> {
     );
   }
 
-  Widget _buildDescription({int maxLines = 3}) {
+  Widget _buildDescription({int? maxLines = 3}) {
     return Text(
       widget.coupon.description,
       style: TextStyle(
@@ -232,68 +235,71 @@ class _WebCouponCardState extends State<WebCouponCard> {
         fontFamily: 'Tajawal',
       ),
       maxLines: maxLines,
-      overflow: TextOverflow.ellipsis,
+      overflow: maxLines != null ? TextOverflow.ellipsis : null,
     );
   }
 
   Widget _buildCouponCode() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Constants.primaryColor.withValues(alpha: 0.1),
-            Constants.primaryColor.withValues(alpha: 0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Constants.primaryColor.withValues(alpha: 0.3),
-          width: 1.5,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.confirmation_number_rounded,
-            size: 18,
-            color: Constants.primaryColor,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Constants.primaryColor.withValues(alpha: 0.1),
+              Constants.primaryColor.withValues(alpha: 0.05),
+            ],
           ),
-          const SizedBox(width: 8),
-          Text(
-            'كود الخصم',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
-              fontFamily: 'Tajawal',
-            ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Constants.primaryColor.withValues(alpha: 0.3),
+            width: 1.5,
           ),
-          const Spacer(),
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Constants.primaryColor,
-                borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Text(
+              'كود الخصم',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[600],
+                fontFamily: 'Tajawal',
               ),
-              child: Text(
-                widget.coupon.code,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                  fontFamily: 'Courier',
-                  letterSpacing: 1.2,
+            ),
+
+            const SizedBox(width: 12), // ✅ تقليل المسافة بين النص والبادج
+
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 8, vertical: 6), // ✅ أقل
+                decoration: BoxDecoration(
+                  color: Constants.primaryColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    child: Text(
+                      widget.coupon.code,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.visible, // ✅ بدون نقاط
+                      style: const TextStyle(
+                        fontSize: 13, // ✅ أصغر شوي عشان يظهر أكثر
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        fontFamily: 'Courier',
+                        letterSpacing: 1.0, // ✅ تقليل تباعد الحروف
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ));
   }
 
   Widget _buildActions(bool isFavorite, FavoriteProvider favoriteProvider) {

@@ -167,28 +167,7 @@ class _WebBannerCarouselState extends State<WebBannerCarousel> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (item.name.isNotEmpty)
-                        Text(
-                          item.name,
-                          style: TextStyle(
-                            fontSize:
-                                ResponsiveLayout.isDesktop(context) ? 42 : 28,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            fontFamily: 'Tajawal',
-                            height: 1.1,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withValues(alpha: 0.5),
-                                blurRadius: 20,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      const SizedBox(height: 16),
+                      if (item.name.isNotEmpty) const SizedBox(height: 16),
                       // زر الإجراء (Call to Action)
                       if (item.web.isNotEmpty)
                         Container(
@@ -197,14 +176,6 @@ class _WebBannerCarouselState extends State<WebBannerCarousel> {
                           decoration: BoxDecoration(
                             color: Constants.primaryColor,
                             borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Constants.primaryColor
-                                    .withValues(alpha: 0.4),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
