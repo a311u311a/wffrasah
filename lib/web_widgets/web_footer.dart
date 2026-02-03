@@ -148,7 +148,7 @@ class WebFooter extends StatelessWidget {
     required String url,
   }) {
     final colorHex =
-        Constants.primaryColor.value.toRadixString(16).substring(2);
+        Constants.primaryColor.toARGB32().toRadixString(16).substring(2);
 
     Widget iconWidget;
     if (svgPathOrIcon == 'x') {

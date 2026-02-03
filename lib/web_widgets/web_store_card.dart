@@ -35,7 +35,8 @@ class _WebStoreCardState extends State<WebStoreCard> {
           padding: EdgeInsets.zero,
           margin:
               EdgeInsets.all(isHovered ? 0 : 4), // تعويض الحركة ليبقى في النطاق
-          transform: Matrix4.identity()..translate(0.0, isHovered ? -5.0 : 0.0),
+          transform: Matrix4.identity()
+            ..translateByDouble(0.0, isHovered ? -5.0 : 0.0, 0.0, 1.0),
           child: Card(
             elevation: isHovered ? 12 : 3,
             shadowColor: Constants.primaryColor.withValues(alpha: 0.2),

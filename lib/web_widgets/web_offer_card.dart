@@ -51,7 +51,7 @@ class _WebOfferCardState extends State<WebOfferCard> {
                 curve: Curves.easeOutCubic,
                 margin: EdgeInsets.all(isHovered ? 2 : 6),
                 transform: Matrix4.identity()
-                  ..translate(0.0, isHovered ? -4.0 : 0.0),
+                  ..translateByDouble(0.0, isHovered ? -4.0 : 0.0, 0.0, 1.0),
                 child: Card(
                   elevation: isHovered ? 12 : 3,
                   shape: RoundedRectangleBorder(

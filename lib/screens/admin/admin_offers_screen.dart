@@ -956,7 +956,7 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                                           .from('images')
                                           .getPublicUrl(fileName);
                                     } catch (e) {
-                                      if (mounted) {
+                                      if (context.mounted) {
                                         showSnackBar(
                                             context, 'فشل رفع الصورة: $e',
                                             isError: true);
@@ -999,7 +999,7 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                                       await _supabase
                                           .from('offers')
                                           .insert(offerData);
-                                      if (mounted) {
+                                      if (context.mounted) {
                                         Navigator.pop(context);
                                         showSnackBar(
                                             context, 'تمت إضافة العرض بنجاح');
@@ -1009,14 +1009,14 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                                           .from('offers')
                                           .update(offerData)
                                           .eq('id', widget.offer!.id);
-                                      if (mounted) {
+                                      if (context.mounted) {
                                         Navigator.pop(context);
                                         showSnackBar(
                                             context, 'تم تعديل العرض بنجاح');
                                       }
                                     }
                                   } catch (e) {
-                                    if (mounted) {
+                                    if (context.mounted) {
                                       showSnackBar(context, 'خطأ في الحفظ: $e',
                                           isError: true);
                                     }
