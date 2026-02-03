@@ -136,27 +136,44 @@ class FavoriteProvider with ChangeNotifier {
     if (item is Coupon) {
       itemType = 'coupon';
       itemData = item.toJson();
+      debugPrint('✅ Adding Coupon to favorites: ${item.id}');
     } else if (item is Offer) {
       itemType = 'offer';
       itemData = item.toJson();
+      debugPrint('✅ Adding Offer to favorites: ${item.id}');
     } else {
-      debugPrint('Unknown item type');
+      debugPrint('❌ Unknown item type: ${item.runtimeType}');
       return;
     }
 
     final String itemId = (item as dynamic).id.toString();
 
-    // إدراج في قاعدة البيانات
-    await Supabase.instance.client.from('favorites').insert({
-      'user_id': userId,
-      'item_id': itemId,
-      'item_type': itemType,
-      'item_data': itemData,
-    });
-
-    // إضافة محلياً
+    // إضافة محلياً أولاً للتحديث الفوري
     _favoriteItems.add(item);
     notifyListeners();
+
+    try {
+      // إدراج في قاعدة البيانات
+      await Supabase.instance.client.from('favorites').insert({
+        'user_id': userId,
+        'item_id': itemId,
+        'item_type': itemType,
+        'item_data': itemData,
+      });
+      debugPrint('✅ Successfully saved to database: $itemId');
+    } catch (e) {
+      // إذا فشل الحفظ، إزالة من القائمة المحلية
+      debugPrint('❌ Database error, reverting local change: $e');
+      _favoriteItems.removeWhere((fav) {
+        try {
+          return (fav as dynamic).id.toString() == itemId;
+        } catch (_) {
+          return false;
+        }
+      });
+      notifyListeners();
+      rethrow; // إعادة رفع الخطأ ليتم التقاطه في toggleFavorite
+    }
   }
 
   /// إزالة عنصر من المفضلة في Supabase
