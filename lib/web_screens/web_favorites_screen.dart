@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../constants.dart';
 import '../models/coupon.dart';
+import '../models/offers.dart';
 import '../models/store.dart';
 import '../providers/favorites_provider.dart';
 import '../providers/locale_provider.dart';
@@ -9,6 +10,7 @@ import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
 import '../web_widgets/web_coupon_card.dart';
+import '../web_widgets/web_offer_card.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// صفحة المفضلة للويب
@@ -22,6 +24,7 @@ class WebFavoritesScreen extends StatefulWidget {
 class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
   final supabase = Supabase.instance.client;
   List<Coupon> favoriteCoupons = [];
+  List<Offer> favoriteOffers = [];
   Map<String, Store> storesMap = {};
   bool isLoading = true;
 
@@ -40,35 +43,39 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
     final langCode = localeProvider.locale.languageCode;
 
     try {
-      final favoriteIds = favoriteProvider.favoriteIds;
-
-      if (favoriteIds.isEmpty) {
-        setState(() {
-          favoriteCoupons = [];
-          isLoading = false;
-        });
-        return;
-      }
-
-      // Load stores
+      // Load stores for displaying store names
       final storesData = await supabase.from('stores').select();
       final loadedStores = (storesData as List)
           .map((store) => Store.fromSupabase(store, langCode))
           .toList();
-      storesMap = {for (var store in loadedStores) store.id: store};
 
-      // Load favorite coupons using inFilter
-      final couponsData = await supabase
-          .from('coupons')
-          .select()
-          .inFilter('id', favoriteIds.toList());
+      final tempMap = <String, Store>{};
+      for (var store in loadedStores) {
+        tempMap[store.id.toLowerCase().trim()] = store;
+        if (store.slug.isNotEmpty) {
+          tempMap[store.slug.toLowerCase().trim()] = store;
+        }
+      }
+      storesMap = tempMap;
 
-      final loadedCoupons = (couponsData as List)
-          .map((coupon) => Coupon.fromSupabase(coupon, langCode))
-          .toList();
+      // Get favorites from provider (contains both Coupons and Offers)
+      final allFavorites = favoriteProvider.favoriteItems;
+
+      // Separate coupons and offers
+      final coupons = <Coupon>[];
+      final offers = <Offer>[];
+
+      for (final item in allFavorites) {
+        if (item is Coupon) {
+          coupons.add(item);
+        } else if (item is Offer) {
+          offers.add(item);
+        }
+      }
 
       setState(() {
-        favoriteCoupons = loadedCoupons;
+        favoriteCoupons = coupons;
+        favoriteOffers = offers;
         isLoading = false;
       });
     } catch (e) {
@@ -100,6 +107,7 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
   }
 
   Widget _buildHeader() {
+    final totalItems = favoriteCoupons.length + favoriteOffers.length;
     return Container(
       padding: ResponsivePadding.page(context),
       decoration: BoxDecoration(
@@ -137,13 +145,25 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            'الكوبونات المحفوظة في قائمتك المفضلة',
+            'الكوبونات والعروض المحفوظة في قائمتك المفضلة',
             style: TextStyle(
               fontSize: 18,
               color: Colors.grey[700],
               fontFamily: 'Tajawal',
             ),
           ),
+          if (!isLoading && totalItems > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                'لديك $totalItems عنصر في المفضلة',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[500],
+                  fontFamily: 'Tajawal',
+                ),
+              ),
+            ),
           const SizedBox(height: 40),
         ],
       ),
@@ -160,7 +180,9 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
       );
     }
 
-    if (favoriteCoupons.isEmpty) {
+    final isEmpty = favoriteCoupons.isEmpty && favoriteOffers.isEmpty;
+
+    if (isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(60),
@@ -173,7 +195,7 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
               ),
               const SizedBox(height: 20),
               Text(
-                'لا توجد كوبونات في المفضلة',
+                'لا توجد عناصر في المفضلة',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
@@ -183,7 +205,7 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                'ابدأ بإضافة الكوبونات التي تعجبك إلى المفضلة',
+                'ابدأ بإضافة الكوبونات والعروض التي تعجبك إلى المفضلة',
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey[500],
@@ -195,7 +217,7 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
                 onPressed: () => Navigator.pushNamed(context, '/'),
                 icon: const Icon(Icons.explore_rounded),
                 label: const Text(
-                  'استكشف الكوبونات',
+                  'استكشف الكوبونات والعروض',
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontFamily: 'Tajawal',
@@ -224,36 +246,87 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'لديك ${favoriteCoupons.length} كوبون في المفضلة',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[700],
-              fontFamily: 'Tajawal',
+          // قسم العروض
+          if (favoriteOffers.isNotEmpty) ...[
+            Row(
+              children: [
+                Icon(Icons.local_offer,
+                    color: Constants.primaryColor, size: 24),
+                const SizedBox(width: 8),
+                Text(
+                  'العروض المفضلة (${favoriteOffers.length})',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Constants.primaryColor,
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 20),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: ResponsiveGrid.columns(context, max: 4),
-              crossAxisSpacing: ResponsiveGrid.spacing(context),
-              mainAxisSpacing: ResponsiveGrid.spacing(context),
-              childAspectRatio: 0.75,
+            const SizedBox(height: 16),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: ResponsiveGrid.columns(context, max: 4),
+                crossAxisSpacing: ResponsiveGrid.spacing(context),
+                mainAxisSpacing: ResponsiveGrid.spacing(context),
+                childAspectRatio: 0.8,
+              ),
+              itemCount: favoriteOffers.length,
+              itemBuilder: (context, index) {
+                final offer = favoriteOffers[index];
+                final store = storesMap[offer.storeId.toLowerCase().trim()];
+                return WebOfferCard(
+                  offer: offer,
+                  storeName: store?.name,
+                  storeImage: store?.image,
+                );
+              },
             ),
-            itemCount: favoriteCoupons.length,
-            itemBuilder: (context, index) {
-              final coupon = favoriteCoupons[index];
-              final store = storesMap[coupon.storeId];
+            const SizedBox(height: 40),
+          ],
 
-              return WebCouponCard(
-                coupon: coupon,
-                storeName: store?.name,
-              );
-            },
-          ),
+          // قسم الكوبونات
+          if (favoriteCoupons.isNotEmpty) ...[
+            Row(
+              children: [
+                Icon(Icons.confirmation_number,
+                    color: Constants.primaryColor, size: 24),
+                const SizedBox(width: 8),
+                Text(
+                  'الكوبونات المفضلة (${favoriteCoupons.length})',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Constants.primaryColor,
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: ResponsiveGrid.columns(context, max: 4),
+                crossAxisSpacing: ResponsiveGrid.spacing(context),
+                mainAxisSpacing: ResponsiveGrid.spacing(context),
+                childAspectRatio: 0.75,
+              ),
+              itemCount: favoriteCoupons.length,
+              itemBuilder: (context, index) {
+                final coupon = favoriteCoupons[index];
+                final store = storesMap[coupon.storeId.toLowerCase().trim()];
+                return WebCouponCard(
+                  coupon: coupon,
+                  storeName: store?.name,
+                );
+              },
+            ),
+          ],
         ],
       ),
     );
