@@ -1,14 +1,16 @@
 import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../constants.dart';
 import '../screens/login_signup/widgets/snackbar.dart';
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
 
-/// صفحة إدارة المتاجر على الويب
+/// صفحة إدارة المتاجر على الويب (UI مُعاد تصميمه - نفس الخصائص)
 class WebAdminStoresScreen extends StatefulWidget {
   final bool isEmbedded;
   const WebAdminStoresScreen({super.key, this.isEmbedded = false});
@@ -18,7 +20,11 @@ class WebAdminStoresScreen extends StatefulWidget {
 }
 
 class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
+  static const String _font = 'Tajawal';
+
   final SupabaseClient _sb = Supabase.instance.client;
+
+  // Form
   final _storeNameArCtrl = TextEditingController();
   final _storeNameEnCtrl = TextEditingController();
   final _storeDescArCtrl = TextEditingController();
@@ -30,7 +36,13 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
   XFile? _pickedStoreImageFile;
   Uint8List? _pickedImageBytes;
   bool _isSaving = false;
+
+  // Picker
   final ImagePicker _picker = ImagePicker();
+
+  // UI state
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _search = '';
 
   @override
   void dispose() {
@@ -38,6 +50,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
     _storeNameEnCtrl.dispose();
     _storeDescArCtrl.dispose();
     _storeDescEnCtrl.dispose();
+    _searchCtrl.dispose();
     super.dispose();
   }
 
@@ -72,9 +85,8 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
           );
       return _sb.storage.from('images').getPublicUrl(path);
     } catch (e) {
-      if (mounted) {
+      if (mounted)
         showSnackBar(context, 'خطأ في رفع الصورة: $e', isError: true);
-      }
       return null;
     }
   }
@@ -99,71 +111,86 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
 
     await showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setStateDialog) => AlertDialog(
           backgroundColor: Colors.white,
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Text(
-            _editingId == null ? 'إضافة متجر جديد' : 'تعديل المتجر',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Constants.primaryColor,
-            ),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+          contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+          actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 18),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Constants.primaryColor.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  _editingId == null
+                      ? Icons.add_business_rounded
+                      : Icons.edit_rounded,
+                  color: Constants.primaryColor,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  _editingId == null ? 'إضافة متجر جديد' : 'تعديل المتجر',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.grey[900],
+                    fontFamily: _font,
+                  ),
+                ),
+              ),
+            ],
           ),
           content: SizedBox(
-            width: 600,
+            width: 650,
             child: SingleChildScrollView(
               child: Form(
                 key: _storeFormKey,
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
+                    const SizedBox(height: 10),
+
                     // صورة المتجر
-                    Center(
-                      child: GestureDetector(
-                        onTap: () async {
-                          final XFile? xfile = await _picker.pickImage(
-                            source: ImageSource.gallery,
-                            maxWidth: 1200,
-                            imageQuality: 85,
-                          );
-                          if (xfile != null) {
-                            final bytes = await xfile.readAsBytes();
-                            setStateDialog(() {
-                              _pickedStoreImageFile = xfile;
-                              _pickedImageBytes = bytes;
-                            });
-                          }
-                        },
-                        child: Container(
-                          height: 100,
-                          width: 100,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey[300]!),
-                            image: _getImageProvider(),
-                          ),
-                          child: _getImageChild(),
-                        ),
+                    _imagePickerCard(setStateDialog),
+
+                    const SizedBox(height: 16),
+
+                    // حقول
+                    _twoColumns(
+                      left: _inputField(
+                        _storeNameArCtrl,
+                        'اسم المتجر (عربي)',
+                        Icons.storefront_rounded,
+                      ),
+                      right: _inputField(
+                        _storeNameEnCtrl,
+                        'Store Name (English)',
+                        Icons.storefront_outlined,
                       ),
                     ),
-                    const SizedBox(height: 25),
-                    _inputField(_storeNameArCtrl, 'اسم المتجر (بالعربي)',
-                        Icons.storefront_rounded),
-                    _inputField(_storeNameEnCtrl, 'Store Name (English)',
-                        Icons.storefront_outlined),
-                    _inputField(_storeDescArCtrl, 'وصف المتجر (بالعربي)',
-                        Icons.description,
-                        maxLines: 2),
-                    _inputField(
-                      _storeDescEnCtrl,
-                      'Store Description (English)',
-                      Icons.description_outlined,
-                      maxLines: 2,
+                    _twoColumns(
+                      left: _inputField(
+                        _storeDescArCtrl,
+                        'وصف المتجر (عربي)',
+                        Icons.description_rounded,
+                        maxLines: 3,
+                      ),
+                      right: _inputField(
+                        _storeDescEnCtrl,
+                        'Store Description (English)',
+                        Icons.description_outlined,
+                        maxLines: 3,
+                      ),
                     ),
+                    const SizedBox(height: 6),
                   ],
                 ),
               ),
@@ -171,12 +198,19 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
+              onPressed: _isSaving ? null : () => Navigator.pop(context),
+              child: Text(
+                'إلغاء',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontFamily: _font,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ),
             SizedBox(
-              height: 45,
-              child: ElevatedButton(
+              height: 44,
+              child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Constants.primaryColor,
                   shape: RoundedRectangleBorder(
@@ -184,23 +218,26 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
                   elevation: 0,
                 ),
                 onPressed: _isSaving ? null : () => _saveStore(setStateDialog),
-                child: _isSaving
+                icon: _isSaving
                     ? const SizedBox(
-                        width: 20,
-                        height: 20,
+                        width: 18,
+                        height: 18,
                         child: CircularProgressIndicator(
                           color: Colors.white,
                           strokeWidth: 2,
                         ),
                       )
-                    : Text(
-                        _editingId == null ? 'إضافة المتجر' : 'حفظ التعديلات',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                    : const Icon(Icons.check_circle_rounded,
+                        color: Colors.white),
+                label: Text(
+                  _editingId == null ? 'إضافة' : 'حفظ',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: _font,
+                  ),
+                ),
               ),
             ),
           ],
@@ -209,39 +246,119 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
     );
   }
 
-  DecorationImage? _getImageProvider() {
+  Widget _imagePickerCard(StateSetter setStateDialog) {
+    DecorationImage? imageProvider;
     if (_pickedImageBytes != null) {
-      return DecorationImage(
-        image: MemoryImage(_pickedImageBytes!),
-        fit: BoxFit.contain,
-      );
+      imageProvider = DecorationImage(
+          image: MemoryImage(_pickedImageBytes!), fit: BoxFit.contain);
     } else if (_editingImageUrl != null && _editingImageUrl!.isNotEmpty) {
-      return DecorationImage(
-        image: NetworkImage(_editingImageUrl!),
-        fit: BoxFit.contain,
-      );
+      imageProvider = DecorationImage(
+          image: NetworkImage(_editingImageUrl!), fit: BoxFit.contain);
     }
-    return null;
+
+    return InkWell(
+      onTap: () async {
+        final XFile? xfile = await _picker.pickImage(
+          source: ImageSource.gallery,
+          maxWidth: 1200,
+          imageQuality: 85,
+        );
+        if (xfile != null) {
+          final bytes = await xfile.readAsBytes();
+          setStateDialog(() {
+            _pickedStoreImageFile = xfile;
+            _pickedImageBytes = bytes;
+          });
+        }
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 74,
+              height: 74,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey[200]!),
+                image: imageProvider,
+              ),
+              child: imageProvider != null
+                  ? null
+                  : Icon(Icons.add_a_photo_rounded,
+                      color: Constants.primaryColor),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'شعار المتجر',
+                    style: TextStyle(
+                      fontFamily: _font,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.grey[900],
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'اضغط لاختيار صورة (يفضل PNG أو JPG)',
+                    style: TextStyle(
+                      fontFamily: _font,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.upload_rounded, color: Colors.grey[500]),
+          ],
+        ),
+      ),
+    );
   }
 
-  Widget? _getImageChild() {
-    if (_pickedImageBytes != null) return null;
-    if (_editingImageUrl != null && _editingImageUrl!.isNotEmpty) return null;
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+  Widget _twoColumns({required Widget left, required Widget right}) {
+    final isDesktop = ResponsiveLayout.isDesktop(context);
+    if (!isDesktop) {
+      return Column(
+        children: [
+          left,
+          const SizedBox(height: 10),
+          right,
+          const SizedBox(height: 10),
+        ],
+      );
+    }
+    return Row(
       children: [
-        Icon(Icons.add_a_photo, color: Constants.primaryColor),
-        const SizedBox(height: 8),
-        const Text('شعار المتجر',
-            style: TextStyle(fontSize: 10, color: Colors.grey)),
+        Expanded(child: left),
+        const SizedBox(width: 12),
+        Expanded(child: right),
       ],
     );
   }
 
-  Widget _inputField(TextEditingController ctrl, String hint, IconData icon,
-      {int? maxLines = 1, TextInputType? keyboardType}) {
+  Widget _inputField(
+    TextEditingController ctrl,
+    String hint,
+    IconData icon, {
+    int? maxLines = 1,
+    TextInputType? keyboardType,
+  }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 12),
       child: TextFormField(
         controller: ctrl,
         maxLines: maxLines,
@@ -249,19 +366,27 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: Constants.primaryColor),
           labelText: hint,
-          labelStyle: const TextStyle(
-              fontSize: 14,
-              color: Colors.black54,
-              fontWeight: FontWeight.normal),
+          labelStyle: TextStyle(
+            fontFamily: _font,
+            fontWeight: FontWeight.w700,
+            color: Colors.grey[700],
+          ),
           filled: true,
-          fillColor: Colors.grey[50],
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
+          fillColor: Colors.white,
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: Colors.grey[200]!),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: Constants.primaryColor, width: 2),
           ),
         ),
-        style: const TextStyle(
-            fontSize: 14, color: Colors.black54, fontWeight: FontWeight.normal),
+        style: TextStyle(
+          fontFamily: _font,
+          fontWeight: FontWeight.w800,
+          color: Colors.grey[900],
+        ),
         validator: (v) =>
             (v == null || v.trim().isEmpty) ? 'هذا الحقل مطلوب' : null,
       ),
@@ -327,16 +452,18 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('حذف المتجر؟'),
+        title: const Text('حذف المتجر؟', style: TextStyle(fontFamily: _font)),
         content: const Text(
-            'سيتم حذف المتجر وكل الكوبونات المرتبطة به. هل أنت متأكد؟'),
+            'سيتم حذف المتجر وكل الكوبونات المرتبطة به. هل أنت متأكد؟',
+            style: TextStyle(fontFamily: _font)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
               child: const Text('إلغاء')),
           TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('حذف', style: TextStyle(color: Colors.red))),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('حذف', style: TextStyle(color: Colors.red)),
+          ),
         ],
       ),
     );
@@ -351,25 +478,54 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
     }
   }
 
+  /// ✅ جلب عدد الكوبونات مرة واحدة لكل عرض (بدل FutureBuilder لكل صف)
+  Future<Map<String, int>> _fetchCouponsCount(
+      List<Map<String, dynamic>> stores) async {
+    final Map<String, int> counts = {};
+    if (stores.isEmpty) return counts;
+
+    // نجمع slugs
+    final slugs = stores
+        .map((s) => (s['slug'] ?? '').toString().trim())
+        .where((s) => s.isNotEmpty)
+        .toSet()
+        .toList();
+
+    if (slugs.isEmpty) return counts;
+
+    // نجيب store_id لكل كوبون (مرة واحدة)
+    final data = await _sb
+        .from('coupons')
+        .select('store_id')
+        .inFilter('store_id', slugs);
+
+    for (final row in (data as List)) {
+      final sid = (row['store_id'] ?? '').toString();
+      if (sid.isEmpty) continue;
+      counts[sid] = (counts[sid] ?? 0) + 1;
+    }
+    return counts;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.isEmbedded) {
       return SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: _buildContent(),
+          child: _buildBody(),
         ),
       );
     }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: const WebNavigationBar(),
       body: SingleChildScrollView(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildHeader(),
-            _buildContent(),
+            _buildBody(),
             const WebFooter(),
           ],
         ),
@@ -381,96 +537,102 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
     return Container(
       padding: ResponsivePadding.page(context),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Constants.primaryColor.withValues(alpha: 0.1),
-            Colors.white,
-          ],
-        ),
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 40),
+          const SizedBox(height: 26),
           Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back, size: 32),
+                icon: const Icon(Icons.arrow_back, size: 28),
                 color: Constants.primaryColor,
                 onPressed: () => Navigator.pop(context),
               ),
-              const SizedBox(width: 16),
-              Icon(
-                Icons.storefront_rounded,
-                color: Constants.primaryColor,
-                size: ResponsiveLayout.isDesktop(context) ? 48 : 36,
-              ),
-              const SizedBox(width: 16),
-              Text(
-                'إدارة المتاجر',
-                style: TextStyle(
-                  fontSize: ResponsiveLayout.isDesktop(context) ? 42 : 32,
-                  fontWeight: FontWeight.w900,
+              const SizedBox(width: 10),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Constants.primaryColor.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  Icons.storefront_rounded,
                   color: Constants.primaryColor,
-                  fontFamily: 'Tajawal',
                 ),
               ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'إدارة المتاجر',
+                  style: TextStyle(
+                    fontSize: ResponsiveLayout.isDesktop(context) ? 28 : 22,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: _font,
+                    color: Colors.grey[900],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              _addButton(),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Text(
-            'إضافة، تعديل، أو حذف المتاجر',
+            'إضافة، تعديل، أو حذف المتاجر بسهولة',
             style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey[700],
-              fontFamily: 'Tajawal',
+              fontSize: 13,
+              fontFamily: _font,
+              fontWeight: FontWeight.w700,
+              color: Colors.grey[600],
             ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  Widget _buildContent() {
+  Widget _addButton() {
+    return SizedBox(
+      height: 44,
+      child: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Constants.primaryColor,
+          elevation: 0,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+        ),
+        onPressed: () => _openAddOrEditDialog(),
+        icon: const Icon(Icons.add_rounded, color: Colors.white),
+        label: const Text(
+          'إضافة متجر',
+          style: TextStyle(
+            color: Colors.white,
+            fontFamily: _font,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
     return Container(
       padding: ResponsivePadding.page(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // زر إضافة متجر جديد
-          SizedBox(
-            width: double.infinity,
-            height: 60,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Constants.primaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 2,
-              ),
-              onPressed: () => _openAddOrEditDialog(),
-              icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-              label: const Text(
-                'إضافة متجر جديد',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  fontFamily: 'Tajawal',
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 30),
-
-          // جدول المتاجر
+          _searchBar(),
+          const SizedBox(height: 18),
           StreamBuilder<List<Map<String, dynamic>>>(
-            stream: _sb.from('stores').stream(
-                primaryKey: ['id']).order('created_at', ascending: false),
+            stream: _sb.from('stores').stream(primaryKey: ['id']).order(
+              'created_at',
+              ascending: false,
+            ),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
                 return const Center(
@@ -480,24 +642,34 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
                   ),
                 );
               }
-              if (snapshot.data!.isEmpty) {
+
+              final all = snapshot.data!;
+              if (all.isEmpty) {
                 return Center(
                   child: Padding(
                     padding: const EdgeInsets.all(40),
                     child: Text(
                       'لا توجد متاجر حالياً',
                       style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 18,
-                        fontFamily: 'Tajawal',
+                        color: Colors.grey[500],
+                        fontSize: 16,
+                        fontFamily: _font,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
                 );
               }
 
-              final items = snapshot.data!;
-              return _buildStoresTable(items);
+              final filtered = _applySearch(all);
+
+              return FutureBuilder<Map<String, int>>(
+                future: _fetchCouponsCount(filtered),
+                builder: (context, countSnap) {
+                  final counts = countSnap.data ?? {};
+                  return _buildStoresGrid(filtered, counts);
+                },
+              );
             },
           ),
           const SizedBox(height: 40),
@@ -506,189 +678,270 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
     );
   }
 
-  Widget _buildStoresTable(List<Map<String, dynamic>> items) {
+  List<Map<String, dynamic>> _applySearch(List<Map<String, dynamic>> items) {
+    final q = _search.trim().toLowerCase();
+    if (q.isEmpty) return items;
+
+    return items.where((s) {
+      final ar = (s['name_ar'] ?? s['name'] ?? '').toString().toLowerCase();
+      final en = (s['name_en'] ?? s['name'] ?? '').toString().toLowerCase();
+      final slug = (s['slug'] ?? '').toString().toLowerCase();
+      return ar.contains(q) || en.contains(q) || slug.contains(q);
+    }).toList();
+  }
+
+  Widget _searchBar() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.search_rounded, color: Colors.grey[600]),
+          const SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              controller: _searchCtrl,
+              onChanged: (v) => setState(() => _search = v),
+              decoration: InputDecoration(
+                hintText: 'ابحث باسم المتجر أو slug…',
+                hintStyle: TextStyle(
+                  fontFamily: _font,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey[500],
+                ),
+                border: InputBorder.none,
+              ),
+              style: TextStyle(
+                fontFamily: _font,
+                fontWeight: FontWeight.w800,
+                color: Colors.grey[900],
+              ),
+            ),
+          ),
+          if (_search.trim().isNotEmpty)
+            IconButton(
+              tooltip: 'مسح',
+              onPressed: () {
+                _searchCtrl.clear();
+                setState(() => _search = '');
+              },
+              icon: Icon(Icons.clear_rounded, color: Colors.grey[600]),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStoresGrid(
+      List<Map<String, dynamic>> items, Map<String, int> counts) {
+    final isDesktop = ResponsiveLayout.isDesktop(context);
+    final crossAxisCount = isDesktop ? 3 : 1;
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: items.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: 14,
+        mainAxisSpacing: 14,
+        mainAxisExtent: 165,
+      ),
+      itemBuilder: (context, i) {
+        final store = items[i];
+        final id = (store['id'] ?? '').toString();
+        final slug = (store['slug'] ?? '').toString();
+        final name = (store['name_ar'] ?? store['name'] ?? '').toString();
+        final desc =
+            (store['description_ar'] ?? store['description'] ?? '').toString();
+        final image = (store['image'] ?? '').toString();
+        final couponsCount = counts[slug] ?? 0;
+
+        return _storeCard(
+          id: id,
+          store: store,
+          name: name,
+          desc: desc,
+          image: image,
+          couponsCount: couponsCount,
+          slug: slug,
+        );
+      },
+    );
+  }
+
+  Widget _storeCard({
+    required String id,
+    required Map<String, dynamic> store,
+    required String name,
+    required String desc,
+    required String image,
+    required int couponsCount,
+    required String slug,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          headingRowColor: WidgetStateProperty.all(
-            Constants.primaryColor.withValues(alpha: 0.1),
-          ),
-          columns: const [
-            DataColumn(
-              label: Text(
-                'الصورة',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Tajawal',
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                // Logo
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.grey[200]!),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: image.isNotEmpty
+                        ? Image.network(
+                            image,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => Icon(
+                                Icons.broken_image,
+                                color: Colors.grey[500]),
+                          )
+                        : Icon(Icons.storefront_rounded,
+                            color: Constants.primaryColor),
+                  ),
                 ),
-              ),
-            ),
-            DataColumn(
-              label: Text(
-                'الاسم',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Tajawal',
-                ),
-              ),
-            ),
-            DataColumn(
-              label: Text(
-                'الوصف',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Tajawal',
-                ),
-              ),
-            ),
-            DataColumn(
-              label: Text(
-                'عدد الكوبونات',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Tajawal',
-                ),
-              ),
-            ),
-            DataColumn(
-              label: Text(
-                'الإجراءات',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Tajawal',
-                ),
-              ),
-            ),
-          ],
-          rows: items.map((store) {
-            final id = (store['id'] ?? '').toString();
-            final slug = (store['slug'] ?? '').toString();
-            final name = store['name_ar'] ?? store['name'] ?? '';
-            final description =
-                store['description_ar'] ?? store['description'] ?? '';
-            final image = store['image'];
+                const SizedBox(width: 12),
 
-            return DataRow(
-              cells: [
-                // الصورة
-                DataCell(
-                  Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey[100]!),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: (image != null && image.toString().isNotEmpty)
-                          ? Image.network(
-                              image,
-                              fit: BoxFit.contain,
-                              errorBuilder: (_, __, ___) =>
-                                  const Icon(Icons.broken_image),
-                            )
-                          : Icon(Icons.storefront_rounded,
-                              color: Constants.primaryColor),
-                    ),
-                  ),
-                ),
-                // الاسم
-                DataCell(
-                  SizedBox(
-                    width: 200,
-                    child: Text(
-                      name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'Tajawal',
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-                // الوصف
-                DataCell(
-                  SizedBox(
-                    width: 300,
-                    child: Text(
-                      description,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontFamily: 'Tajawal',
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-                // عدد الكوبونات
-                DataCell(
-                  FutureBuilder<List<Map<String, dynamic>>>(
-                    future:
-                        _sb.from('coupons').select('id').eq('store_id', slug),
-                    builder: (context, snapshot) {
-                      final count = snapshot.data?.length ?? 0;
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Constants.primaryColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '$count',
-                          style: TextStyle(
-                            color: Constants.primaryColor,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Tajawal',
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                // الإجراءات
-                DataCell(
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
+                // Name + slug
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      IconButton(
-                        icon: Icon(Icons.edit_note_rounded,
-                            color: Colors.blueGrey[400]),
-                        onPressed: () => _openAddOrEditDialog(store: store),
-                        tooltip: 'تعديل',
+                      Text(
+                        name,
+                        style: const TextStyle(
+                          fontFamily: _font,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_sweep_outlined,
-                            color: Colors.redAccent),
-                        onPressed: () => _deleteStore(id),
-                        tooltip: 'حذف',
+                      const SizedBox(height: 6),
+                      Text(
+                        slug.isEmpty ? 'بدون slug' : slug,
+                        style: TextStyle(
+                          fontFamily: _font,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
+
+                // Actions
+                PopupMenuButton<String>(
+                  tooltip: 'خيارات',
+                  onSelected: (v) {
+                    if (v == 'edit') _openAddOrEditDialog(store: store);
+                    if (v == 'delete') _deleteStore(id);
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(value: 'edit', child: Text('تعديل')),
+                    PopupMenuItem(value: 'delete', child: Text('حذف')),
+                  ],
+                ),
               ],
-            );
-          }).toList(),
+            ),
+            const SizedBox(height: 12),
+
+            // Description
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                desc.isEmpty ? 'بدون وصف' : desc,
+                style: TextStyle(
+                  fontFamily: _font,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey[600],
+                  fontSize: 12,
+                  height: 1.3,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+
+            const Spacer(),
+
+            // Footer: count badge + quick buttons
+            Row(
+              children: [
+                _countBadge(couponsCount),
+                const Spacer(),
+                IconButton(
+                  tooltip: 'تعديل',
+                  onPressed: () => _openAddOrEditDialog(store: store),
+                  icon: Icon(Icons.edit_note_rounded,
+                      color: Colors.blueGrey[500]),
+                ),
+                IconButton(
+                  tooltip: 'حذف',
+                  onPressed: () => _deleteStore(id),
+                  icon: const Icon(Icons.delete_sweep_outlined,
+                      color: Colors.redAccent),
+                ),
+              ],
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _countBadge(int count) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: Constants.primaryColor.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(999),
+        border:
+            Border.all(color: Constants.primaryColor.withValues(alpha: 0.18)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.confirmation_number_rounded,
+              size: 16, color: Constants.primaryColor),
+          const SizedBox(width: 8),
+          Text(
+            'الكوبونات: $count',
+            style: TextStyle(
+              color: Constants.primaryColor,
+              fontWeight: FontWeight.w900,
+              fontFamily: _font,
+              fontSize: 12,
+            ),
+          ),
+        ],
       ),
     );
   }
