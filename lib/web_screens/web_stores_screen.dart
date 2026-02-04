@@ -269,7 +269,7 @@ class _WebStoresScreenState extends State<WebStoresScreen> {
           crossAxisCount: ResponsiveGrid.columns(context, max: 6),
           crossAxisSpacing: ResponsiveGrid.spacing(context),
           mainAxisSpacing: ResponsiveGrid.spacing(context),
-          childAspectRatio: 0.85,
+          childAspectRatio: 0.75, // ✅ تقليل النسبة يعطي ارتفاع أكبر
         ),
         itemCount: filteredStores.length,
         itemBuilder: (context, index) {

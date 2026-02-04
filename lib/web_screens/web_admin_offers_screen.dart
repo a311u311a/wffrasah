@@ -662,10 +662,77 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
 
             const Divider(height: 18, thickness: 0.5),
 
-            // Footer: Buttons + Expiry
+            // Footer: Expiry + Buttons
             Row(
               children: [
-                // Buttons left
+                // Expiry Info (Left/Start)
+                if (offer.expiryDate != null)
+                  Builder(builder: (_) {
+                    final daysLeft =
+                        offer.expiryDate!.difference(DateTime.now()).inDays;
+                    final isExpired = daysLeft < 0;
+                    final isCritical = daysLeft <= 5;
+
+                    // ✅ التاريخ
+                    final dateStr =
+                        '${offer.expiryDate!.year}/${offer.expiryDate!.month.toString().padLeft(2, '0')}/${offer.expiryDate!.day.toString().padLeft(2, '0')}';
+
+                    // ✅ المدة المتبقية
+                    String remainingText;
+                    if (isExpired) {
+                      remainingText =
+                          '$dateStr • منتهي منذ ${daysLeft.abs()} يوم';
+                    } else if (daysLeft == 0) {
+                      remainingText = '$dateStr • ينتهي اليوم!';
+                    } else if (daysLeft == 1) {
+                      remainingText = '$dateStr • باقي يوم واحد';
+                    } else if (daysLeft <= 10) {
+                      remainingText = '$dateStr • باقي $daysLeft أيام';
+                    } else {
+                      remainingText = '$dateStr • باقي $daysLeft يوم';
+                    }
+
+                    // ✅ إذا بقي 5 أيام أو أقل: خلفية حمراء كاملة مع نص أبيض
+                    final bgColor = isCritical
+                        ? Colors.red
+                        : Constants.primaryColor.withValues(alpha: 0.10);
+                    final textColor =
+                        isCritical ? Colors.white : Constants.primaryColor;
+                    final borderColor = isCritical
+                        ? Colors.red
+                        : Constants.primaryColor.withValues(alpha: 0.18);
+
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: bgColor,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: borderColor),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.access_time_rounded,
+                              size: 12, color: textColor),
+                          const SizedBox(width: 6),
+                          Text(
+                            remainingText,
+                            style: TextStyle(
+                              fontFamily: _font,
+                              fontSize: 10,
+                              color: textColor,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+
+                const Spacer(),
+
+                // Buttons (Right/End)
                 Row(
                   children: [
                     InkWell(
@@ -689,38 +756,6 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                     ),
                   ],
                 ),
-
-                const Spacer(),
-
-                // Expiry Info (Right)
-                if (offer.expiryDate != null)
-                  Builder(builder: (_) {
-                    final daysLeft =
-                        offer.expiryDate!.difference(DateTime.now()).inDays;
-                    final isSoon = daysLeft <= 5;
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: isSoon ? Colors.red[50] : Colors.green[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: isSoon ? Colors.red[100]! : Colors.green[100]!,
-                        ),
-                      ),
-                      child: Text(
-                        daysLeft < 0
-                            ? 'منتهي منذ ${daysLeft.abs()} يوم'
-                            : 'باقي $daysLeft يوم',
-                        style: TextStyle(
-                          fontFamily: _font,
-                          fontSize: 10,
-                          color: isSoon ? Colors.red[700] : Colors.green[700],
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    );
-                  }),
               ],
             ),
           ],

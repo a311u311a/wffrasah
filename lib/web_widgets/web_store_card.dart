@@ -40,6 +40,7 @@ class _WebStoreCardState extends State<WebStoreCard> {
           child: Card(
             elevation: isHovered ? 12 : 3,
             shadowColor: Constants.primaryColor.withValues(alpha: 0.2),
+            clipBehavior: Clip.antiAlias, // ✅ يقص أي محتوى زائد
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -49,16 +50,19 @@ class _WebStoreCardState extends State<WebStoreCard> {
                 color: Colors.white,
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  const SizedBox(height: 10),
                   // صورة المتجر
                   _buildStoreImage(),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 6),
                   // اسم المتجر
                   _buildStoreName(),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   // عدد الكوبونات
                   _buildCouponCount(),
+                  const SizedBox(height: 10),
                 ],
               ),
             ),
@@ -70,8 +74,8 @@ class _WebStoreCardState extends State<WebStoreCard> {
 
   Widget _buildStoreImage() {
     return Container(
-      width: 80,
-      height: 80,
+      width: 60,
+      height: 60,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         boxShadow: [

@@ -962,7 +962,7 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
         crossAxisCount: crossAxisCount,
         crossAxisSpacing: 14,
         mainAxisSpacing: 14,
-        mainAxisExtent: 165,
+        mainAxisExtent: 205, // ✅ زيادة الارتفاع لاستيعاب الـ Divider
       ),
       itemBuilder: (context, i) {
         final coupon = items[i];
@@ -1048,13 +1048,13 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                 ),
                 const SizedBox(width: 12),
 
-                // Code + Store Name
+                // Store Name + Code
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        code,
+                        storeName,
                         style: const TextStyle(
                           fontFamily: _font,
                           fontWeight: FontWeight.w900,
@@ -1065,12 +1065,12 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        storeName,
+                        code,
                         style: TextStyle(
                           fontFamily: _font,
                           fontWeight: FontWeight.w700,
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: Constants.primaryColor,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1097,7 +1097,7 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
 
             // Description
             Align(
-              alignment: Alignment.centerLeft,
+              alignment: Alignment.centerRight, // ✅ يبدأ من اليمين للعربية
               child: Text(
                 description.isEmpty ? 'بدون وصف' : description,
                 style: TextStyle(
@@ -1113,6 +1113,8 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
             ),
 
             const Spacer(),
+
+            const Divider(height: 18, thickness: 0.5),
 
             // Footer: Expiry + quick actions
             Row(
@@ -1142,24 +1144,25 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
   Widget _expiryBadge(DateTime? date) {
     if (date == null) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: Colors.grey[100],
           borderRadius: BorderRadius.circular(999),
           border: Border.all(color: Colors.grey[300]!),
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.calendar_today_rounded,
-                size: 14, color: Colors.grey[600]),
-            const SizedBox(width: 8),
+                size: 12, color: Colors.grey[600]),
+            const SizedBox(width: 6),
             Text(
               'غير محدد',
               style: TextStyle(
                 color: Colors.grey[700],
                 fontWeight: FontWeight.w700,
                 fontFamily: _font,
-                fontSize: 12,
+                fontSize: 10,
               ),
             ),
           ],
@@ -1168,38 +1171,55 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
     }
 
     final daysLeft = date.difference(DateTime.now()).inDays;
-    final isAhmar = daysLeft <= 5; // أحمر
-    final color = isAhmar ? Colors.red : Constants.primaryColor;
-    final bgColor = isAhmar
-        ? Colors.red[50]!
+    final isExpired = daysLeft < 0;
+    final isCritical = daysLeft <= 5; // أحمر كامل
+
+    // ✅ إذا بقي 5 أيام أو أقل: خلفية حمراء كاملة مع نص أبيض
+    final bgColor = isCritical
+        ? Colors.red
         : Constants.primaryColor.withValues(alpha: 0.10);
-    final borderColor = isAhmar
-        ? Colors.red[100]!
+    final textColor = isCritical ? Colors.white : Constants.primaryColor;
+    final borderColor = isCritical
+        ? Colors.red
         : Constants.primaryColor.withValues(alpha: 0.18);
-    final dateStr = '${date.year}-${date.month}-${date.day}';
+
+    // ✅ التاريخ
+    final dateStr =
+        '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
+
+    // ✅ المدة المتبقية مع التاريخ
+    String remainingText;
+    if (isExpired) {
+      remainingText = '$dateStr • منتهي منذ ${daysLeft.abs()} يوم';
+    } else if (daysLeft == 0) {
+      remainingText = '$dateStr • ينتهي اليوم!';
+    } else if (daysLeft == 1) {
+      remainingText = '$dateStr • باقي يوم واحد';
+    } else if (daysLeft <= 10) {
+      remainingText = '$dateStr • باقي $daysLeft أيام';
+    } else {
+      remainingText = '$dateStr • باقي $daysLeft يوم';
+    }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: borderColor),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.calendar_today_rounded, size: 14, color: color),
-          const SizedBox(width: 8),
+          Icon(Icons.access_time_rounded, size: 12, color: textColor),
+          const SizedBox(width: 6),
           Text(
-            // ممكن نعرض "باقي X أيام" لو حابب، بس هو طلب اللون بس، فحنخلي التاريخ
-            // بس ممكن نضيف نص توضيحي لو منتهي
-            daysLeft < 0
-                ? 'منتهي ($dateStr)'
-                : (isAhmar ? 'باقي $daysLeft يوم ($dateStr)' : dateStr),
+            remainingText,
             style: TextStyle(
-              color: color,
+              color: textColor,
               fontWeight: FontWeight.w900,
               fontFamily: _font,
-              fontSize: 12,
+              fontSize: 10,
             ),
           ),
         ],

@@ -516,6 +516,39 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
     return counts;
   }
 
+  /// ✅ جلب عدد العروض لكل متجر
+  Future<Map<String, int>> _fetchOffersCount(
+      List<Map<String, dynamic>> stores) async {
+    final Map<String, int> counts = {};
+    if (stores.isEmpty) return counts;
+
+    final slugs = stores
+        .map((s) => (s['slug'] ?? '').toString().trim())
+        .where((s) => s.isNotEmpty)
+        .toSet()
+        .toList();
+
+    if (slugs.isEmpty) return counts;
+
+    final data =
+        await _sb.from('offers').select('store_id').inFilter('store_id', slugs);
+
+    for (final row in (data as List)) {
+      final sid = (row['store_id'] ?? '').toString();
+      if (sid.isEmpty) continue;
+      counts[sid] = (counts[sid] ?? 0) + 1;
+    }
+    return counts;
+  }
+
+  /// ✅ جلب عدد الكوبونات والعروض معاً
+  Future<Map<String, Map<String, int>>> _fetchAllCounts(
+      List<Map<String, dynamic>> stores) async {
+    final coupons = await _fetchCouponsCount(stores);
+    final offers = await _fetchOffersCount(stores);
+    return {'coupons': coupons, 'offers': offers};
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.isEmbedded) {
@@ -648,11 +681,13 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
 
               final filtered = _applySearch(all);
 
-              return FutureBuilder<Map<String, int>>(
-                future: _fetchCouponsCount(filtered),
+              return FutureBuilder<Map<String, Map<String, int>>>(
+                future: _fetchAllCounts(filtered),
                 builder: (context, countSnap) {
-                  final counts = countSnap.data ?? {};
-                  return _buildStoresGrid(filtered, counts);
+                  final allCounts = countSnap.data ?? {};
+                  final couponCounts = allCounts['coupons'] ?? {};
+                  final offerCounts = allCounts['offers'] ?? {};
+                  return _buildStoresGrid(filtered, couponCounts, offerCounts);
                 },
               );
             },
@@ -789,8 +824,8 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
     );
   }
 
-  Widget _buildStoresGrid(
-      List<Map<String, dynamic>> items, Map<String, int> counts) {
+  Widget _buildStoresGrid(List<Map<String, dynamic>> items,
+      Map<String, int> couponCounts, Map<String, int> offerCounts) {
     final isDesktop = ResponsiveLayout.isDesktop(context);
     final crossAxisCount = isDesktop ? 3 : 1;
 
@@ -802,7 +837,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
         crossAxisCount: crossAxisCount,
         crossAxisSpacing: 14,
         mainAxisSpacing: 14,
-        mainAxisExtent: 165,
+        mainAxisExtent: 205, // ✅ زيادة الارتفاع لاستيعاب الـ Divider
       ),
       itemBuilder: (context, i) {
         final store = items[i];
@@ -812,7 +847,8 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
         final desc =
             (store['description_ar'] ?? store['description'] ?? '').toString();
         final image = (store['image'] ?? '').toString();
-        final couponsCount = counts[slug] ?? 0;
+        final couponsCount = couponCounts[slug] ?? 0;
+        final offersCount = offerCounts[slug] ?? 0;
 
         return _storeCard(
           id: id,
@@ -821,6 +857,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
           desc: desc,
           image: image,
           couponsCount: couponsCount,
+          offersCount: offersCount,
           slug: slug,
         );
       },
@@ -834,6 +871,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
     required String desc,
     required String image,
     required int couponsCount,
+    required int offersCount,
     required String slug,
   }) {
     return Container(
@@ -930,7 +968,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
 
             // Description
             Align(
-              alignment: Alignment.centerLeft,
+              alignment: Alignment.centerRight, // ✅ يبدأ من اليمين للعربية
               child: Text(
                 desc.isEmpty ? 'بدون وصف' : desc,
                 style: TextStyle(
@@ -947,10 +985,15 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
 
             const Spacer(),
 
-            // Footer: count badge + quick buttons
+            const Divider(height: 18, thickness: 0.5),
+
+            // Footer: count badges + buttons
             Row(
               children: [
-                _countBadge(couponsCount),
+                _countBadge(
+                    couponsCount, 'كوبون', Icons.confirmation_number_rounded),
+                const SizedBox(width: 8),
+                _countBadge(offersCount, 'عرض', Icons.local_offer_rounded),
                 const Spacer(),
                 IconButton(
                   tooltip: 'تعديل',
@@ -972,9 +1015,9 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
     );
   }
 
-  Widget _countBadge(int count) {
+  Widget _countBadge(int count, String label, IconData icon) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
       decoration: BoxDecoration(
         color: Constants.primaryColor.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(999),
@@ -982,17 +1025,17 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
             Border.all(color: Constants.primaryColor.withValues(alpha: 0.18)),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.confirmation_number_rounded,
-              size: 16, color: Constants.primaryColor),
-          const SizedBox(width: 8),
+          Icon(icon, size: 14, color: Constants.primaryColor),
+          const SizedBox(width: 4),
           Text(
-            'الكوبونات: $count',
+            '$count $label',
             style: TextStyle(
               color: Constants.primaryColor,
               fontWeight: FontWeight.w900,
               fontFamily: _font,
-              fontSize: 12,
+              fontSize: 10,
             ),
           ),
         ],
