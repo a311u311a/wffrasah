@@ -3,10 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:rbhan/screens/login_signup/widgets/snackbar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../constants.dart';
 import '../models/offers.dart';
-
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
@@ -469,23 +467,18 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
           // لو موجود سابقاً تمام
           // ignore: deprecated_member_use_from_same_package
           storeId: (data['store_id'] ?? '').toString(),
+
+          // ✅ كود الخصم
+          code: (data['code'] ?? data['coupon_code'] ?? '').toString(),
         );
 
-        // ✅ كود الخصم من الجدول
-        final code =
-            (data['code'] ?? '').toString(); // لو عمودك coupon_code غيّره هنا
-
-        return _offerCard(
-          offerModel,
-          data['id'].toString(),
-          code: code,
-        );
+        return _offerCard(offerModel, data['id'].toString());
       },
     );
   }
 
   // ✅ بطاقة العرض الجديدة: اسم المتجر بالأعلى + تحته الكود + الوصف بالمنتصف
-  Widget _offerCard(Offer offer, String id, {required String code}) {
+  Widget _offerCard(Offer offer, String id) {
     final storeName = _storeNames[offer.storeId] ?? 'بدون متجر';
 
     return Container(
@@ -588,7 +581,7 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                       const SizedBox(height: 6),
 
                       // ✅ Code badge تحت اسم المتجر
-                      if (code.trim().isNotEmpty)
+                      if (offer.code.isNotEmpty)
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 6),
@@ -608,7 +601,7 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                                   size: 14, color: Constants.primaryColor),
                               const SizedBox(width: 6),
                               Text(
-                                code,
+                                offer.code,
                                 style: TextStyle(
                                   fontFamily: 'Courier',
                                   fontWeight: FontWeight.w900,
@@ -782,9 +775,8 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
       _selectedStoreId = o.storeId.isNotEmpty ? o.storeId : null;
       _expiryDate = o.expiryDate;
 
-      // ✅ إذا عندك code داخل Offer model فعّله هنا
-      // _codeCtrl.text = o.code;
-      _codeCtrl.text = '';
+      // ✅ استرجاع كود الخصم عند التعديل
+      _codeCtrl.text = o.code;
     }
   }
 
