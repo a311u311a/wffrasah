@@ -32,9 +32,11 @@ class AuthMethod {
 
   Future<void> signInWithGoogle() async {
     if (kIsWeb) {
-      // على الويب: استخدام الإعدادات الافتراضية
+      // على الويب: يجب تحديد رابط العودة لضمان العمل بشكل صحيح
+      // نستخدم Uri.base.origin للعودة إلى الصفحة الرئيسية
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
+        redirectTo: Uri.base.origin,
       );
     } else {
       // على التطبيق: استخدام inAppWebView للبقاء داخل التطبيق
@@ -112,9 +114,11 @@ class AuthMethods {
 
   Future<void> signInWithGoogle() async {
     if (kIsWeb) {
-      // على الويب: استخدام الإعدادات الافتراضية
+      // على الويب: يجب تحديد رابط العودة لضمان العمل بشكل صحيح
+      // نستخدم Uri.base.origin للعودة إلى الصفحة الرئيسية
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
+        redirectTo: Uri.base.origin,
       );
     } else {
       // على التطبيق: استخدام inAppWebView للبقاء داخل التطبيق

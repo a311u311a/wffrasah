@@ -976,12 +976,9 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
         final storeName = storesMap[storeId] ?? storeId;
         final expiryDateString = coupon['expiry_date'];
 
-        String expiryText = 'غير محدد';
+        DateTime? expiryDate;
         if (expiryDateString != null) {
-          final date = DateTime.tryParse(expiryDateString.toString());
-          if (date != null) {
-            expiryText = '${date.year}-${date.month}-${date.day}';
-          }
+          expiryDate = DateTime.tryParse(expiryDateString.toString());
         }
 
         return _couponCard(
@@ -991,7 +988,7 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
           description: description,
           image: (image ?? '').toString(),
           storeName: storeName,
-          expiryDate: expiryText,
+          expiryDate: expiryDate,
         );
       },
     );
@@ -1004,7 +1001,7 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
     required String description,
     required String image,
     required String storeName,
-    required String expiryDate,
+    required DateTime? expiryDate,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -1142,24 +1139,64 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
     );
   }
 
-  Widget _expiryBadge(String date) {
+  Widget _expiryBadge(DateTime? date) {
+    if (date == null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.calendar_today_rounded,
+                size: 14, color: Colors.grey[600]),
+            const SizedBox(width: 8),
+            Text(
+              'غير محدد',
+              style: TextStyle(
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w700,
+                fontFamily: _font,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final daysLeft = date.difference(DateTime.now()).inDays;
+    final isAhmar = daysLeft <= 5; // أحمر
+    final color = isAhmar ? Colors.red : Constants.primaryColor;
+    final bgColor = isAhmar
+        ? Colors.red[50]!
+        : Constants.primaryColor.withValues(alpha: 0.10);
+    final borderColor = isAhmar
+        ? Colors.red[100]!
+        : Constants.primaryColor.withValues(alpha: 0.18);
+    final dateStr = '${date.year}-${date.month}-${date.day}';
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: Constants.primaryColor.withValues(alpha: 0.10),
+        color: bgColor,
         borderRadius: BorderRadius.circular(999),
-        border:
-            Border.all(color: Constants.primaryColor.withValues(alpha: 0.18)),
+        border: Border.all(color: borderColor),
       ),
       child: Row(
         children: [
-          Icon(Icons.calendar_today_rounded,
-              size: 14, color: Constants.primaryColor),
+          Icon(Icons.calendar_today_rounded, size: 14, color: color),
           const SizedBox(width: 8),
           Text(
-            date,
+            // ممكن نعرض "باقي X أيام" لو حابب، بس هو طلب اللون بس، فحنخلي التاريخ
+            // بس ممكن نضيف نص توضيحي لو منتهي
+            daysLeft < 0
+                ? 'منتهي ($dateStr)'
+                : (isAhmar ? 'باقي $daysLeft يوم ($dateStr)' : dateStr),
             style: TextStyle(
-              color: Constants.primaryColor,
+              color: color,
               fontWeight: FontWeight.w900,
               fontFamily: _font,
               fontSize: 12,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart'; // Import Google Fonts
 import 'constants.dart';
 
 class AppThemes {
@@ -10,7 +11,7 @@ class AppThemes {
       brightness: brightness,
       primaryColor: primaryColor,
       scaffoldBackgroundColor: isDark ? Colors.black : Colors.white,
-      fontFamily: 'Tajawal',
+      // fontFamily: 'Tajawal', // Removed manual font family
       appBarTheme: AppBarTheme(
         backgroundColor: isDark ? Colors.black : Colors.white,
         foregroundColor: isDark ? Colors.white : Colors.black,
@@ -19,9 +20,12 @@ class AppThemes {
         surfaceTintColor: Colors.transparent,
         iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black),
       ),
-      textTheme: TextTheme(
-        bodyLarge: TextStyle(color: isDark ? Colors.white : Colors.black),
-        bodyMedium: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+      textTheme: GoogleFonts.tajawalTextTheme(
+        TextTheme(
+          bodyLarge: TextStyle(color: isDark ? Colors.white : Colors.black),
+          bodyMedium:
+              TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+        ),
       ),
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryColor,
