@@ -515,10 +515,7 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
           _searchAndAddRow(),
           const SizedBox(height: 18),
           StreamBuilder<List<Map<String, dynamic>>>(
-            stream: _sb.from('carousel').stream(primaryKey: ['id']).order(
-              'created_at',
-              ascending: false,
-            ),
+            stream: _sb.from('carousel').stream(primaryKey: ['id']),
             builder: (context, snapshot) {
               if (snapshot.hasError) {
                 return Center(
