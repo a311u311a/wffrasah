@@ -272,9 +272,9 @@ class _WebCouponCardState extends State<WebCouponCard> {
             Expanded(
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 6), // ✅ أقل
+                    horizontal: 8, vertical: 4), // ✅ أقل
                 decoration: BoxDecoration(
-                  color: Constants.primaryColor,
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Center(
@@ -286,10 +286,10 @@ class _WebCouponCardState extends State<WebCouponCard> {
                       maxLines: 1,
                       softWrap: false,
                       overflow: TextOverflow.visible, // ✅ بدون نقاط
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13, // ✅ أصغر شوي عشان يظهر أكثر
                         fontWeight: FontWeight.w900,
-                        color: Colors.white,
+                        color: Constants.primaryColor,
                         fontFamily: 'Courier',
                         letterSpacing: 1.0, // ✅ تقليل تباعد الحروف
                       ),

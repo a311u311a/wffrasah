@@ -63,10 +63,7 @@ class _WebOfferCardState extends State<WebOfferCard> {
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [
-                          Colors.white,
-                          Constants.primaryColor.withValues(alpha: 0.03),
-                        ],
+                        colors: [Colors.white, Colors.white],
                       ),
                     ),
                     child: Column(
@@ -77,7 +74,8 @@ class _WebOfferCardState extends State<WebOfferCard> {
                             widget.storeImage != null)
                           Padding(
                             padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                            child: _buildStoreHeader(),
+                            child:
+                                _buildStoreHeader(isFavorite, favoriteProvider),
                           ),
 
                         // صورة العرض
@@ -125,69 +123,29 @@ class _WebOfferCardState extends State<WebOfferCard> {
     return ClipRRect(
       child: AspectRatio(
         aspectRatio: 2.3 / 1, // ✅ تصغير الارتفاع
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: CachedNetworkImage(
-                imageUrl: widget.offer.image,
-                fit: BoxFit.fill,
-                placeholder: (context, url) => Container(
-                  color: Colors.grey[200],
-                  child: const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: Colors.grey[200],
-                  child: Icon(
-                    Icons.local_mall_rounded,
-                    size: 48,
-                    color: Constants.primaryColor,
-                  ),
-                ),
-              ),
+        child: CachedNetworkImage(
+          imageUrl: widget.offer.image,
+          fit: BoxFit.fill,
+          placeholder: (context, url) => Container(
+            color: Colors.grey[200],
+            child: const Center(
+              child: CircularProgressIndicator(),
             ),
-            // Favorite button
-            Positioned(
-              top: 10,
-              right: 10,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {
-                    favoriteProvider.toggleFavorite(widget.offer, context);
-                    HapticFeedback.mediumImpact();
-                  },
-                  borderRadius: BorderRadius.circular(30),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.95),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.12),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      isFavorite ? Icons.favorite : Icons.favorite_border,
-                      size: 20,
-                      color: isFavorite ? Colors.red : Colors.grey[600],
-                    ),
-                  ),
-                ),
-              ),
+          ),
+          errorWidget: (context, url, error) => Container(
+            color: Colors.grey[200],
+            child: Icon(
+              Icons.local_mall_rounded,
+              size: 48,
+              color: Constants.primaryColor,
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildStoreHeader() {
+  Widget _buildStoreHeader(bool isFavorite, FavoriteProvider favoriteProvider) {
     return Row(
       children: [
         if (widget.storeImage != null)
@@ -220,6 +178,36 @@ class _WebOfferCardState extends State<WebOfferCard> {
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        // Favorite Button
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              favoriteProvider.toggleFavorite(widget.offer, context);
+              HapticFeedback.mediumImpact();
+            },
+            borderRadius: BorderRadius.circular(30),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(
+                isFavorite ? Icons.favorite : Icons.favorite_border,
+                size: 20,
+                color: isFavorite ? Colors.red : Colors.grey[600],
+              ),
+            ),
           ),
         ),
       ],

@@ -76,8 +76,7 @@ class _WebStoreCardState extends State<WebStoreCard> {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color:
-                Constants.primaryColor.withValues(alpha: isHovered ? 0.3 : 0.1),
+            color: Colors.white,
             blurRadius: isHovered ? 12 : 8,
             offset: const Offset(0, 4),
           ),

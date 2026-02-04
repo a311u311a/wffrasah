@@ -369,7 +369,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                     Expanded(
                       flex: 5,
                       child: Container(
-                        decoration: _softCard().copyWith(boxShadow: []),
+                        decoration: _softCard(), // ✅ Shadow enabled
                         clipBehavior: Clip.antiAlias,
                         child: _buildFeaturedCarousel(),
                       ),
@@ -385,7 +385,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
             : Column(
                 children: [
                   Container(
-                    decoration: _softCard().copyWith(boxShadow: []),
+                    decoration: _softCard(), // ✅ Shadow enabled
                     clipBehavior: Clip.antiAlias,
                     child: _buildFeaturedCarousel(),
                   ),
@@ -483,8 +483,6 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                               borderRadius: BorderRadius.circular(14),
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 180),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 10),
                                 decoration: BoxDecoration(
                                   color: isSelected
                                       ? Constants.primaryColor
@@ -499,43 +497,33 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                                     width: isSelected ? 1.6 : 1.0,
                                   ),
                                 ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Container(
-                                      width: 74,
-                                      height: 74,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(12),
-                                        border: Border.all(
-                                            color: Colors.grey[100]!),
-                                      ),
-                                      child: store.image.isNotEmpty
-                                          ? ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                              child: CachedNetworkImage(
-                                                imageUrl: store.image,
-                                                fit: BoxFit.cover,
-                                                placeholder: (context, url) =>
-                                                    Container(
-                                                  color: Colors.grey[200],
-                                                ),
-                                                errorWidget: (context, url,
-                                                        error) =>
-                                                    Icon(Icons.store,
-                                                        color:
-                                                            Colors.grey[500]),
-                                              ),
-                                            )
-                                          : Icon(
-                                              Icons.store_rounded,
-                                              color: Constants.primaryColor,
-                                              size: 22,
+                                child: AspectRatio(
+                                  aspectRatio: 1.3,
+                                  child: store.image.isNotEmpty
+                                      ? ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          child: CachedNetworkImage(
+                                            imageUrl: store.image,
+                                            fit: BoxFit.contain,
+                                            alignment: Alignment.center,
+                                            placeholder: (context, url) =>
+                                                Container(
+                                              color: Colors.grey[200],
                                             ),
-                                    ),
-                                  ],
+                                            errorWidget:
+                                                (context, url, error) => Icon(
+                                                    Icons.store,
+                                                    color: Colors.grey[500]),
+                                          ),
+                                        )
+                                      : Center(
+                                          child: Icon(
+                                            Icons.store_rounded,
+                                            color: Constants.primaryColor,
+                                            size: 28,
+                                          ),
+                                        ),
                                 ),
                               ),
                             );
@@ -785,7 +773,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                 ),
                 itemCount: () {
                   final cols = ResponsiveGrid.columns(context, max: 6);
-                  final limit = cols * 6; // ✅ زيادة من 2 إلى 6 صفوف
+                  final limit = cols * 2; // ✅ 2 rows only
                   return displayItems.length > limit
                       ? limit
                       : displayItems.length;
@@ -943,7 +931,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                 final cols = ResponsiveLayout.isDesktop(context)
                     ? ResponsiveGrid.columns(context, max: 6)
                     : ResponsiveGrid.columns(context, max: 2);
-                final limit = cols * 6; // ✅ زيادة من 2 إلى 6 صفوف
+                final limit = cols * 2; // ✅ 2 rows only
                 return latestOffers.length > limit
                     ? limit
                     : latestOffers.length;

@@ -94,7 +94,7 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
         children: [
           SvgPicture.asset(
             'assets/image/Rbhan.svg',
-            height: 45, // Slightly smaller for balance
+            height: 70, // Slightly smaller for balance
             fit: BoxFit.contain,
           ),
           const SizedBox(width: 12),
