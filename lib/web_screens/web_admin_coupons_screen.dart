@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../constants.dart';
 import '../screens/login_signup/widgets/snackbar.dart';
 import '../web_widgets/responsive_layout.dart';
@@ -19,25 +21,37 @@ class WebAdminCouponsScreen extends StatefulWidget {
 }
 
 class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
+  static const String _font = 'Tajawal';
+
   final SupabaseClient _sb = Supabase.instance.client;
+
   final _couponCodeCtrl = TextEditingController();
   final _couponDescArCtrl = TextEditingController();
   final _couponDescEnCtrl = TextEditingController();
   final _couponWebCtrl = TextEditingController();
+
   final List<TextEditingController> _tagCtrls =
       List.generate(6, (_) => TextEditingController());
+
   final _couponFormKey = GlobalKey<FormState>();
 
   String? _selectedStoreId;
   String? _selectedStoreImageUrl;
   String? _selectedStoreName;
   DateTime? _selectedExpiryDate;
+
   String? _editingId;
   String? _editingImageUrl;
+
   XFile? _pickedCouponImageFile;
   Uint8List? _pickedImageBytes;
+
   bool _isSaving = false;
   final ImagePicker _picker = ImagePicker();
+
+  // ✅ Search (مثل صفحة المتاجر)
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _search = '';
 
   @override
   void dispose() {
@@ -45,6 +59,7 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
     _couponDescArCtrl.dispose();
     _couponDescEnCtrl.dispose();
     _couponWebCtrl.dispose();
+    _searchCtrl.dispose();
     for (final c in _tagCtrls) {
       c.dispose();
     }
@@ -54,15 +69,19 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
   void _clearForm() {
     _editingId = null;
     _editingImageUrl = null;
+
     _couponCodeCtrl.clear();
     _couponDescArCtrl.clear();
     _couponDescEnCtrl.clear();
     _couponWebCtrl.clear();
+
     for (var c in _tagCtrls) {
       c.clear();
     }
+
     _pickedCouponImageFile = null;
     _pickedImageBytes = null;
+
     _selectedStoreId = null;
     _selectedStoreImageUrl = null;
     _selectedStoreName = null;
@@ -145,6 +164,7 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
               fontSize: 22,
               fontWeight: FontWeight.bold,
               color: Constants.primaryColor,
+              fontFamily: _font,
             ),
           ),
           content: SizedBox(
@@ -229,9 +249,11 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                                   ? 'ينتهي في: ${_selectedExpiryDate!.year}-${_selectedExpiryDate!.month}-${_selectedExpiryDate!.day}'
                                   : 'تاريخ انتهاء الصلاحية (اختياري)',
                               style: const TextStyle(
-                                  fontWeight: FontWeight.normal,
-                                  fontSize: 14,
-                                  color: Colors.black54),
+                                fontWeight: FontWeight.normal,
+                                fontSize: 14,
+                                color: Colors.black54,
+                                fontFamily: _font,
+                              ),
                             ),
                             const Spacer(),
                             if (_selectedExpiryDate != null)
@@ -270,9 +292,11 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                         decoration: InputDecoration(
                           hintText: 'وسم ${i + 1}',
                           hintStyle: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.black54,
-                              fontWeight: FontWeight.normal),
+                            fontSize: 14,
+                            color: Colors.black54,
+                            fontWeight: FontWeight.normal,
+                            fontFamily: _font,
+                          ),
                           filled: true,
                           fillColor: Colors.grey[50],
                           border: OutlineInputBorder(
@@ -283,9 +307,11 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                               const EdgeInsets.symmetric(horizontal: 12),
                         ),
                         style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.black54,
-                            fontWeight: FontWeight.normal),
+                          fontSize: 14,
+                          color: Colors.black54,
+                          fontWeight: FontWeight.normal,
+                          fontFamily: _font,
+                        ),
                       ),
                     ),
                   ],
@@ -295,8 +321,11 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
+              onPressed: _isSaving ? null : () => Navigator.pop(context),
+              child: const Text(
+                'إلغاء',
+                style: TextStyle(color: Colors.grey, fontFamily: _font),
+              ),
             ),
             SizedBox(
               height: 45,
@@ -325,6 +354,7 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                           color: Colors.white,
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
+                          fontFamily: _font,
                         ),
                       ),
               ),
@@ -366,9 +396,11 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                     ? 'تم اختيار المتجر: ${_selectedStoreName ?? _selectedStoreId}'
                     : 'اضغط لاختيار المتجر',
                 style: const TextStyle(
-                    fontWeight: FontWeight.normal,
-                    fontSize: 14,
-                    color: Colors.black54),
+                  fontWeight: FontWeight.normal,
+                  fontSize: 14,
+                  color: Colors.black54,
+                  fontFamily: _font,
+                ),
               ),
             ),
             const Icon(Icons.keyboard_arrow_down),
@@ -400,7 +432,7 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                 Expanded(
                   child: Text(
                     storeName.toString(),
-                    style: const TextStyle(fontSize: 14),
+                    style: const TextStyle(fontSize: 14, fontFamily: _font),
                   ),
                 ),
               ],
@@ -446,8 +478,10 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
       children: [
         Icon(Icons.add_a_photo, color: Constants.primaryColor),
         const SizedBox(height: 4),
-        const Text("صورة الكوبون",
-            style: TextStyle(fontSize: 10, color: Colors.grey)),
+        const Text(
+          "صورة الكوبون",
+          style: TextStyle(fontSize: 10, color: Colors.grey, fontFamily: _font),
+        ),
       ],
     );
   }
@@ -455,11 +489,15 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10, top: 5),
-      child: Text(title,
-          style: TextStyle(
-              color: Constants.primaryColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 14)),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: Constants.primaryColor,
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+          fontFamily: _font,
+        ),
+      ),
     );
   }
 
@@ -475,17 +513,26 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
           hintText: hint,
           labelText: hint,
           labelStyle: const TextStyle(
-              fontSize: 14,
-              color: Colors.black54,
-              fontWeight: FontWeight.normal),
+            fontSize: 14,
+            color: Colors.black54,
+            fontWeight: FontWeight.normal,
+            fontFamily: _font,
+          ),
           filled: true,
           fillColor: Colors.grey[50],
           border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none),
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
         ),
         style: const TextStyle(
-            fontSize: 14, color: Colors.black54, fontWeight: FontWeight.normal),
+          fontSize: 14,
+          color: Colors.black54,
+          fontWeight: FontWeight.normal,
+          fontFamily: _font,
+        ),
+        validator: (v) =>
+            (v == null || v.trim().isEmpty) ? 'هذا الحقل مطلوب' : null,
       ),
     );
   }
@@ -557,8 +604,9 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('حذف الكوبون؟'),
-        content: const Text('سيتم حذف الكوبون نهائياً. هل أنت متأكد؟'),
+        title: const Text('حذف الكوبون؟', style: TextStyle(fontFamily: _font)),
+        content: const Text('سيتم حذف الكوبون نهائياً. هل أنت متأكد؟',
+            style: TextStyle(fontFamily: _font)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -580,6 +628,33 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
     }
   }
 
+  /// ✅ جلب أسماء المتاجر مرة واحدة بناءً على slugs الموجودة في الكوبونات
+  Future<Map<String, String>> _fetchStoresNames(
+      List<Map<String, dynamic>> coupons) async {
+    final Map<String, String> map = {};
+    if (coupons.isEmpty) return map;
+
+    final slugs = coupons
+        .map((c) => (c['store_id'] ?? '').toString().trim())
+        .where((s) => s.isNotEmpty)
+        .toSet()
+        .toList();
+
+    if (slugs.isEmpty) return map;
+
+    final data = await _sb
+        .from('stores')
+        .select('slug,name,name_ar')
+        .inFilter('slug', slugs);
+
+    for (final row in (data as List)) {
+      final slug = (row['slug'] ?? '').toString();
+      final name = (row['name_ar'] ?? row['name'] ?? '').toString();
+      if (slug.isNotEmpty) map[slug] = name;
+    }
+    return map;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.isEmbedded) {
@@ -590,6 +665,7 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
         ),
       );
     }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: const WebNavigationBar(),
@@ -643,7 +719,7 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                   fontSize: ResponsiveLayout.isDesktop(context) ? 42 : 32,
                   fontWeight: FontWeight.w900,
                   color: Constants.primaryColor,
-                  fontFamily: 'Tajawal',
+                  fontFamily: _font,
                 ),
               ),
             ],
@@ -654,7 +730,7 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
             style: TextStyle(
               fontSize: 18,
               color: Colors.grey[700],
-              fontFamily: 'Tajawal',
+              fontFamily: _font,
             ),
           ),
           const SizedBox(height: 40),
@@ -663,40 +739,15 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
     );
   }
 
+  /// ✅ نفس فكرة صفحة المتاجر: بحث + زر إضافة جنب بعض
   Widget _buildContent() {
     return Container(
       padding: ResponsivePadding.page(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // زر إضافة كوبون جديد
-          SizedBox(
-            width: double.infinity,
-            height: 60,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Constants.primaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 2,
-              ),
-              onPressed: () => _openAddOrEditDialog(),
-              icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-              label: const Text(
-                'إضافة كوبون جديد',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  fontFamily: 'Tajawal',
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 30),
-
-          // جدول الكوبونات
+          _searchWithAddButton(),
+          const SizedBox(height: 18),
           StreamBuilder<List<Map<String, dynamic>>>(
             stream: _sb.from('coupons').stream(
                 primaryKey: ['id']).order('created_at', ascending: false),
@@ -709,7 +760,9 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                   ),
                 );
               }
-              if (snapshot.data!.isEmpty) {
+
+              final all = snapshot.data!;
+              if (all.isEmpty) {
                 return Center(
                   child: Padding(
                     padding: const EdgeInsets.all(40),
@@ -718,15 +771,40 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                       style: TextStyle(
                         color: Colors.grey[400],
                         fontSize: 18,
-                        fontFamily: 'Tajawal',
+                        fontFamily: _font,
                       ),
                     ),
                   ),
                 );
               }
 
-              final items = snapshot.data!;
-              return _buildCouponsTable(items);
+              // ✅ جلب أسماء المتاجر مرة واحدة (بدل FutureBuilder لكل صف)
+              return FutureBuilder<Map<String, String>>(
+                future: _fetchStoresNames(all),
+                builder: (context, storesSnap) {
+                  final storesMap = storesSnap.data ?? {};
+
+                  final filtered = _applySearch(all, storesMap);
+                  if (filtered.isEmpty) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(40),
+                        child: Text(
+                          'لا توجد نتائج مطابقة للبحث',
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 16,
+                            fontFamily: _font,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+
+                  return _buildCouponsTable(filtered, storesMap);
+                },
+              );
             },
           ),
           const SizedBox(height: 40),
@@ -735,7 +813,143 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
     );
   }
 
-  Widget _buildCouponsTable(List<Map<String, dynamic>> items) {
+  /// ✅ فلترة البحث (تشمل اسم المتجر أيضًا)
+  List<Map<String, dynamic>> _applySearch(
+      List<Map<String, dynamic>> items, Map<String, String> storesMap) {
+    final q = _search.trim().toLowerCase();
+    if (q.isEmpty) return items;
+
+    return items.where((c) {
+      final code = (c['code'] ?? '').toString().toLowerCase();
+      final ar = (c['description_ar'] ?? '').toString().toLowerCase();
+      final en = (c['description_en'] ?? '').toString().toLowerCase();
+      final storeId = (c['store_id'] ?? '').toString().toLowerCase();
+      final storeName = (storesMap[storeId] ?? '').toLowerCase();
+
+      return code.contains(q) ||
+          ar.contains(q) ||
+          en.contains(q) ||
+          storeId.contains(q) ||
+          storeName.contains(q);
+    }).toList();
+  }
+
+  Widget _searchWithAddButton() {
+    final isDesktop = ResponsiveLayout.isDesktop(context);
+
+    if (!isDesktop) {
+      return Column(
+        children: [
+          _searchBar(),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Constants.primaryColor,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () => _openAddOrEditDialog(),
+              icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+              label: const Text(
+                'إضافة كوبون جديد',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 15,
+                  fontFamily: _font,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        Expanded(child: _searchBar()),
+        const SizedBox(width: 12),
+        SizedBox(
+          height: 50,
+          child: ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Constants.primaryColor,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+            ),
+            onPressed: () => _openAddOrEditDialog(),
+            icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+            label: const Text(
+              'إضافة كوبون',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 15,
+                fontFamily: _font,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _searchBar() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.search_rounded, color: Colors.grey[600]),
+          const SizedBox(width: 10),
+          Expanded(
+            child: TextField(
+              controller: _searchCtrl,
+              onChanged: (v) => setState(() => _search = v),
+              decoration: InputDecoration(
+                hintText: 'ابحث بالكود أو الوصف أو اسم المتجر…',
+                hintStyle: TextStyle(
+                  fontFamily: _font,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey[500],
+                ),
+                border: InputBorder.none,
+              ),
+              style: TextStyle(
+                fontFamily: _font,
+                fontWeight: FontWeight.w800,
+                color: Colors.grey[900],
+              ),
+            ),
+          ),
+          if (_search.trim().isNotEmpty)
+            IconButton(
+              tooltip: 'مسح',
+              onPressed: () {
+                _searchCtrl.clear();
+                setState(() => _search = '');
+              },
+              icon: Icon(Icons.clear_rounded, color: Colors.grey[600]),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCouponsTable(
+      List<Map<String, dynamic>> items, Map<String, String> storesMap) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -757,72 +971,49 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
           ),
           columns: const [
             DataColumn(
-              label: Text(
-                'الصورة',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Tajawal',
-                ),
-              ),
+              label: Text('الصورة',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, fontFamily: _font)),
             ),
             DataColumn(
-              label: Text(
-                'الكود',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Tajawal',
-                ),
-              ),
+              label: Text('الكود',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, fontFamily: _font)),
             ),
             DataColumn(
-              label: Text(
-                'الوصف',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Tajawal',
-                ),
-              ),
+              label: Text('الوصف',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, fontFamily: _font)),
             ),
             DataColumn(
-              label: Text(
-                'المتجر',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Tajawal',
-                ),
-              ),
+              label: Text('المتجر',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, fontFamily: _font)),
             ),
             DataColumn(
-              label: Text(
-                'تاريخ الانتهاء',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Tajawal',
-                ),
-              ),
+              label: Text('تاريخ الانتهاء',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, fontFamily: _font)),
             ),
             DataColumn(
-              label: Text(
-                'الإجراءات',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Tajawal',
-                ),
-              ),
+              label: Text('الإجراءات',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold, fontFamily: _font)),
             ),
           ],
           rows: items.map((coupon) {
             final id = coupon['id'].toString();
-            final code = coupon['code'] ?? '';
+            final code = (coupon['code'] ?? '').toString();
             final description =
-                coupon['description_ar'] ?? coupon['description'] ?? '';
+                (coupon['description_ar'] ?? coupon['description'] ?? '')
+                    .toString();
             final image = coupon['image'];
-            final storeId = coupon['store_id'];
+            final storeId = (coupon['store_id'] ?? '').toString();
+            final storeName = storesMap[storeId] ?? storeId;
             final expiryDateString = coupon['expiry_date'];
 
             return DataRow(
               cells: [
-                // الصورة
                 DataCell(
                   Container(
                     width: 50,
@@ -836,7 +1027,7 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                       borderRadius: BorderRadius.circular(8),
                       child: (image != null && image.toString().isNotEmpty)
                           ? Image.network(
-                              image,
+                              image.toString(),
                               fit: BoxFit.contain,
                               errorBuilder: (_, __, ___) =>
                                   const Icon(Icons.broken_image),
@@ -846,13 +1037,10 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                     ),
                   ),
                 ),
-                // الكود
                 DataCell(
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: Constants.primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -861,13 +1049,12 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                       code,
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
-                        fontFamily: 'Tajawal',
+                        fontFamily: _font,
                         color: Constants.primaryColor,
                       ),
                     ),
                   ),
                 ),
-                // الوصف
                 DataCell(
                   SizedBox(
                     width: 300,
@@ -875,51 +1062,30 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                       description,
                       style: TextStyle(
                         color: Colors.grey[600],
-                        fontFamily: 'Tajawal',
+                        fontFamily: _font,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),
-                // المتجر
                 DataCell(
-                  FutureBuilder<List<Map<String, dynamic>>>(
-                    future: _sb
-                        .from('stores')
-                        .select('name,name_ar,slug')
-                        .eq('slug', storeId ?? ''),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData && snapshot.data!.isNotEmpty) {
-                        final store = snapshot.data!.first;
-                        return Text(
-                          store['name_ar'] ?? store['name'] ?? '',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontFamily: 'Tajawal',
-                          ),
-                        );
-                      }
-                      return const Text('-');
-                    },
+                  Text(
+                    storeName,
+                    style: const TextStyle(fontSize: 14, fontFamily: _font),
                   ),
                 ),
-                // تاريخ الانتهاء
                 DataCell(
                   Text(
                     expiryDateString != null
-                        ? DateTime.tryParse(expiryDateString.toString())
+                        ? (DateTime.tryParse(expiryDateString.toString())
                                 ?.toString()
                                 .split(' ')[0] ??
-                            '-'
+                            '-')
                         : '-',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontFamily: 'Tajawal',
-                    ),
+                    style: const TextStyle(fontSize: 14, fontFamily: _font),
                   ),
                 ),
-                // الإجراءات
                 DataCell(
                   Row(
                     mainAxisSize: MainAxisSize.min,
