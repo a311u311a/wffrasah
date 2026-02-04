@@ -25,9 +25,38 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
   static const String _font = 'Tajawal';
   final SupabaseClient _sb = Supabase.instance.client;
 
+  // Cache store names: storeId (slug) -> Name
+  Map<String, String> _storeNames = {};
+
   // UI search
   final TextEditingController _searchCtrl = TextEditingController();
   String _search = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchStoreNames();
+  }
+
+  Future<void> _fetchStoreNames() async {
+    try {
+      final res = await _sb.from('stores').select('slug, name, name_ar');
+      final data = res as List;
+      final map = <String, String>{};
+      for (final item in data) {
+        final slug = (item['slug'] ?? '').toString();
+        // Prefer Arabic name if available
+        final nameAr = (item['name_ar'] ?? '').toString();
+        final nameEn = (item['name'] ?? '').toString();
+        map[slug] = nameAr.isNotEmpty ? nameAr : nameEn;
+      }
+      if (mounted) {
+        setState(() => _storeNames = map);
+      }
+    } catch (e) {
+      debugPrint('Error fetching store names: $e');
+    }
+  }
 
   @override
   void dispose() {
@@ -446,6 +475,8 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
   }
 
   Widget _offerCard(Offer offer, String id) {
+    final storeName = _storeNames[offer.storeId] ?? '';
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -464,11 +495,12 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
         child: Column(
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Image
                 Container(
-                  width: 54,
-                  height: 54,
+                  width: 60,
+                  height: 60,
                   decoration: BoxDecoration(
                     color: Colors.grey[50],
                     borderRadius: BorderRadius.circular(14),
@@ -496,6 +528,56 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Store Name & Popup
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          if (storeName.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              margin: const EdgeInsets.only(bottom: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                storeName,
+                                style: TextStyle(
+                                  fontFamily: _font,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                            )
+                          else
+                            const SizedBox(),
+                          SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: PopupMenuButton<String>(
+                              padding: EdgeInsets.zero,
+                              tooltip: 'خيارات',
+                              onSelected: (v) {
+                                if (v == 'edit')
+                                  _openAddOrEditDialog(offer: offer);
+                                if (v == 'delete') _deleteOffer(id);
+                              },
+                              itemBuilder: (_) => const [
+                                PopupMenuItem(
+                                    value: 'edit', child: Text('تعديل')),
+                                PopupMenuItem(
+                                    value: 'delete', child: Text('حذف')),
+                              ],
+                              child: Icon(Icons.more_horiz,
+                                  color: Colors.grey[500]),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // Offer Name
                       Text(
                         offer.name.isEmpty ? 'بدون اسم' : offer.name,
                         style: const TextStyle(
@@ -506,7 +588,23 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      const SizedBox(height: 4),
+
+                      // Offer Description (New)
+                      if (offer.description.isNotEmpty)
+                        Text(
+                          offer.description,
+                          style: TextStyle(
+                            fontFamily: _font,
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            height: 1.2,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       const SizedBox(height: 6),
+
                       // Tags row
                       if (offer.tags.isNotEmpty)
                         Text(
@@ -520,90 +618,74 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         )
-                      else
-                        Text(
-                          'لا يوجد وسوم',
-                          style: TextStyle(
-                            fontFamily: _font,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 11,
-                            color: Colors.grey[400],
-                          ),
-                        ),
                     ],
                   ),
-                ),
-
-                // Popup Actions
-                PopupMenuButton<String>(
-                  tooltip: 'خيارات',
-                  onSelected: (v) {
-                    if (v == 'edit') _openAddOrEditDialog(offer: offer);
-                    if (v == 'delete') _deleteOffer(id);
-                  },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'edit', child: Text('تعديل')),
-                    PopupMenuItem(value: 'delete', child: Text('حذف')),
-                  ],
                 ),
               ],
             ),
 
-            const SizedBox(height: 12),
-
-            // Expiry Info
-            if (offer.expiryDate != null)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Builder(builder: (_) {
-                  final daysLeft =
-                      offer.expiryDate!.difference(DateTime.now()).inDays;
-                  final isSoon = daysLeft <= 5;
-                  return Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isSoon ? Colors.red[50] : Colors.green[50],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isSoon ? Colors.red[100]! : Colors.green[100]!,
-                      ),
-                    ),
-                    child: Text(
-                      daysLeft < 0
-                          ? 'منتهي منذ ${daysLeft.abs()} يوم'
-                          : 'باقي $daysLeft يوم',
-                      style: TextStyle(
-                        fontFamily: _font,
-                        fontSize: 10,
-                        color: isSoon ? Colors.red[700] : Colors.green[700],
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  );
-                }),
-              )
-            else
-              const Spacer(), // spacer if no date to push buttons down
-
             const Spacer(),
+            const Divider(height: 20, thickness: 0.5),
 
-            // Footer Buttons
+            // Footer: Buttons (Left) + Expiry (Right)
             Row(
               children: [
+                // Buttons left
+                Row(
+                  children: [
+                    InkWell(
+                      onTap: () => _openAddOrEditDialog(offer: offer),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: Icon(Icons.edit_note_rounded,
+                            size: 20, color: Colors.blueGrey[500]),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    InkWell(
+                      onTap: () => _deleteOffer(id),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: Icon(Icons.delete_sweep_outlined,
+                            size: 20, color: Colors.redAccent),
+                      ),
+                    ),
+                  ],
+                ),
+
                 const Spacer(),
-                IconButton(
-                  tooltip: 'تعديل',
-                  onPressed: () => _openAddOrEditDialog(offer: offer),
-                  icon: Icon(Icons.edit_note_rounded,
-                      color: Colors.blueGrey[500]),
-                ),
-                IconButton(
-                  tooltip: 'حذف',
-                  onPressed: () => _deleteOffer(id),
-                  icon: const Icon(Icons.delete_sweep_outlined,
-                      color: Colors.redAccent),
-                ),
+
+                // Expiry Info (Right)
+                if (offer.expiryDate != null)
+                  Builder(builder: (_) {
+                    final daysLeft =
+                        offer.expiryDate!.difference(DateTime.now()).inDays;
+                    final isSoon = daysLeft <= 5;
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isSoon ? Colors.red[50] : Colors.green[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isSoon ? Colors.red[100]! : Colors.green[100]!,
+                        ),
+                      ),
+                      child: Text(
+                        daysLeft < 0
+                            ? 'منتهي منذ ${daysLeft.abs()} يوم'
+                            : 'باقي $daysLeft يوم',
+                        style: TextStyle(
+                          fontFamily: _font,
+                          fontSize: 10,
+                          color: isSoon ? Colors.red[700] : Colors.green[700],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    );
+                  }),
               ],
             ),
           ],
