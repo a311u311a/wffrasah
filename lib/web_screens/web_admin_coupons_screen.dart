@@ -686,60 +686,62 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
     return Container(
       padding: ResponsivePadding.page(context),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Constants.primaryColor.withValues(alpha: 0.1),
-            Colors.white,
-          ],
-        ),
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 40),
+          const SizedBox(height: 26),
           Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back, size: 32),
+                icon: const Icon(Icons.arrow_back, size: 28),
                 color: Constants.primaryColor,
                 onPressed: () => Navigator.pop(context),
               ),
-              const SizedBox(width: 16),
-              Icon(
-                Icons.confirmation_number_rounded,
-                color: Constants.primaryColor,
-                size: ResponsiveLayout.isDesktop(context) ? 48 : 36,
-              ),
-              const SizedBox(width: 16),
-              Text(
-                'إدارة الكوبونات',
-                style: TextStyle(
-                  fontSize: ResponsiveLayout.isDesktop(context) ? 42 : 32,
-                  fontWeight: FontWeight.w900,
+              const SizedBox(width: 10),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Constants.primaryColor.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  Icons.confirmation_number_rounded,
                   color: Constants.primaryColor,
-                  fontFamily: _font,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'إدارة الكوبونات',
+                  style: TextStyle(
+                    fontSize: ResponsiveLayout.isDesktop(context) ? 28 : 22,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: _font,
+                    color: Colors.grey[900],
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Text(
-            'إضافة، تعديل، أو حذف أكواد الخصم',
+            'إضافة، تعديل، أو حذف أكواد الخصم بسهولة',
             style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey[700],
+              fontSize: 13,
               fontFamily: _font,
+              fontWeight: FontWeight.w700,
+              color: Colors.grey[600],
             ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  /// ✅ نفس فكرة صفحة المتاجر: بحث + زر إضافة جنب بعض
   Widget _buildContent() {
     return Container(
       padding: ResponsivePadding.page(context),
@@ -749,8 +751,10 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
           _searchWithAddButton(),
           const SizedBox(height: 18),
           StreamBuilder<List<Map<String, dynamic>>>(
-            stream: _sb.from('coupons').stream(
-                primaryKey: ['id']).order('created_at', ascending: false),
+            stream: _sb.from('coupons').stream(primaryKey: ['id']).order(
+              'created_at',
+              ascending: false,
+            ),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
                 return const Center(
@@ -769,22 +773,22 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                     child: Text(
                       'لا توجد كوبونات حالياً',
                       style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 18,
+                        color: Colors.grey[500],
+                        fontSize: 16,
                         fontFamily: _font,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
                 );
               }
 
-              // ✅ جلب أسماء المتاجر مرة واحدة (بدل FutureBuilder لكل صف)
               return FutureBuilder<Map<String, String>>(
                 future: _fetchStoresNames(all),
                 builder: (context, storesSnap) {
                   final storesMap = storesSnap.data ?? {};
-
                   final filtered = _applySearch(all, storesMap);
+
                   if (filtered.isEmpty) {
                     return Center(
                       child: Padding(
@@ -795,14 +799,14 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                             color: Colors.grey[500],
                             fontSize: 16,
                             fontFamily: _font,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ),
                     );
                   }
 
-                  return _buildCouponsTable(filtered, storesMap);
+                  return _buildCouponsGrid(filtered, storesMap);
                 },
               );
             },
@@ -813,7 +817,6 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
     );
   }
 
-  /// ✅ فلترة البحث (تشمل اسم المتجر أيضًا)
   List<Map<String, dynamic>> _applySearch(
       List<Map<String, dynamic>> items, Map<String, String> storesMap) {
     final q = _search.trim().toLowerCase();
@@ -844,24 +847,23 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
           const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
-            height: 50,
+            height: 46,
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Constants.primaryColor,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                 ),
               ),
               onPressed: () => _openAddOrEditDialog(),
-              icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+              icon: const Icon(Icons.add_rounded, color: Colors.white),
               label: const Text(
-                'إضافة كوبون جديد',
+                'إضافة كوبون',
                 style: TextStyle(
                   color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 15,
                   fontFamily: _font,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
             ),
@@ -875,25 +877,24 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
         Expanded(child: _searchBar()),
         const SizedBox(width: 12),
         SizedBox(
-          height: 50,
+          height: 46,
           child: ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: Constants.primaryColor,
               elevation: 0,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16),
             ),
             onPressed: () => _openAddOrEditDialog(),
-            icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+            icon: const Icon(Icons.add_rounded, color: Colors.white),
             label: const Text(
               'إضافة كوبون',
               style: TextStyle(
                 color: Colors.white,
-                fontWeight: FontWeight.w900,
-                fontSize: 15,
                 fontFamily: _font,
+                fontWeight: FontWeight.w900,
               ),
             ),
           ),
@@ -919,7 +920,7 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
               controller: _searchCtrl,
               onChanged: (v) => setState(() => _search = v),
               decoration: InputDecoration(
-                hintText: 'ابحث بالكود أو الوصف أو اسم المتجر…',
+                hintText: 'ابحث بالكود أو اسم المتجر…',
                 hintStyle: TextStyle(
                   fontFamily: _font,
                   fontWeight: FontWeight.w700,
@@ -948,167 +949,223 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
     );
   }
 
-  Widget _buildCouponsTable(
+  Widget _buildCouponsGrid(
       List<Map<String, dynamic>> items, Map<String, String> storesMap) {
+    final isDesktop = ResponsiveLayout.isDesktop(context);
+    final crossAxisCount = isDesktop ? 3 : 1;
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: items.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: 14,
+        mainAxisSpacing: 14,
+        mainAxisExtent: 165,
+      ),
+      itemBuilder: (context, i) {
+        final coupon = items[i];
+        final id = coupon['id'].toString();
+        final code = (coupon['code'] ?? '').toString();
+        final description =
+            (coupon['description_ar'] ?? coupon['description'] ?? '')
+                .toString();
+        final image = coupon['image'];
+        final storeId = (coupon['store_id'] ?? '').toString();
+        final storeName = storesMap[storeId] ?? storeId;
+        final expiryDateString = coupon['expiry_date'];
+
+        String expiryText = 'غير محدد';
+        if (expiryDateString != null) {
+          final date = DateTime.tryParse(expiryDateString.toString());
+          if (date != null) {
+            expiryText = '${date.year}-${date.month}-${date.day}';
+          }
+        }
+
+        return _couponCard(
+          id: id,
+          coupon: coupon,
+          code: code,
+          description: description,
+          image: (image ?? '').toString(),
+          storeName: storeName,
+          expiryDate: expiryText,
+        );
+      },
+    );
+  }
+
+  Widget _couponCard({
+    required String id,
+    required Map<String, dynamic> coupon,
+    required String code,
+    required String description,
+    required String image,
+    required String storeName,
+    required String expiryDate,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          headingRowColor: WidgetStateProperty.all(
-            Constants.primaryColor.withValues(alpha: 0.1),
-          ),
-          columns: const [
-            DataColumn(
-              label: Text('الصورة',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, fontFamily: _font)),
-            ),
-            DataColumn(
-              label: Text('الكود',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, fontFamily: _font)),
-            ),
-            DataColumn(
-              label: Text('الوصف',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, fontFamily: _font)),
-            ),
-            DataColumn(
-              label: Text('المتجر',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, fontFamily: _font)),
-            ),
-            DataColumn(
-              label: Text('تاريخ الانتهاء',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, fontFamily: _font)),
-            ),
-            DataColumn(
-              label: Text('الإجراءات',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, fontFamily: _font)),
-            ),
-          ],
-          rows: items.map((coupon) {
-            final id = coupon['id'].toString();
-            final code = (coupon['code'] ?? '').toString();
-            final description =
-                (coupon['description_ar'] ?? coupon['description'] ?? '')
-                    .toString();
-            final image = coupon['image'];
-            final storeId = (coupon['store_id'] ?? '').toString();
-            final storeName = storesMap[storeId] ?? storeId;
-            final expiryDateString = coupon['expiry_date'];
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                // Coupon Image
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.grey[200]!),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: image.isNotEmpty
+                        ? Image.network(
+                            image,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => Icon(
+                              Icons.broken_image,
+                              color: Colors.grey[500],
+                            ),
+                          )
+                        : Icon(Icons.confirmation_number_rounded,
+                            color: Constants.primaryColor),
+                  ),
+                ),
+                const SizedBox(width: 12),
 
-            return DataRow(
-              cells: [
-                DataCell(
-                  Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey[100]!),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: (image != null && image.toString().isNotEmpty)
-                          ? Image.network(
-                              image.toString(),
-                              fit: BoxFit.contain,
-                              errorBuilder: (_, __, ___) =>
-                                  const Icon(Icons.broken_image),
-                            )
-                          : Icon(Icons.confirmation_number,
-                              color: Constants.primaryColor),
-                    ),
-                  ),
-                ),
-                DataCell(
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Constants.primaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      code,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontFamily: _font,
-                        color: Constants.primaryColor,
-                      ),
-                    ),
-                  ),
-                ),
-                DataCell(
-                  SizedBox(
-                    width: 300,
-                    child: Text(
-                      description,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontFamily: _font,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-                DataCell(
-                  Text(
-                    storeName,
-                    style: const TextStyle(fontSize: 14, fontFamily: _font),
-                  ),
-                ),
-                DataCell(
-                  Text(
-                    expiryDateString != null
-                        ? (DateTime.tryParse(expiryDateString.toString())
-                                ?.toString()
-                                .split(' ')[0] ??
-                            '-')
-                        : '-',
-                    style: const TextStyle(fontSize: 14, fontFamily: _font),
-                  ),
-                ),
-                DataCell(
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
+                // Code + Store Name
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      IconButton(
-                        icon: Icon(Icons.edit_note_rounded,
-                            color: Colors.blueGrey[400]),
-                        onPressed: () => _openAddOrEditDialog(coupon: coupon),
-                        tooltip: 'تعديل',
+                      Text(
+                        code,
+                        style: const TextStyle(
+                          fontFamily: _font,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_sweep_outlined,
-                            color: Colors.redAccent),
-                        onPressed: () => _deleteCoupon(id),
-                        tooltip: 'حذف',
+                      const SizedBox(height: 6),
+                      Text(
+                        storeName,
+                        style: TextStyle(
+                          fontFamily: _font,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
+
+                // Actions
+                PopupMenuButton<String>(
+                  tooltip: 'خيارات',
+                  onSelected: (v) {
+                    if (v == 'edit') _openAddOrEditDialog(coupon: coupon);
+                    if (v == 'delete') _deleteCoupon(id);
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(value: 'edit', child: Text('تعديل')),
+                    PopupMenuItem(value: 'delete', child: Text('حذف')),
+                  ],
+                ),
               ],
-            );
-          }).toList(),
+            ),
+            const SizedBox(height: 12),
+
+            // Description
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                description.isEmpty ? 'بدون وصف' : description,
+                style: TextStyle(
+                  fontFamily: _font,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey[600],
+                  fontSize: 12,
+                  height: 1.3,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+
+            const Spacer(),
+
+            // Footer: Expiry + quick actions
+            Row(
+              children: [
+                _expiryBadge(expiryDate),
+                const Spacer(),
+                IconButton(
+                  tooltip: 'تعديل',
+                  onPressed: () => _openAddOrEditDialog(coupon: coupon),
+                  icon: Icon(Icons.edit_note_rounded,
+                      color: Colors.blueGrey[500]),
+                ),
+                IconButton(
+                  tooltip: 'حذف',
+                  onPressed: () => _deleteCoupon(id),
+                  icon: const Icon(Icons.delete_sweep_outlined,
+                      color: Colors.redAccent),
+                ),
+              ],
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _expiryBadge(String date) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: Constants.primaryColor.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(999),
+        border:
+            Border.all(color: Constants.primaryColor.withValues(alpha: 0.18)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.calendar_today_rounded,
+              size: 14, color: Constants.primaryColor),
+          const SizedBox(width: 8),
+          Text(
+            date,
+            style: TextStyle(
+              color: Constants.primaryColor,
+              fontWeight: FontWeight.w900,
+              fontFamily: _font,
+              fontSize: 12,
+            ),
+          ),
+        ],
       ),
     );
   }

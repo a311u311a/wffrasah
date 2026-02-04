@@ -1,16 +1,16 @@
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:rbhan/screens/login_signup/widgets/snackbar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../constants.dart';
-import '../../screens/login_signup/widgets/snackbar.dart';
+
 import '../../web_widgets/responsive_layout.dart';
 import '../../web_widgets/web_navigation_bar.dart';
 import '../../web_widgets/web_footer.dart';
 
-/// ✅ صفحة إدارة بنرات الكاروسيل على الويب (UI احترافي - كاملة الوظائف)
+/// ✅ صفحة إدارة بنرات الكاروسيل على الويب (UI احترافي - نفس المهام)
 class WebAdminCarouselScreen extends StatefulWidget {
   final bool isEmbedded;
   const WebAdminCarouselScreen({super.key, this.isEmbedded = false});
@@ -21,52 +21,36 @@ class WebAdminCarouselScreen extends StatefulWidget {
 
 class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
   static const String _font = 'Tajawal';
+
   final SupabaseClient _sb = Supabase.instance.client;
-
-  // Form
-  final _nameCtrl = TextEditingController();
-  final _linkCtrl = TextEditingController(); // For 'web' column
-  final _formKey = GlobalKey<FormState>();
-
-  String? _editingId;
-  String? _editingImageUrl;
-  XFile? _pickedImageFile;
-  Uint8List? _pickedImageBytes;
-  bool _isSaving = false;
-
-  // Picker
   final ImagePicker _picker = ImagePicker();
 
-  // Search
+  // Search UI
   final TextEditingController _searchCtrl = TextEditingController();
   String _search = '';
 
   @override
   void dispose() {
-    _nameCtrl.dispose();
-    _linkCtrl.dispose();
     _searchCtrl.dispose();
     super.dispose();
   }
 
-  void _clearForm() {
-    _editingId = null;
-    _editingImageUrl = null;
-    _nameCtrl.clear();
-    _linkCtrl.clear();
-    _pickedImageFile = null;
-    _pickedImageBytes = null;
-  }
+  // =========================
+  // Storage helpers
+  // =========================
 
-  Future<String?> _uploadFile(XFile file, String path) async {
+  Future<String?> _uploadFile(XFile file) async {
     try {
+      final fileName = 'Carousel/${DateTime.now().millisecondsSinceEpoch}.jpg';
       final bytes = await file.readAsBytes();
+
       await _sb.storage.from('images').uploadBinary(
-            path,
+            fileName,
             bytes,
             fileOptions: const FileOptions(contentType: 'image/jpeg'),
           );
-      return _sb.storage.from('images').getPublicUrl(path);
+
+      return _sb.storage.from('images').getPublicUrl(fileName);
     } catch (e) {
       if (mounted) {
         showSnackBar(context, 'خطأ في رفع الصورة: $e', isError: true);
@@ -75,15 +59,66 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
     }
   }
 
-  Future<void> _openAddOrEditDialog({Map<String, dynamic>? item}) async {
-    _clearForm();
+  Future<void> _deleteItem(String id) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: const Text('حذف البنر؟', style: TextStyle(fontFamily: _font)),
+        content: const Text('هل أنت متأكد من حذف هذا البنر؟',
+            style: TextStyle(fontFamily: _font)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('إلغاء',
+                style: TextStyle(
+                  fontFamily: _font,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.grey[600],
+                )),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('حذف', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
 
-    if (item != null) {
-      _editingId = (item['id'] ?? '').toString();
-      _editingImageUrl = (item['image'] ?? '').toString();
-      _nameCtrl.text = (item['name_ar'] ?? item['name'] ?? '').toString();
-      _linkCtrl.text = (item['web'] ?? '').toString();
+    if (confirm == true) {
+      try {
+        await _sb.from('carousel').delete().eq('id', id);
+        if (mounted) {
+          showSnackBar(context, 'تم حذف البنر بنجاح');
+        }
+      } catch (e) {
+        if (mounted) {
+          showSnackBar(context, 'خطأ في الحذف: $e', isError: true);
+        }
+      }
     }
+  }
+
+  // =========================
+  // Dialog: Add/Edit
+  // =========================
+
+  Future<void> _openAddOrEditDialog({Map<String, dynamic>? item}) async {
+    final nameArCtrl = TextEditingController(
+      text: (item?['name_ar'] ?? item?['name'] ?? '').toString(),
+    );
+    final nameEnCtrl = TextEditingController(
+      text: (item?['name_en'] ?? item?['name'] ?? '').toString(),
+    );
+    final webCtrl =
+        TextEditingController(text: (item?['web'] ?? '').toString());
+
+    XFile? pickedImage;
+    Uint8List? pickedBytes;
+    bool isSaving = false;
+
+    final existingImageUrl = (item?['image'] ?? '').toString();
+    final editingId = (item?['id'] ?? '').toString();
 
     await showDialog(
       context: context,
@@ -105,16 +140,16 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
-                  _editingId == null
+                  item == null
                       ? Icons.add_photo_alternate_rounded
-                      : Icons.edit_note_rounded,
+                      : Icons.edit_rounded,
                   color: Constants.primaryColor,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  _editingId == null ? 'إضافة بنر جديد' : 'تعديل البنر',
+                  item == null ? 'إضافة بنر جديد' : 'تعديل البنر',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
@@ -126,45 +161,103 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
             ],
           ),
           content: SizedBox(
-            width: 500,
+            width: 700,
             child: SingleChildScrollView(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 10),
+              child: Column(
+                children: [
+                  const SizedBox(height: 10),
 
-                    // صورة البنر
-                    _imagePickerCard(setStateDialog),
-
-                    const SizedBox(height: 16),
-
-                    // الاسم
-                    _inputField(
-                      _nameCtrl,
-                      'عنوان البنر (اختياري)',
-                      Icons.title_rounded,
-                      isRequired: false,
+                  // Image picker card
+                  InkWell(
+                    onTap: () async {
+                      final img = await _picker.pickImage(
+                        source: ImageSource.gallery,
+                        maxWidth: 1600,
+                        imageQuality: 80,
+                      );
+                      if (img != null) {
+                        final bytes = await img.readAsBytes();
+                        setStateDialog(() {
+                          pickedImage = img;
+                          pickedBytes = bytes;
+                        });
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 86,
+                            height: 86,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: Colors.grey[200]!),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(14),
+                              child: _buildPreviewImage(
+                                pickedBytes: pickedBytes,
+                                pickedFile: pickedImage,
+                                existingUrl: existingImageUrl,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'صورة البنر',
+                                  style: TextStyle(
+                                    fontFamily: _font,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.grey[900],
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'اضغط لاختيار صورة (يفضل PNG أو JPG)',
+                                  style: TextStyle(
+                                    fontFamily: _font,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.grey[600],
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.upload_rounded, color: Colors.grey[500]),
+                        ],
+                      ),
                     ),
+                  ),
 
-                    // الرابط
-                    _inputField(
-                      _linkCtrl,
-                      'رابط عند الضغط (اختياري)',
-                      Icons.link_rounded,
-                      isRequired: false,
-                    ),
+                  const SizedBox(height: 16),
 
-                    const SizedBox(height: 6),
-                  ],
-                ),
+                  _inputField(nameArCtrl, 'الاسم (عربي)', Icons.title_rounded),
+                  _inputField(
+                      nameEnCtrl, 'Name (English)', Icons.title_outlined),
+                  _inputField(
+                      webCtrl, 'رابط الموقع (Web Link)', Icons.link_rounded),
+                  const SizedBox(height: 6),
+                ],
               ),
             ),
           ),
           actions: [
             TextButton(
-              onPressed: _isSaving ? null : () => Navigator.pop(context),
+              onPressed: isSaving ? null : () => Navigator.pop(context),
               child: Text(
                 'إلغاء',
                 style: TextStyle(
@@ -184,8 +277,67 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
                   ),
                   elevation: 0,
                 ),
-                onPressed: _isSaving ? null : () => _saveItem(setStateDialog),
-                icon: _isSaving
+                onPressed: isSaving
+                    ? null
+                    : () async {
+                        // validation
+                        if (nameArCtrl.text.trim().isEmpty) {
+                          showSnackBar(context, 'الرجاء إدخال الاسم العربي',
+                              isError: true);
+                          return;
+                        }
+                        if (item == null && pickedImage == null) {
+                          showSnackBar(context, 'الرجاء اختيار صورة البنر',
+                              isError: true);
+                          return;
+                        }
+
+                        setStateDialog(() => isSaving = true);
+
+                        try {
+                          String finalUrl = existingImageUrl;
+
+                          if (pickedImage != null) {
+                            final url = await _uploadFile(pickedImage!);
+                            if (url != null) finalUrl = url;
+                          }
+
+                          final payload = {
+                            'name_ar': nameArCtrl.text.trim(),
+                            'name_en': nameEnCtrl.text.trim().isEmpty
+                                ? nameArCtrl.text.trim()
+                                : nameEnCtrl.text.trim(),
+                            // legacy
+                            'name': nameArCtrl.text.trim(),
+                            'web': webCtrl.text.trim(),
+                            'image': finalUrl,
+                          };
+
+                          if (item == null) {
+                            await _sb.from('carousel').insert(payload);
+                            if (mounted) {
+                              Navigator.pop(context);
+                              showSnackBar(context, 'تمت الإضافة بنجاح ✅');
+                            }
+                          } else {
+                            await _sb
+                                .from('carousel')
+                                .update(payload)
+                                .eq('id', editingId);
+                            if (mounted) {
+                              Navigator.pop(context);
+                              showSnackBar(context, 'تم التحديث بنجاح ✅');
+                            }
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            showSnackBar(context, 'خطأ: $e', isError: true);
+                          }
+                        } finally {
+                          if (mounted) setStateDialog(() => isSaving = false);
+                        }
+                      },
+                icon: isSaving
                     ? const SizedBox(
                         width: 18,
                         height: 18,
@@ -197,7 +349,7 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
                     : const Icon(Icons.check_circle_rounded,
                         color: Colors.white),
                 label: Text(
-                  _editingId == null ? 'إضافة' : 'حفظ',
+                  item == null ? 'إضافة' : 'حفظ',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
@@ -213,110 +365,27 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
     );
   }
 
-  Widget _imagePickerCard(StateSetter setStateDialog) {
-    DecorationImage? imageProvider;
-    if (_pickedImageBytes != null) {
-      imageProvider = DecorationImage(
-        image: MemoryImage(_pickedImageBytes!),
+  Widget _buildPreviewImage({
+    required Uint8List? pickedBytes,
+    required XFile? pickedFile,
+    required String existingUrl,
+  }) {
+    if (pickedBytes != null) {
+      return Image.memory(pickedBytes, fit: BoxFit.cover);
+    }
+    if (existingUrl.isNotEmpty) {
+      return Image.network(
+        existingUrl,
         fit: BoxFit.cover,
-      );
-    } else if (_editingImageUrl != null && _editingImageUrl!.isNotEmpty) {
-      imageProvider = DecorationImage(
-        image: NetworkImage(_editingImageUrl!),
-        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) =>
+            Icon(Icons.broken_image, color: Colors.grey[500]),
       );
     }
-
-    return InkWell(
-      onTap: () async {
-        final XFile? xfile = await _picker.pickImage(
-          source: ImageSource.gallery,
-          maxWidth: 1500, // البنرات تحتاج جودة أعلى
-          imageQuality: 90,
-        );
-        if (xfile != null) {
-          final bytes = await xfile.readAsBytes();
-          setStateDialog(() {
-            _pickedImageFile = xfile;
-            _pickedImageBytes = bytes;
-          });
-        }
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        width: double.infinity,
-        height: 180, // مساحة أكبر للبنر
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[200]!),
-        ),
-        child: Stack(
-          children: [
-            if (imageProvider != null)
-              Positioned.fill(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    decoration: BoxDecoration(image: imageProvider),
-                  ),
-                ),
-              ),
-            if (imageProvider == null)
-              Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.add_photo_alternate_rounded,
-                        size: 40, color: Constants.primaryColor),
-                    const SizedBox(height: 10),
-                    Text(
-                      'اضغط لاختيار صورة البنر',
-                      style: TextStyle(
-                        fontFamily: _font,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.grey[700],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            // تلميح صغير
-            Positioned(
-              bottom: 0,
-              right: 0,
-              left: 0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.4),
-                  borderRadius:
-                      const BorderRadius.vertical(bottom: Radius.circular(12)),
-                ),
-                child: const Text(
-                  'يفضل صور بعرضية (Landscape)',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontFamily: _font,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    // placeholder
+    return Icon(Icons.add_a_photo_rounded, color: Constants.primaryColor);
   }
 
-  Widget _inputField(
-    TextEditingController ctrl,
-    String hint,
-    IconData icon, {
-    bool isRequired = true,
-  }) {
+  Widget _inputField(TextEditingController ctrl, String hint, IconData icon) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextFormField(
@@ -345,101 +414,13 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
           fontWeight: FontWeight.w800,
           color: Colors.grey[900],
         ),
-        validator: isRequired
-            ? (v) => (v == null || v.trim().isEmpty) ? 'هذا الحقل مطلوب' : null
-            : null,
       ),
     );
   }
 
-  Future<void> _saveItem(StateSetter setStateDialog) async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-
-    // validation للصورة
-    if (_pickedImageFile == null && _editingId == null) {
-      // حالة إضافة جديدة ولا توجد صورة
-      // لكن قد يكون المستخدم يريد إضافة بنر نصي؟ عادة البنر يحتاج صورة
-      // سنطلب الصورة كشيء أساسي
-      // يمكن إظهار رسالة
-      return;
-    }
-
-    setStateDialog(() => _isSaving = true);
-    if (mounted) setState(() => _isSaving = true);
-
-    try {
-      String? finalImageUrl = _editingImageUrl;
-
-      if (_pickedImageFile != null) {
-        final path = 'carousel/${DateTime.now().millisecondsSinceEpoch}.jpg';
-        final url = await _uploadFile(_pickedImageFile!, path);
-        if (url != null) finalImageUrl = url;
-      }
-
-      // إذا لم ينجح الرفع ولا توجد صورة قديمة، نتوقف
-      if (finalImageUrl == null || finalImageUrl.isEmpty) {
-        // handle error
-        throw Exception('يجب اختيار صورة');
-      }
-
-      final payload = {
-        'name_ar': _nameCtrl.text.trim(),
-        'web': _linkCtrl.text.trim(),
-        'image': finalImageUrl,
-      };
-
-      if (_editingId == null) {
-        await _sb.from('carousel').insert(payload);
-      } else {
-        await _sb.from('carousel').update(payload).eq('id', _editingId!);
-      }
-
-      if (!mounted) return;
-      Navigator.pop(context);
-      showSnackBar(
-        context,
-        _editingId == null ? 'تمت الإضافة بنجاح' : 'تم التحديث بنجاح',
-      );
-    } catch (e) {
-      if (mounted) showSnackBar(context, 'خطأ: $e', isError: true);
-    } finally {
-      if (mounted) {
-        setStateDialog(() => _isSaving = false);
-        setState(() => _isSaving = false);
-      }
-    }
-  }
-
-  Future<void> _deleteItem(String id) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('حذف البنر؟', style: TextStyle(fontFamily: _font)),
-        content: const Text(
-          'سيتم حذف هذا البنر نهائياً. هل أنت متأكد؟',
-          style: TextStyle(fontFamily: _font),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('إلغاء')),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('حذف', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      try {
-        await _sb.from('carousel').delete().eq('id', id);
-        if (mounted) showSnackBar(context, 'تم الحذف');
-      } catch (e) {
-        if (mounted) showSnackBar(context, 'خطأ في الحذف: $e', isError: true);
-      }
-    }
-  }
+  // =========================
+  // Build page
+  // =========================
 
   @override
   Widget build(BuildContext context) {
@@ -692,7 +673,7 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
         crossAxisCount: crossAxisCount,
         crossAxisSpacing: 14,
         mainAxisSpacing: 14,
-        mainAxisExtent: 330,
+        mainAxisExtent: 165,
       ),
       itemBuilder: (context, i) {
         final item = items[i];
@@ -702,113 +683,140 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
         final link = (item['web'] ?? '').toString();
         final id = (item['id'] ?? '').toString();
 
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.grey[200]!),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 14,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              ClipRRect(
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(18)),
-                child: imageUrl.isNotEmpty
-                    ? Image.network(
-                        imageUrl,
-                        height: 190,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          height: 190,
-                          color: Colors.grey[200],
-                          child: const Icon(Icons.broken_image,
-                              size: 44, color: Colors.grey),
-                        ),
-                      )
-                    : Container(
-                        height: 190,
-                        color: Colors.grey[200],
-                        child: const Icon(Icons.image_not_supported,
-                            size: 44, color: Colors.grey),
-                      ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        fontFamily: _font,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 14,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      link.isEmpty ? 'لا يوجد رابط' : link,
-                      style: TextStyle(
-                        fontFamily: _font,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                        color:
-                            link.isEmpty ? Colors.grey[500] : Colors.blue[700],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: Colors.grey[300]!),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                            onPressed: () => _openAddOrEditDialog(item: item),
-                            icon: Icon(Icons.edit_note_rounded,
-                                color: Colors.blueGrey[500]),
-                            label: Text(
-                              'تعديل',
-                              style: TextStyle(
-                                fontFamily: _font,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.grey[800],
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        IconButton(
-                          tooltip: 'حذف',
-                          onPressed: () => _deleteItem(id),
-                          icon: const Icon(Icons.delete_sweep_outlined,
-                              color: Colors.redAccent),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+        return _carouselCard(
+          id: id,
+          item: item,
+          name: name,
+          imageUrl: imageUrl,
+          link: link,
         );
       },
+    );
+  }
+
+  Widget _carouselCard({
+    required String id,
+    required Map<String, dynamic> item,
+    required String name,
+    required String imageUrl,
+    required String link,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                // Image
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.grey[200]!),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: imageUrl.isNotEmpty
+                        ? Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Icon(
+                              Icons.broken_image,
+                              color: Colors.grey[500],
+                            ),
+                          )
+                        : Icon(Icons.image_not_supported,
+                            color: Constants.primaryColor),
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // Name + Link
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: const TextStyle(
+                          fontFamily: _font,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        link.isEmpty ? 'بدون رابط' : link,
+                        style: TextStyle(
+                          fontFamily: _font,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                          color: link.isEmpty
+                              ? Colors.grey[600]
+                              : Colors.blue[700],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Actions
+                PopupMenuButton<String>(
+                  tooltip: 'خيارات',
+                  onSelected: (v) {
+                    if (v == 'edit') _openAddOrEditDialog(item: item);
+                    if (v == 'delete') _deleteItem(id);
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(value: 'edit', child: Text('تعديل')),
+                    PopupMenuItem(value: 'delete', child: Text('حذف')),
+                  ],
+                ),
+              ],
+            ),
+
+            const Spacer(),
+
+            // Footer: Quick buttons
+            Row(
+              children: [
+                const Spacer(),
+                IconButton(
+                  tooltip: 'تعديل',
+                  onPressed: () => _openAddOrEditDialog(item: item),
+                  icon: Icon(Icons.edit_note_rounded,
+                      color: Colors.blueGrey[500]),
+                ),
+                IconButton(
+                  tooltip: 'حذف',
+                  onPressed: () => _deleteItem(id),
+                  icon: const Icon(Icons.delete_sweep_outlined,
+                      color: Colors.redAccent),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -12,7 +12,7 @@ import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
 
-// ✅ صفحة إدارة العروض على الويب (مستقلة) - نفس أسلوب المتاجر/الكوبونات
+// ✅ صفحة إدارة العروض على الويب (مستقلة) - تم تحديث التصميم
 class WebAdminOffersScreen extends StatefulWidget {
   final bool isEmbedded;
   const WebAdminOffersScreen({super.key, this.isEmbedded = false});
@@ -126,7 +126,7 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
             height: ResponsiveLayout.isDesktop(context) ? 640 : 560,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: _OfferFormSheet(offer: offer), // ✅ نفس الفورم عندك
+              child: _OfferFormSheet(offer: offer),
             ),
           ),
         ),
@@ -397,14 +397,23 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
   }
 
   // =========================
-  // List UI
+  // Grid UI (New)
   // =========================
 
   Widget _buildOffersList(List<Map<String, dynamic>> items) {
-    return ListView.builder(
+    final isDesktop = ResponsiveLayout.isDesktop(context);
+    final crossAxisCount = isDesktop ? 3 : 1;
+
+    return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: items.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: 14,
+        mainAxisSpacing: 14,
+        mainAxisExtent: 165,
+      ),
       itemBuilder: (context, index) {
         final data = items[index];
 
@@ -438,7 +447,6 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
 
   Widget _offerCard(Offer offer, String id) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 0).copyWith(bottom: 14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
@@ -451,138 +459,153 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
           ),
         ],
       ),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          leading: Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.grey[200]!),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: offer.image.isNotEmpty
-                  ? Image.network(
-                      offer.image,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) =>
-                          Icon(Icons.broken_image, color: Colors.grey[500]),
-                    )
-                  : Icon(Icons.local_offer_outlined,
-                      color: Constants.primaryColor),
-            ),
-          ),
-          title: Text(
-            offer.name.isEmpty ? 'بدون اسم' : offer.name,
-            style: const TextStyle(
-              fontFamily: _font,
-              fontWeight: FontWeight.w900,
-              fontSize: 14,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (offer.tags.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Text(
-                  '#${offer.tags.join(" #")}',
-                  style: TextStyle(
-                    fontFamily: _font,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 11,
-                    color: Constants.primaryColor,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                // Image
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.grey[200]!),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: offer.image.isNotEmpty
+                        ? Image.network(
+                            offer.image,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Icon(
+                              Icons.broken_image,
+                              color: Colors.grey[500],
+                            ),
+                          )
+                        : Icon(Icons.local_offer_outlined,
+                            color: Constants.primaryColor),
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        offer.name.isEmpty ? 'بدون اسم' : offer.name,
+                        style: const TextStyle(
+                          fontFamily: _font,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      // Tags row
+                      if (offer.tags.isNotEmpty)
+                        Text(
+                          '#${offer.tags.join(" #")}',
+                          style: TextStyle(
+                            fontFamily: _font,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 11,
+                            color: Constants.primaryColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        )
+                      else
+                        Text(
+                          'لا يوجد وسوم',
+                          style: TextStyle(
+                            fontFamily: _font,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 11,
+                            color: Colors.grey[400],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+
+                // Popup Actions
+                PopupMenuButton<String>(
+                  tooltip: 'خيارات',
+                  onSelected: (v) {
+                    if (v == 'edit') _openAddOrEditDialog(offer: offer);
+                    if (v == 'delete') _deleteOffer(id);
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(value: 'edit', child: Text('تعديل')),
+                    PopupMenuItem(value: 'delete', child: Text('حذف')),
+                  ],
                 ),
               ],
-              if (offer.expiryDate != null) ...[
-                const SizedBox(height: 4),
-                Builder(builder: (_) {
+            ),
+
+            const SizedBox(height: 12),
+
+            // Expiry Info
+            if (offer.expiryDate != null)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Builder(builder: (_) {
                   final daysLeft =
                       offer.expiryDate!.difference(DateTime.now()).inDays;
                   final isSoon = daysLeft <= 5;
-                  return Text(
-                    daysLeft < 0
-                        ? 'منتهي منذ ${daysLeft.abs()} يوم'
-                        : 'باقي $daysLeft يوم',
-                    style: TextStyle(
-                      fontFamily: _font,
-                      fontSize: 11,
-                      color: isSoon ? Colors.red : Colors.grey[600],
-                      fontWeight: isSoon ? FontWeight.bold : FontWeight.normal,
+                  return Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isSoon ? Colors.red[50] : Colors.green[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isSoon ? Colors.red[100]! : Colors.green[100]!,
+                      ),
+                    ),
+                    child: Text(
+                      daysLeft < 0
+                          ? 'منتهي منذ ${daysLeft.abs()} يوم'
+                          : 'باقي $daysLeft يوم',
+                      style: TextStyle(
+                        fontFamily: _font,
+                        fontSize: 10,
+                        color: isSoon ? Colors.red[700] : Colors.green[700],
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   );
                 }),
+              )
+            else
+              const Spacer(), // spacer if no date to push buttons down
+
+            const Spacer(),
+
+            // Footer Buttons
+            Row(
+              children: [
+                const Spacer(),
+                IconButton(
+                  tooltip: 'تعديل',
+                  onPressed: () => _openAddOrEditDialog(offer: offer),
+                  icon: Icon(Icons.edit_note_rounded,
+                      color: Colors.blueGrey[500]),
+                ),
+                IconButton(
+                  tooltip: 'حذف',
+                  onPressed: () => _deleteOffer(id),
+                  icon: const Icon(Icons.delete_sweep_outlined,
+                      color: Colors.redAccent),
+                ),
               ],
-            ],
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                tooltip: 'تعديل',
-                onPressed: () => _openAddOrEditDialog(offer: offer),
-                icon:
-                    Icon(Icons.edit_note_rounded, color: Colors.blueGrey[500]),
-              ),
-              IconButton(
-                tooltip: 'حذف',
-                onPressed: () => _deleteOffer(id),
-                icon: const Icon(Icons.delete_sweep_outlined,
-                    color: Colors.redAccent),
-              ),
-              const Icon(Icons.expand_circle_down_outlined,
-                  size: 20, color: Colors.grey),
-            ],
-          ),
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              color: Colors.grey[50],
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'تفاصيل العرض:',
-                    style: TextStyle(
-                      fontFamily: _font,
-                      color: Constants.primaryColor,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    offer.description.isEmpty ? 'بدون وصف' : offer.description,
-                    style: TextStyle(
-                      fontFamily: _font,
-                      color: Colors.grey[700],
-                      height: 1.4,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  if (offer.web.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      offer.web,
-                      style: TextStyle(
-                        fontFamily: _font,
-                        color: Colors.blue[700],
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            )
+            ),
           ],
         ),
       ),
