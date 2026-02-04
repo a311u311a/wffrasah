@@ -85,8 +85,9 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
           );
       return _sb.storage.from('images').getPublicUrl(path);
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         showSnackBar(context, 'خطأ في رفع الصورة: $e', isError: true);
+      }
       return null;
     }
   }
@@ -214,7 +215,8 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Constants.primaryColor,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   elevation: 0,
                 ),
                 onPressed: _isSaving ? null : () => _saveStore(setStateDialog),
@@ -250,10 +252,14 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
     DecorationImage? imageProvider;
     if (_pickedImageBytes != null) {
       imageProvider = DecorationImage(
-          image: MemoryImage(_pickedImageBytes!), fit: BoxFit.contain);
+        image: MemoryImage(_pickedImageBytes!),
+        fit: BoxFit.contain,
+      );
     } else if (_editingImageUrl != null && _editingImageUrl!.isNotEmpty) {
       imageProvider = DecorationImage(
-          image: NetworkImage(_editingImageUrl!), fit: BoxFit.contain);
+        image: NetworkImage(_editingImageUrl!),
+        fit: BoxFit.contain,
+      );
     }
 
     return InkWell(
@@ -436,8 +442,10 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
 
       if (!mounted) return;
       Navigator.pop(context);
-      showSnackBar(context,
-          _editingId == null ? 'تمت الإضافة بنجاح' : 'تم التحديث بنجاح');
+      showSnackBar(
+        context,
+        _editingId == null ? 'تمت الإضافة بنجاح' : 'تم التحديث بنجاح',
+      );
     } catch (e) {
       if (mounted) showSnackBar(context, 'خطأ: $e', isError: true);
     } finally {
@@ -454,8 +462,9 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
       builder: (_) => AlertDialog(
         title: const Text('حذف المتجر؟', style: TextStyle(fontFamily: _font)),
         content: const Text(
-            'سيتم حذف المتجر وكل الكوبونات المرتبطة به. هل أنت متأكد؟',
-            style: TextStyle(fontFamily: _font)),
+          'سيتم حذف المتجر وكل الكوبونات المرتبطة به. هل أنت متأكد؟',
+          style: TextStyle(fontFamily: _font),
+        ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -575,8 +584,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
-              _addButton(),
+              // ✅ تم حذف زر الإضافة من الهيدر
             ],
           ),
           const SizedBox(height: 10),
@@ -595,38 +603,15 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
     );
   }
 
-  Widget _addButton() {
-    return SizedBox(
-      height: 44,
-      child: ElevatedButton.icon(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Constants.primaryColor,
-          elevation: 0,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-        ),
-        onPressed: () => _openAddOrEditDialog(),
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text(
-          'إضافة متجر',
-          style: TextStyle(
-            color: Colors.white,
-            fontFamily: _font,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildBody() {
     return Container(
       padding: ResponsivePadding.page(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _searchBar(),
+          // ✅ البحث + زر الإضافة جنب بعض
+          _searchWithAddButton(),
+
           const SizedBox(height: 18),
           StreamBuilder<List<Map<String, dynamic>>>(
             stream: _sb.from('stores').stream(primaryKey: ['id']).order(
@@ -688,6 +673,74 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
       final slug = (s['slug'] ?? '').toString().toLowerCase();
       return ar.contains(q) || en.contains(q) || slug.contains(q);
     }).toList();
+  }
+
+  Widget _searchWithAddButton() {
+    final isDesktop = ResponsiveLayout.isDesktop(context);
+
+    if (!isDesktop) {
+      // موبايل/تابلت: البحث ثم زر الإضافة تحتها
+      return Column(
+        children: [
+          _searchBar(),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Constants.primaryColor,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              onPressed: () => _openAddOrEditDialog(),
+              icon: const Icon(Icons.add_rounded, color: Colors.white),
+              label: const Text(
+                'إضافة متجر',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontFamily: _font,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // ديسكتوب: زر الإضافة جنب البحث
+    return Row(
+      children: [
+        Expanded(child: _searchBar()),
+        const SizedBox(width: 12),
+        SizedBox(
+          height: 46,
+          child: ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Constants.primaryColor,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+            ),
+            onPressed: () => _openAddOrEditDialog(),
+            icon: const Icon(Icons.add_rounded, color: Colors.white),
+            label: const Text(
+              'إضافة متجر',
+              style: TextStyle(
+                color: Colors.white,
+                fontFamily: _font,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _searchBar() {
@@ -818,8 +871,9 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
                             image,
                             fit: BoxFit.contain,
                             errorBuilder: (_, __, ___) => Icon(
-                                Icons.broken_image,
-                                color: Colors.grey[500]),
+                              Icons.broken_image,
+                              color: Colors.grey[500],
+                            ),
                           )
                         : Icon(Icons.storefront_rounded,
                             color: Constants.primaryColor),
