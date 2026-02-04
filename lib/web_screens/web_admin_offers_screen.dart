@@ -11,7 +11,7 @@ import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
 
-// ✅ صفحة إدارة العروض على الويب (مستقلة) - تم تحديث التصميم
+// ✅ صفحة إدارة العروض على الويب (مستقلة) - تصميم مُحدّث
 class WebAdminOffersScreen extends StatefulWidget {
   final bool isEmbedded;
   const WebAdminOffersScreen({super.key, this.isEmbedded = false});
@@ -44,14 +44,11 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
       final map = <String, String>{};
       for (final item in data) {
         final slug = (item['slug'] ?? '').toString();
-        // Prefer Arabic name if available
         final nameAr = (item['name_ar'] ?? '').toString();
         final nameEn = (item['name'] ?? '').toString();
         map[slug] = nameAr.isNotEmpty ? nameAr : nameEn;
       }
-      if (mounted) {
-        setState(() => _storeNames = map);
-      }
+      if (mounted) setState(() => _storeNames = map);
     } catch (e) {
       debugPrint('Error fetching store names: $e');
     }
@@ -369,7 +366,7 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
               controller: _searchCtrl,
               onChanged: (v) => setState(() => _search = v),
               decoration: InputDecoration(
-                hintText: 'ابحث بالاسم أو الوصف أو الوسوم أو الرابط…',
+                hintText: 'ابحث بالوصف أو الوسوم أو الرابط…',
                 hintStyle: TextStyle(
                   fontFamily: _font,
                   fontWeight: FontWeight.w700,
@@ -403,29 +400,29 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
     if (q.isEmpty) return items;
 
     bool match(Map<String, dynamic> r) {
-      final name = (r['name_ar'] ?? r['name'] ?? '').toString().toLowerCase();
       final desc = (r['description_ar'] ?? r['description'] ?? '')
           .toString()
           .toLowerCase();
       final web = (r['web'] ?? '').toString().toLowerCase();
 
-      // tags ممكن تكون List أو null
       final tagsRaw = r['tags'];
       final tags = (tagsRaw is List)
           ? tagsRaw.map((e) => e.toString().toLowerCase()).join(' ')
           : '';
 
-      return name.contains(q) ||
-          desc.contains(q) ||
+      final code = (r['code'] ?? '').toString().toLowerCase(); // ✅ بحث بالكود
+
+      return desc.contains(q) ||
           web.contains(q) ||
-          tags.contains(q);
+          tags.contains(q) ||
+          code.contains(q);
     }
 
     return items.where(match).toList();
   }
 
   // =========================
-  // Grid UI (New)
+  // Grid UI
   // =========================
 
   Widget _buildOffersList(List<Map<String, dynamic>> items) {
@@ -440,7 +437,7 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
         crossAxisCount: crossAxisCount,
         crossAxisSpacing: 14,
         mainAxisSpacing: 14,
-        mainAxisExtent: 165,
+        mainAxisExtent: 185, // ✅ زودناها شوي عشان ترتيب النصوص
       ),
       itemBuilder: (context, index) {
         final data = items[index];
@@ -451,9 +448,10 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
 
         final offerModel = Offer(
           id: data['id'].toString(),
-          name: (data['name_ar'] ?? data['name'] ?? '').toString(),
-          nameAr: (data['name_ar'] ?? '').toString(),
-          nameEn: (data['name_en'] ?? '').toString(),
+          // ✅ الاسم لم يعد مهم بالواجهة
+          name: '',
+          nameAr: '',
+          nameEn: '',
           description:
               (data['description_ar'] ?? data['description'] ?? '').toString(),
           descriptionAr: (data['description_ar'] ?? '').toString(),
@@ -466,15 +464,29 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
           expiryDate: data['expiry_date'] != null
               ? DateTime.tryParse(data['expiry_date'].toString())
               : null,
+
+          // ✅ مهم: لازم يكون Offer model عندك يحتوي storeId
+          // لو موجود سابقاً تمام
+          // ignore: deprecated_member_use_from_same_package
+          storeId: (data['store_id'] ?? '').toString(),
         );
 
-        return _offerCard(offerModel, data['id'].toString());
+        // ✅ كود الخصم من الجدول
+        final code =
+            (data['code'] ?? '').toString(); // لو عمودك coupon_code غيّره هنا
+
+        return _offerCard(
+          offerModel,
+          data['id'].toString(),
+          code: code,
+        );
       },
     );
   }
 
-  Widget _offerCard(Offer offer, String id) {
-    final storeName = _storeNames[offer.storeId] ?? '';
+  // ✅ بطاقة العرض الجديدة: اسم المتجر بالأعلى + تحته الكود + الوصف بالمنتصف
+  Widget _offerCard(Offer offer, String id, {required String code}) {
+    final storeName = _storeNames[offer.storeId] ?? 'بدون متجر';
 
     return Container(
       decoration: BoxDecoration(
@@ -492,7 +504,9 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ===== Top Row: Image + Menu
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -527,34 +541,26 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Store Name & Popup
+                      // Store name + menu
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (storeName.isNotEmpty)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
-                              margin: const EdgeInsets.only(bottom: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.grey[100],
-                                borderRadius: BorderRadius.circular(6),
+                          Expanded(
+                            child: Text(
+                              storeName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: _font,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 13,
+                                color: Colors.grey[900],
                               ),
-                              child: Text(
-                                storeName,
-                                style: TextStyle(
-                                  fontFamily: _font,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                            )
-                          else
-                            const SizedBox(),
+                            ),
+                          ),
                           SizedBox(
-                            height: 24,
-                            width: 24,
+                            height: 26,
+                            width: 26,
                             child: PopupMenuButton<String>(
                               padding: EdgeInsets.zero,
                               tooltip: 'خيارات',
@@ -562,7 +568,9 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                                 if (v == 'edit') {
                                   _openAddOrEditDialog(offer: offer);
                                 }
-                                if (v == 'delete') _deleteOffer(id);
+                                if (v == 'delete') {
+                                  _deleteOffer(id);
+                                }
                               },
                               itemBuilder: (_) => const [
                                 PopupMenuItem(
@@ -577,57 +585,88 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                         ],
                       ),
 
-                      // Offer Name
-                      Text(
-                        offer.name.isEmpty ? 'بدون اسم' : offer.name,
-                        style: const TextStyle(
-                          fontFamily: _font,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 14,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-
-                      // Offer Description (New)
-                      if (offer.description.isNotEmpty)
-                        Text(
-                          offer.description,
-                          style: TextStyle(
-                            fontFamily: _font,
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                            height: 1.2,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
                       const SizedBox(height: 6),
 
-                      // Tags row
-                      if (offer.tags.isNotEmpty)
+                      // ✅ Code badge تحت اسم المتجر
+                      if (code.trim().isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color:
+                                Constants.primaryColor.withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: Constants.primaryColor
+                                  .withValues(alpha: 0.18),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.confirmation_number_rounded,
+                                  size: 14, color: Constants.primaryColor),
+                              const SizedBox(width: 6),
+                              Text(
+                                code,
+                                style: TextStyle(
+                                  fontFamily: 'Courier',
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 12,
+                                  letterSpacing: 1.0,
+                                  color: Constants.primaryColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
                         Text(
-                          '#${offer.tags.join(" #")}',
+                          'بدون كود',
                           style: TextStyle(
                             fontFamily: _font,
-                            fontWeight: FontWeight.w700,
                             fontSize: 11,
-                            color: Constants.primaryColor,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.grey[500],
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        )
+                        ),
                     ],
                   ),
                 ),
               ],
             ),
 
-            const Spacer(),
-            const Divider(height: 20, thickness: 0.5),
+            const SizedBox(height: 12),
 
-            // Footer: Buttons (Left) + Expiry (Right)
+            // ✅ الوصف في منتصف البطاقة
+            Expanded(
+              child: (offer.description.isNotEmpty)
+                  ? Text(
+                      offer.description,
+                      style: TextStyle(
+                        fontFamily: _font,
+                        fontSize: 13,
+                        color: Colors.grey[700],
+                        height: 1.25,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  : Text(
+                      'لا يوجد وصف',
+                      style: TextStyle(
+                        fontFamily: _font,
+                        fontSize: 12,
+                        color: Colors.grey[500],
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+            ),
+
+            const Divider(height: 18, thickness: 0.5),
+
+            // Footer: Buttons + Expiry
             Row(
               children: [
                 // Buttons left
@@ -646,8 +685,8 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                     InkWell(
                       onTap: () => _deleteOffer(id),
                       borderRadius: BorderRadius.circular(8),
-                      child: Padding(
-                        padding: const EdgeInsets.all(6),
+                      child: const Padding(
+                        padding: EdgeInsets.all(6),
                         child: Icon(Icons.delete_sweep_outlined,
                             size: 20, color: Colors.redAccent),
                       ),
@@ -696,7 +735,7 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ✅ نموذج إضافة/تعديل العرض (Form Sheet)
+// ✅ نموذج إضافة/تعديل العرض (Form Sheet) - حسب ترتيبك + زرين
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _OfferFormSheet extends StatefulWidget {
@@ -711,40 +750,41 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
   static const String _font = 'Tajawal';
   final SupabaseClient _sb = Supabase.instance.client;
 
-  // Controllers
-  final TextEditingController _nameArCtrl = TextEditingController();
-  final TextEditingController _nameEnCtrl = TextEditingController();
   final TextEditingController _descArCtrl = TextEditingController();
   final TextEditingController _descEnCtrl = TextEditingController();
-  final TextEditingController _webCtrl = TextEditingController();
+  final TextEditingController _codeCtrl = TextEditingController();
+  final TextEditingController _storeUrlCtrl = TextEditingController();
   final TextEditingController _tagsCtrl = TextEditingController();
 
   String? _imageUrl;
   Uint8List? _pickedImageBytes;
   String? _selectedCategoryId;
-  String? _selectedStoreId; // ✅ Store Slug
-  List<Map<String, dynamic>> _stores = []; // ✅ App Stores
+  String? _selectedStoreId;
+  List<Map<String, dynamic>> _stores = [];
   DateTime? _expiryDate;
   bool _saving = false;
+
   bool get _isEdit => widget.offer != null;
 
   @override
   void initState() {
     super.initState();
-    _fetchStores(); // ✅ Fetch stores
+    _fetchStores();
+
     if (_isEdit) {
       final o = widget.offer!;
-      _nameArCtrl.text = o.nameAr;
-      _nameEnCtrl.text = o.nameEn;
       _descArCtrl.text = o.descriptionAr;
       _descEnCtrl.text = o.descriptionEn;
-      _webCtrl.text = o.web;
+      _storeUrlCtrl.text = o.web;
       _tagsCtrl.text = o.tags.join(', ');
       _imageUrl = o.image;
       _selectedCategoryId = o.categoryId.isNotEmpty ? o.categoryId : null;
-      // ✅ Set store id
       _selectedStoreId = o.storeId.isNotEmpty ? o.storeId : null;
       _expiryDate = o.expiryDate;
+
+      // ✅ إذا عندك code داخل Offer model فعّله هنا
+      // _codeCtrl.text = o.code;
+      _codeCtrl.text = '';
     }
   }
 
@@ -752,7 +792,7 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
     try {
       final res = await _sb
           .from('stores')
-          .select('slug, name, name_ar, image') // Fetch image too if needed
+          .select('slug, name, name_ar, image')
           .order('name');
       if (mounted) {
         setState(() {
@@ -766,11 +806,10 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
 
   @override
   void dispose() {
-    _nameArCtrl.dispose();
-    _nameEnCtrl.dispose();
     _descArCtrl.dispose();
     _descEnCtrl.dispose();
-    _webCtrl.dispose();
+    _codeCtrl.dispose();
+    _storeUrlCtrl.dispose();
     _tagsCtrl.dispose();
     super.dispose();
   }
@@ -813,14 +852,16 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
     );
-    if (picked != null) {
-      setState(() => _expiryDate = picked);
-    }
+    if (picked != null) setState(() => _expiryDate = picked);
   }
 
   Future<void> _save() async {
-    if (_nameArCtrl.text.trim().isEmpty) {
-      showSnackBar(context, 'الرجاء إدخال اسم العرض بالعربية', isError: true);
+    if (_selectedStoreId == null || _selectedStoreId!.isEmpty) {
+      showSnackBar(context, 'الرجاء اختيار المتجر', isError: true);
+      return;
+    }
+    if (_descArCtrl.text.trim().isEmpty) {
+      showSnackBar(context, 'الرجاء إدخال الوصف بالعربية', isError: true);
       return;
     }
 
@@ -828,6 +869,7 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
 
     try {
       final uploadedUrl = await _uploadImage();
+
       final tags = _tagsCtrl.text
           .split(',')
           .map((e) => e.trim())
@@ -835,15 +877,21 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
           .toList();
 
       final data = {
-        'name_ar': _nameArCtrl.text.trim(),
-        'name_en': _nameEnCtrl.text.trim(),
+        'name_ar': '',
+        'name_en': '',
         'description_ar': _descArCtrl.text.trim(),
         'description_en': _descEnCtrl.text.trim(),
-        'web': _webCtrl.text.trim(),
+
+        // ✅ كود الخصم
+        'code': _codeCtrl.text.trim(), // لو عمودك coupon_code غيّرها هنا
+
+        // ✅ رابط المتجر
+        'web': _storeUrlCtrl.text.trim(),
+
         'image': uploadedUrl ?? '',
         'tags': tags,
         'category_id': _selectedCategoryId,
-        'store_id': _selectedStoreId, // ✅ Save store_id
+        'store_id': _selectedStoreId,
         'expiry_date': _expiryDate?.toIso8601String(),
       };
 
@@ -875,7 +923,7 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ═══ صورة العرض ═══
+            // 1) الصورة
             _buildSectionTitle('صورة العرض'),
             const SizedBox(height: 10),
             Center(
@@ -919,8 +967,8 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
             ),
             const SizedBox(height: 24),
 
-            // ═══ المتجر ═══
-            _buildSectionTitle('المتجر'),
+            // 2) اختر المتجر
+            _buildSectionTitle('اختر المتجر'),
             const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -937,12 +985,15 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                           fontFamily: _font, color: Colors.grey[500])),
                   isExpanded: true,
                   items: [
-                    const DropdownMenuItem(
-                        value: null, child: Text('اختر المتجر')),
+                    const DropdownMenuItem<String>(
+                      value: null,
+                      child: Text('اختر المتجر',
+                          style: TextStyle(fontFamily: _font)),
+                    ),
                     ..._stores.map((s) {
                       final name = (s['name_ar'] ?? s['name'] ?? '').toString();
                       final slug = (s['slug'] ?? '').toString();
-                      return DropdownMenuItem(
+                      return DropdownMenuItem<String>(
                         value: slug,
                         child: Text(name,
                             style: const TextStyle(fontFamily: _font)),
@@ -955,41 +1006,8 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
             ),
             const SizedBox(height: 24),
 
-            // ═══ الاسم ═══
-            _buildSectionTitle('الاسم'),
-            const SizedBox(height: 10),
-            _inputField(_nameArCtrl, 'الاسم بالعربية', Icons.edit_rounded),
-            const SizedBox(height: 10),
-            _inputField(_nameEnCtrl, 'الاسم بالإنجليزية', Icons.edit_rounded),
-            const SizedBox(height: 24),
-
-            // ═══ الوصف ═══
-            _buildSectionTitle('الوصف'),
-            const SizedBox(height: 10),
-            _inputField(
-                _descArCtrl, 'الوصف بالعربية', Icons.description_rounded,
-                maxLines: 3),
-            const SizedBox(height: 10),
-            _inputField(
-                _descEnCtrl, 'الوصف بالإنجليزية', Icons.description_rounded,
-                maxLines: 3),
-            const SizedBox(height: 24),
-
-            // ═══ الرابط ═══
-            _buildSectionTitle('رابط العرض'),
-            const SizedBox(height: 10),
-            _inputField(
-                _webCtrl, 'https://example.com/offer', Icons.link_rounded),
-            const SizedBox(height: 24),
-
-            // ═══ الوسوم ═══
-            _buildSectionTitle('الوسوم (مفصولة بفاصلة)'),
-            const SizedBox(height: 10),
-            _inputField(_tagsCtrl, 'خصم, عرض, صيف', Icons.tag_rounded),
-            const SizedBox(height: 24),
-
-            // ═══ التصنيف ═══
-            _buildSectionTitle('التصنيف'),
+            // 3) فئة العرض
+            _buildSectionTitle('فئة العرض'),
             const SizedBox(height: 10),
             FutureBuilder<List<Map<String, dynamic>>>(
               future: _sb.from('categories').select(),
@@ -1008,17 +1026,23 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: _selectedCategoryId,
-                      hint: Text('اختر التصنيف',
+                      hint: Text('اختر الفئة',
                           style: TextStyle(
                               fontFamily: _font, color: Colors.grey[500])),
                       isExpanded: true,
                       items: [
-                        const DropdownMenuItem(
-                            value: null, child: Text('بدون تصنيف')),
-                        ...categories.map((cat) => DropdownMenuItem(
+                        const DropdownMenuItem<String>(
+                          value: null,
+                          child: Text('بدون فئة',
+                              style: TextStyle(fontFamily: _font)),
+                        ),
+                        ...categories.map((cat) => DropdownMenuItem<String>(
                               value: cat['id'].toString(),
-                              child: Text(cat['name_ar'] ?? cat['name'] ?? '',
-                                  style: const TextStyle(fontFamily: _font)),
+                              child: Text(
+                                (cat['name_ar'] ?? cat['name'] ?? '')
+                                    .toString(),
+                                style: const TextStyle(fontFamily: _font),
+                              ),
                             )),
                       ],
                       onChanged: (v) => setState(() => _selectedCategoryId = v),
@@ -1029,8 +1053,8 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
             ),
             const SizedBox(height: 24),
 
-            // ═══ تاريخ الانتهاء ═══
-            _buildSectionTitle('تاريخ الانتهاء'),
+            // 4) تاريخ الصلاحية
+            _buildSectionTitle('تاريخ الصلاحية'),
             const SizedBox(height: 10),
             GestureDetector(
               onTap: _pickExpiryDate,
@@ -1069,37 +1093,114 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                 ),
               ),
             ),
+            const SizedBox(height: 24),
+
+            // 5) الوصف بالعربي
+            _buildSectionTitle('الوصف بالعربية'),
+            const SizedBox(height: 10),
+            _inputField(
+              _descArCtrl,
+              'اكتب وصف العرض بالعربية',
+              Icons.description_rounded,
+              maxLines: 3,
+            ),
+            const SizedBox(height: 24),
+
+            // 6) الوصف بالانجليزي
+            _buildSectionTitle('الوصف بالإنجليزية'),
+            const SizedBox(height: 10),
+            _inputField(
+              _descEnCtrl,
+              'Write offer description in English',
+              Icons.description_rounded,
+              maxLines: 3,
+            ),
+            const SizedBox(height: 24),
+
+            // 7) كود الخصم
+            _buildSectionTitle('كود الخصم'),
+            const SizedBox(height: 10),
+            _inputField(
+              _codeCtrl,
+              'مثال: RBHAN20',
+              Icons.confirmation_number_rounded,
+            ),
+            const SizedBox(height: 24),
+
+            // 8) رابط المتجر
+            _buildSectionTitle('رابط المتجر'),
+            const SizedBox(height: 10),
+            _inputField(
+              _storeUrlCtrl,
+              'https://store.com',
+              Icons.link_rounded,
+            ),
+            const SizedBox(height: 24),
+
+            _buildSectionTitle('الوسوم (اختياري)'),
+            const SizedBox(height: 10),
+            _inputField(_tagsCtrl, 'خصم, عرض, رمضان', Icons.tag_rounded),
             const SizedBox(height: 32),
 
-            // ═══ زر الحفظ ═══
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: _saving ? null : _save,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Constants.primaryColor,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
-                  elevation: 0,
-                ),
-                child: _saving
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2.5, color: Colors.white),
-                      )
-                    : Text(
-                        _isEdit ? 'تحديث العرض' : 'إضافة العرض',
-                        style: const TextStyle(
+            // زرين
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 52,
+                    child: OutlinedButton(
+                      onPressed: _saving ? null : () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.grey[300]!),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text(
+                        'إلغاء',
+                        style: TextStyle(
                           fontFamily: _font,
                           fontWeight: FontWeight.w900,
                           fontSize: 16,
-                          color: Colors.white,
+                          color: Colors.black87,
                         ),
                       ),
-              ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SizedBox(
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: _saving ? null : _save,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Constants.primaryColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: _saving
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2.5, color: Colors.white),
+                            )
+                          : Text(
+                              _isEdit ? 'تحديث العرض' : 'إضافة العرض',
+                              style: const TextStyle(
+                                fontFamily: _font,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
           ],
