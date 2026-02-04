@@ -467,18 +467,21 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
           // لو موجود سابقاً تمام
           // ignore: deprecated_member_use_from_same_package
           storeId: (data['store_id'] ?? '').toString(),
-
-          // ✅ كود الخصم
-          code: (data['code'] ?? data['coupon_code'] ?? '').toString(),
         );
 
-        return _offerCard(offerModel, data['id'].toString());
+        // ✅ كود الخصم (نستخدم أول وسم كما في AdminOfferScreen)
+        String code = '';
+        if (tags.isNotEmpty) {
+          code = tags.first;
+        }
+
+        return _offerCard(offerModel, data['id'].toString(), code: code);
       },
     );
   }
 
-  // ✅ بطاقة العرض الجديدة: اسم المتجر بالأعلى + تحته الكود + الوصف بالمنتصف
-  Widget _offerCard(Offer offer, String id) {
+  // ✅ بطاقة العرض: اسم المتجر + الكود + الوصف
+  Widget _offerCard(Offer offer, String id, {required String code}) {
     final storeName = _storeNames[offer.storeId] ?? 'بدون متجر';
 
     return Container(
@@ -581,7 +584,7 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                       const SizedBox(height: 6),
 
                       // ✅ Code badge تحت اسم المتجر
-                      if (offer.code.isNotEmpty)
+                      if (code.isNotEmpty)
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 6),
@@ -601,7 +604,7 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                                   size: 14, color: Constants.primaryColor),
                               const SizedBox(width: 6),
                               Text(
-                                offer.code,
+                                code,
                                 style: TextStyle(
                                   fontFamily: 'Courier',
                                   fontWeight: FontWeight.w900,
@@ -775,8 +778,15 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
       _selectedStoreId = o.storeId.isNotEmpty ? o.storeId : null;
       _expiryDate = o.expiryDate;
 
-      // ✅ استرجاع كود الخصم عند التعديل
-      _codeCtrl.text = o.code;
+      // ✅ استرجاع كود الخصم من أول وسم (كما في AdminOfferScreen)
+      if (o.tags.isNotEmpty) {
+        _codeCtrl.text = o.tags.first;
+        // باقي الوسوم في خانة الوسوم
+        _tagsCtrl.text = o.tags.skip(1).join(', ');
+      } else {
+        _codeCtrl.text = '';
+        _tagsCtrl.text = '';
+      }
     }
   }
 
@@ -862,11 +872,17 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
     try {
       final uploadedUrl = await _uploadImage();
 
-      final tags = _tagsCtrl.text
+      final otherTags = _tagsCtrl.text
           .split(',')
           .map((e) => e.trim())
           .where((e) => e.isNotEmpty)
           .toList();
+
+      // ✅ الكود يكون أول وسم
+      final code = _codeCtrl.text.trim();
+      final List<String> tags = [];
+      if (code.isNotEmpty) tags.add(code);
+      tags.addAll(otherTags);
 
       final data = {
         'name_ar': '',
@@ -874,8 +890,7 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
         'description_ar': _descArCtrl.text.trim(),
         'description_en': _descEnCtrl.text.trim(),
 
-        // ✅ كود الخصم
-        'code': _codeCtrl.text.trim(), // لو عمودك coupon_code غيّرها هنا
+        // 'code': _codeCtrl.text.trim(), // ❌ لا نستخدم عمود code بل tags
 
         // ✅ رابط المتجر
         'web': _storeUrlCtrl.text.trim(),

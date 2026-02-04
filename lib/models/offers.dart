@@ -7,9 +7,6 @@ class Offer {
   // ✅ الجديد: ربط العرض بالمتجر (offers.store_id = stores.slug)
   final String storeId;
 
-  // ✅ كود الخصم
-  final String code;
-
   final String name;
   final String description;
 
@@ -29,7 +26,7 @@ class Offer {
     required this.id,
     required this.categoryId,
     this.storeId = '', // ✅ لا يكسر الكود القديم
-    this.code = '', // ✅ كود الخصم (اختياري لتجنب الكسر)
+
     required this.name,
     required this.description,
     required this.nameAr,
@@ -57,9 +54,6 @@ class Offer {
 
       // ✅ مهم جدًا: store_id (slug)
       storeId: _asString(data['store_id'] ?? data['storeId']),
-
-      // ✅ كود الخصم
-      code: _asString(data['code'] ?? data['coupon_code']),
 
       name: isAr ? (nAr.isNotEmpty ? nAr : nEn) : (nEn.isNotEmpty ? nEn : nAr),
       description:
@@ -92,8 +86,6 @@ class Offer {
       // ✅ نخزنها علشان الفلترة بالمتجر تشتغل محليًا بعد
       'store_id': storeId,
       'storeId': storeId,
-
-      'code': code,
 
       'name': name,
       'description': description,
