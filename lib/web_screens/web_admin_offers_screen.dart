@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -560,8 +559,9 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                               padding: EdgeInsets.zero,
                               tooltip: 'خيارات',
                               onSelected: (v) {
-                                if (v == 'edit')
+                                if (v == 'edit') {
                                   _openAddOrEditDialog(offer: offer);
+                                }
                                 if (v == 'delete') _deleteOffer(id);
                               },
                               itemBuilder: (_) => const [
@@ -722,6 +722,8 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
   String? _imageUrl;
   Uint8List? _pickedImageBytes;
   String? _selectedCategoryId;
+  String? _selectedStoreId; // ✅ Store Slug
+  List<Map<String, dynamic>> _stores = []; // ✅ App Stores
   DateTime? _expiryDate;
   bool _saving = false;
   bool get _isEdit => widget.offer != null;
@@ -729,6 +731,7 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
   @override
   void initState() {
     super.initState();
+    _fetchStores(); // ✅ Fetch stores
     if (_isEdit) {
       final o = widget.offer!;
       _nameArCtrl.text = o.nameAr;
@@ -739,7 +742,25 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
       _tagsCtrl.text = o.tags.join(', ');
       _imageUrl = o.image;
       _selectedCategoryId = o.categoryId.isNotEmpty ? o.categoryId : null;
+      // ✅ Set store id
+      _selectedStoreId = o.storeId.isNotEmpty ? o.storeId : null;
       _expiryDate = o.expiryDate;
+    }
+  }
+
+  Future<void> _fetchStores() async {
+    try {
+      final res = await _sb
+          .from('stores')
+          .select('slug, name, name_ar, image') // Fetch image too if needed
+          .order('name');
+      if (mounted) {
+        setState(() {
+          _stores = List<Map<String, dynamic>>.from(res);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching stores: $e');
     }
   }
 
@@ -822,6 +843,7 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
         'image': uploadedUrl ?? '',
         'tags': tags,
         'category_id': _selectedCategoryId,
+        'store_id': _selectedStoreId, // ✅ Save store_id
         'expiry_date': _expiryDate?.toIso8601String(),
       };
 
@@ -892,6 +914,42 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                                         fontWeight: FontWeight.w700)),
                               ],
                             ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // ═══ المتجر ═══
+            _buildSectionTitle('المتجر'),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _selectedStoreId,
+                  hint: Text('اختر المتجر',
+                      style: TextStyle(
+                          fontFamily: _font, color: Colors.grey[500])),
+                  isExpanded: true,
+                  items: [
+                    const DropdownMenuItem(
+                        value: null, child: Text('اختر المتجر')),
+                    ..._stores.map((s) {
+                      final name = (s['name_ar'] ?? s['name'] ?? '').toString();
+                      final slug = (s['slug'] ?? '').toString();
+                      return DropdownMenuItem(
+                        value: slug,
+                        child: Text(name,
+                            style: const TextStyle(fontFamily: _font)),
+                      );
+                    }),
+                  ],
+                  onChanged: (v) => setState(() => _selectedStoreId = v),
                 ),
               ),
             ),
