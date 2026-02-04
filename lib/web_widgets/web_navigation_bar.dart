@@ -7,6 +7,7 @@ import '../localization/app_localizations.dart';
 import '../providers/locale_provider.dart';
 import '../providers/user_provider.dart';
 import 'responsive_layout.dart';
+import 'web_search_dialog.dart';
 
 /// شريط تنقل احترافي وعصري للويب
 class WebNavigationBar extends StatefulWidget implements PreferredSizeWidget {
@@ -181,14 +182,18 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
     AppLocalizations? localizations,
     bool isArabic,
   ) {
+    final isMobile = !ResponsiveLayout.isDesktop(context);
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Search Icon
+        // Search Icon - show on all screens
         IconButton(
           onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('ميزة البحث قادمة قريباً')),
+            showDialog(
+              context: context,
+              barrierColor: Colors.black54,
+              builder: (context) => const WebSearchDialog(),
             );
           },
           icon: Icon(Icons.search_rounded, color: Colors.grey[600]),
@@ -199,14 +204,27 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
         ),
-        const SizedBox(width: 8),
+        if (!isMobile) const SizedBox(width: 8),
 
-        // Language Switcher
-        _buildLanguageSwitcher(localeProvider, isArabic),
-        const SizedBox(width: 20),
+        // Language Switcher - compact on mobile
+        if (isMobile)
+          IconButton(
+            onPressed: () {
+              localeProvider.setLocale(
+                  isArabic ? const Locale('en') : const Locale('ar'));
+            },
+            icon:
+                Icon(Icons.language_rounded, size: 22, color: Colors.grey[700]),
+            tooltip: isArabic ? 'English' : 'العربية',
+          )
+        else
+          _buildLanguageSwitcher(localeProvider, isArabic),
 
-        // User Account Link
-        _buildUserButton(userProvider, localizations, isArabic),
+        if (!isMobile) const SizedBox(width: 20),
+        if (isMobile) const SizedBox(width: 4),
+
+        // User Account Link - hide on mobile (available in menu)
+        if (!isMobile) _buildUserButton(userProvider, localizations, isArabic),
       ],
     );
   }
@@ -391,31 +409,32 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
 
   Widget _buildMobileMenuSheet(AppLocalizations? localizations, bool isArabic) {
     final userProvider = Provider.of<UserProvider>(context);
+    final user = userProvider.user;
 
     final allItems = [
-      {'label': 'الرئيسية', 'route': '/', 'icon': Icons.home_outlined},
-      {'label': 'المتاجر', 'route': '/stores', 'icon': Icons.store_outlined},
+      {'label': 'الرئيسية', 'route': '/', 'icon': Icons.home_rounded},
+      {'label': 'المتاجر', 'route': '/stores', 'icon': Icons.store_rounded},
       {
         'label': 'الكوبونات',
         'route': '/coupons',
-        'icon': Icons.local_activity_outlined
+        'icon': Icons.confirmation_number_rounded
       },
       {
         'label': 'العروض',
         'route': '/offers',
-        'icon': Icons.local_offer_outlined
+        'icon': Icons.local_offer_rounded
       },
       {
         'label': 'المفضلة',
         'route': '/favorites',
-        'icon': Icons.favorite_border
+        'icon': Icons.favorite_rounded
       },
-      {'label': 'من نحن', 'route': '/about', 'icon': Icons.info_outline},
-      {'label': 'اتصل بنا', 'route': '/contact', 'icon': Icons.mail_outline},
+      {'label': 'من نحن', 'route': '/about', 'icon': Icons.info_rounded},
+      {'label': 'اتصل بنا', 'route': '/contact', 'icon': Icons.mail_rounded},
       {
         'label': 'لوحة التحكم',
         'route': '/admin',
-        'icon': Icons.admin_panel_settings_outlined,
+        'icon': Icons.admin_panel_settings_rounded,
         'adminOnly': true
       },
     ];
@@ -425,27 +444,266 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
       return true;
     }).toList();
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20),
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: items.map((item) {
-          return ListTile(
-            leading:
-                Icon(item['icon'] as IconData, color: Constants.primaryColor),
-            title: Text(
-              item['label'] as String,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Tajawal',
+        children: [
+          // Header with gradient
+          Container(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Constants.primaryColor.withValues(alpha: 0.1),
+                  Constants.primaryColor.withValues(alpha: 0.02),
+                ],
+              ),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              children: [
+                // Drag indicator
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // User info or Logo
+                Row(
+                  children: [
+                    if (user != null) ...[
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor:
+                            Constants.primaryColor.withValues(alpha: 0.15),
+                        backgroundImage:
+                            user.userMetadata?['avatar_url'] != null
+                                ? NetworkImage(user.userMetadata!['avatar_url'])
+                                : null,
+                        child: user.userMetadata?['avatar_url'] == null
+                            ? Icon(Icons.person_rounded,
+                                size: 28, color: Constants.primaryColor)
+                            : null,
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              user.userMetadata?['full_name'] ?? 'مرحباً!',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.black87,
+                                fontFamily: 'Tajawal',
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              user.email ?? '',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey[600],
+                                fontFamily: 'Tajawal',
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else ...[
+                      SvgPicture.asset(
+                        'assets/image/Rbhan.svg',
+                        height: 40,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        isArabic ? 'ربحان' : 'Rbhan',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          color: Constants.primaryColor,
+                          fontFamily: 'Tajawal',
+                        ),
+                      ),
+                    ],
+                    const Spacer(),
+                    // Close button
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Icon(Icons.close_rounded,
+                            size: 20, color: Colors.grey[700]),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Menu items
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Column(
+                children: [
+                  ...items.map((item) {
+                    final isCurrent =
+                        ModalRoute.of(context)?.settings.name == item['route'];
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 6),
+                      decoration: BoxDecoration(
+                        color: isCurrent
+                            ? Constants.primaryColor.withValues(alpha: 0.08)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 4),
+                        leading: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: isCurrent
+                                ? Constants.primaryColor.withValues(alpha: 0.15)
+                                : Colors.grey[100],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            item['icon'] as IconData,
+                            color: isCurrent
+                                ? Constants.primaryColor
+                                : Colors.grey[600],
+                            size: 22,
+                          ),
+                        ),
+                        title: Text(
+                          item['label'] as String,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight:
+                                isCurrent ? FontWeight.w700 : FontWeight.w500,
+                            fontFamily: 'Tajawal',
+                            color: isCurrent
+                                ? Constants.primaryColor
+                                : Colors.black87,
+                          ),
+                        ),
+                        trailing: Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 16,
+                          color: isCurrent
+                              ? Constants.primaryColor
+                              : Colors.grey[400],
+                        ),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.pushNamed(context, item['route'] as String);
+                        },
+                      ),
+                    );
+                  }),
+                ],
               ),
             ),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, item['route'] as String);
-            },
-          );
-        }).toList(),
+          ),
+
+          // Bottom action button
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(color: Colors.grey[100]!),
+              ),
+            ),
+            child: user != null
+                ? SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        await Supabase.instance.client.auth.signOut();
+                        if (mounted) {
+                          Navigator.pushNamedAndRemoveUntil(
+                              context, '/', (_) => false);
+                        }
+                      },
+                      icon: const Icon(Icons.logout_rounded, size: 20),
+                      label: const Text(
+                        'تسجيل الخروج',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'Tajawal',
+                          fontSize: 15,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red[600],
+                        side: BorderSide(color: Colors.red[200]!),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                  )
+                : SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.pushNamed(context, '/signin');
+                      },
+                      icon: const Icon(Icons.login_rounded, size: 20),
+                      label: const Text(
+                        'تسجيل الدخول',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'Tajawal',
+                          fontSize: 15,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Constants.primaryColor,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                  ),
+          ),
+        ],
       ),
     );
   }

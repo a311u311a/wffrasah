@@ -16,7 +16,7 @@ import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
 import '../web_widgets/web_coupon_card.dart';
 import '../web_widgets/web_banner_carousel.dart';
-import '../web_widgets/web_search_bar.dart';
+
 import '../web_widgets/web_store_card.dart';
 import '../web_widgets/web_offer_card.dart';
 import '../localization/app_localizations.dart';
@@ -348,28 +348,6 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
             offset: const Offset(0, 10),
           ),
         ],
-      ),
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: ResponsivePadding.page(context).horizontal,
-          vertical: 18,
-        ),
-        child: Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 980),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.grey[200]!),
-            ),
-            child: WebSearchBar(
-              hintText: localizations?.translate('search_hint_web') ??
-                  'ابحث عن الكوبونات والمتاجر...',
-              onSearch: (query) {},
-            ),
-          ),
-        ),
       ),
     );
   }
