@@ -520,6 +520,23 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
               ascending: false,
             ),
             builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.red[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.red[100]!),
+                    ),
+                    child: Text(
+                      'حدث خطأ: ${snapshot.error}',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+                );
+              }
+
               if (!snapshot.hasData) {
                 return const Center(
                   child: Padding(
@@ -534,14 +551,21 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
                 return Center(
                   child: Padding(
                     padding: const EdgeInsets.all(40),
-                    child: Text(
-                      'لا توجد صور في الشريط حالياً',
-                      style: TextStyle(
-                        color: Colors.grey[500],
-                        fontSize: 16,
-                        fontFamily: _font,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    child: Column(
+                      children: [
+                        Icon(Icons.photo_library_outlined,
+                            size: 60, color: Colors.grey[300]),
+                        const SizedBox(height: 10),
+                        Text(
+                          'لا توجد صور في الشريط حالياً',
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 16,
+                            fontFamily: _font,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 );
