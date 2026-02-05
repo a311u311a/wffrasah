@@ -303,11 +303,7 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
                           }
 
                           final payload = {
-                            'name_ar': nameArCtrl.text.trim(),
-                            'name_en': nameEnCtrl.text.trim().isEmpty
-                                ? nameArCtrl.text.trim()
-                                : nameEnCtrl.text.trim(),
-                            // legacy
+                            // ✅ استخدام الأعمدة الموجودة في قاعدة البيانات فقط
                             'name': nameArCtrl.text.trim(),
                             'web': webCtrl.text.trim(),
                             'image': finalUrl,

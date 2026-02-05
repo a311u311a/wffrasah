@@ -960,232 +960,250 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
         color: Colors.grey[50],
         borderRadius: BorderRadius.circular(16),
       ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1) الصورة
-            _buildSectionTitle('صورة العرض'),
-            const SizedBox(height: 10),
-            Center(
-              child: GestureDetector(
-                onTap: _pickImage,
-                child: Container(
-                  width: 140,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: Colors.grey[300]!),
-                  ),
-                  child: _pickedImageBytes != null
-                      ? ClipRRect(
+      child: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1) الصورة
+                  _buildSectionTitle('صورة العرض'),
+                  const SizedBox(height: 10),
+                  Center(
+                    child: GestureDetector(
+                      onTap: _pickImage,
+                      child: Container(
+                        width: 140,
+                        height: 140,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(18),
-                          child: Image.memory(_pickedImageBytes!,
-                              fit: BoxFit.cover),
-                        )
-                      : (_imageUrl != null && _imageUrl!.isNotEmpty)
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(18),
-                              child:
-                                  Image.network(_imageUrl!, fit: BoxFit.cover),
-                            )
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.add_photo_alternate_rounded,
-                                    size: 40, color: Colors.grey[400]),
-                                const SizedBox(height: 6),
-                                Text('اختر صورة',
-                                    style: TextStyle(
-                                        fontFamily: _font,
-                                        color: Colors.grey[500],
-                                        fontWeight: FontWeight.w700)),
-                              ],
-                            ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // 2) اختر المتجر
-            _buildSectionTitle('اختر المتجر'),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.grey[300]!),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _selectedStoreId,
-                  hint: Text('اختر المتجر',
-                      style: TextStyle(
-                          fontFamily: _font, color: Colors.grey[500])),
-                  isExpanded: true,
-                  items: [
-                    const DropdownMenuItem<String>(
-                      value: null,
-                      child: Text('اختر المتجر',
-                          style: TextStyle(fontFamily: _font)),
-                    ),
-                    ..._stores.map((s) {
-                      final name = (s['name_ar'] ?? s['name'] ?? '').toString();
-                      final slug = (s['slug'] ?? '').toString();
-                      return DropdownMenuItem<String>(
-                        value: slug,
-                        child: Text(name,
-                            style: const TextStyle(fontFamily: _font)),
-                      );
-                    }),
-                  ],
-                  onChanged: (v) => setState(() => _selectedStoreId = v),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // 3) فئة العرض
-            _buildSectionTitle('فئة العرض'),
-            const SizedBox(height: 10),
-            FutureBuilder<List<Map<String, dynamic>>>(
-              future: _sb.from('categories').select(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final categories = snapshot.data!;
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.grey[300]!),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedCategoryId,
-                      hint: Text('اختر الفئة',
-                          style: TextStyle(
-                              fontFamily: _font, color: Colors.grey[500])),
-                      isExpanded: true,
-                      items: [
-                        const DropdownMenuItem<String>(
-                          value: null,
-                          child: Text('بدون فئة',
-                              style: TextStyle(fontFamily: _font)),
+                          border: Border.all(color: Colors.grey[300]!),
                         ),
-                        ...categories.map((cat) => DropdownMenuItem<String>(
-                              value: cat['id'].toString(),
-                              child: Text(
-                                (cat['name_ar'] ?? cat['name'] ?? '')
-                                    .toString(),
-                                style: const TextStyle(fontFamily: _font),
-                              ),
-                            )),
-                      ],
-                      onChanged: (v) => setState(() => _selectedCategoryId = v),
+                        child: _pickedImageBytes != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(18),
+                                child: Image.memory(_pickedImageBytes!,
+                                    fit: BoxFit.cover),
+                              )
+                            : (_imageUrl != null && _imageUrl!.isNotEmpty)
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(18),
+                                    child: Image.network(_imageUrl!,
+                                        fit: BoxFit.cover),
+                                  )
+                                : Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.add_photo_alternate_rounded,
+                                          size: 40, color: Colors.grey[400]),
+                                      const SizedBox(height: 6),
+                                      Text('اختر صورة',
+                                          style: TextStyle(
+                                              fontFamily: _font,
+                                              color: Colors.grey[500],
+                                              fontWeight: FontWeight.w700)),
+                                    ],
+                                  ),
+                      ),
                     ),
                   ),
-                );
-              },
-            ),
-            const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-            // 4) تاريخ الصلاحية
-            _buildSectionTitle('تاريخ الصلاحية'),
-            const SizedBox(height: 10),
-            GestureDetector(
-              onTap: _pickExpiryDate,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.grey[300]!),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.calendar_today_rounded, color: Colors.grey[500]),
-                    const SizedBox(width: 12),
-                    Text(
-                      _expiryDate != null
-                          ? '${_expiryDate!.year}/${_expiryDate!.month}/${_expiryDate!.day}'
-                          : 'اختر التاريخ',
-                      style: TextStyle(
-                        fontFamily: _font,
-                        fontWeight: FontWeight.w700,
-                        color: _expiryDate != null
-                            ? Colors.grey[800]
-                            : Colors.grey[500],
+                  // 2) اختر المتجر
+                  _buildSectionTitle('اختر المتجر'),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedStoreId,
+                        hint: Text('اختر المتجر',
+                            style: TextStyle(
+                                fontFamily: _font, color: Colors.grey[500])),
+                        isExpanded: true,
+                        items: [
+                          const DropdownMenuItem<String>(
+                            value: null,
+                            child: Text('اختر المتجر',
+                                style: TextStyle(fontFamily: _font)),
+                          ),
+                          ..._stores.map((s) {
+                            final name =
+                                (s['name_ar'] ?? s['name'] ?? '').toString();
+                            final slug = (s['slug'] ?? '').toString();
+                            return DropdownMenuItem<String>(
+                              value: slug,
+                              child: Text(name,
+                                  style: const TextStyle(fontFamily: _font)),
+                            );
+                          }),
+                        ],
+                        onChanged: (v) => setState(() => _selectedStoreId = v),
                       ),
                     ),
-                    const Spacer(),
-                    if (_expiryDate != null)
-                      GestureDetector(
-                        onTap: () => setState(() => _expiryDate = null),
-                        child:
-                            Icon(Icons.clear_rounded, color: Colors.grey[500]),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 3) فئة العرض
+                  _buildSectionTitle('فئة العرض'),
+                  const SizedBox(height: 10),
+                  FutureBuilder<List<Map<String, dynamic>>>(
+                    future: _sb.from('categories').select(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      final categories = snapshot.data!;
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Colors.grey[300]!),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedCategoryId,
+                            hint: Text('اختر الفئة',
+                                style: TextStyle(
+                                    fontFamily: _font,
+                                    color: Colors.grey[500])),
+                            isExpanded: true,
+                            items: [
+                              const DropdownMenuItem<String>(
+                                value: null,
+                                child: Text('بدون فئة',
+                                    style: TextStyle(fontFamily: _font)),
+                              ),
+                              ...categories.map((cat) =>
+                                  DropdownMenuItem<String>(
+                                    value: cat['id'].toString(),
+                                    child: Text(
+                                      (cat['name_ar'] ?? cat['name'] ?? '')
+                                          .toString(),
+                                      style: const TextStyle(fontFamily: _font),
+                                    ),
+                                  )),
+                            ],
+                            onChanged: (v) =>
+                                setState(() => _selectedCategoryId = v),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 4) تاريخ الصلاحية
+                  _buildSectionTitle('تاريخ الصلاحية'),
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: _pickExpiryDate,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.grey[300]!),
                       ),
-                  ],
-                ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.calendar_today_rounded,
+                              color: Colors.grey[500]),
+                          const SizedBox(width: 12),
+                          Text(
+                            _expiryDate != null
+                                ? '${_expiryDate!.year}/${_expiryDate!.month}/${_expiryDate!.day}'
+                                : 'اختر التاريخ',
+                            style: TextStyle(
+                              fontFamily: _font,
+                              fontWeight: FontWeight.w700,
+                              color: _expiryDate != null
+                                  ? Colors.grey[800]
+                                  : Colors.grey[500],
+                            ),
+                          ),
+                          const Spacer(),
+                          if (_expiryDate != null)
+                            GestureDetector(
+                              onTap: () => setState(() => _expiryDate = null),
+                              child: Icon(Icons.clear_rounded,
+                                  color: Colors.grey[500]),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 5) الوصف بالعربي
+                  _buildSectionTitle('الوصف بالعربية'),
+                  const SizedBox(height: 10),
+                  _inputField(
+                    _descArCtrl,
+                    'اكتب وصف العرض بالعربية',
+                    Icons.description_rounded,
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 6) الوصف بالانجليزي
+                  _buildSectionTitle('الوصف بالإنجليزية'),
+                  const SizedBox(height: 10),
+                  _inputField(
+                    _descEnCtrl,
+                    'Write offer description in English',
+                    Icons.description_rounded,
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 7) كود الخصم
+                  _buildSectionTitle('كود الخصم'),
+                  const SizedBox(height: 10),
+                  _inputField(
+                    _codeCtrl,
+                    'مثال: RBHAN20',
+                    Icons.confirmation_number_rounded,
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 8) رابط المتجر
+                  _buildSectionTitle('رابط المتجر'),
+                  const SizedBox(height: 10),
+                  _inputField(
+                    _storeUrlCtrl,
+                    'https://store.com',
+                    Icons.link_rounded,
+                  ),
+                  const SizedBox(height: 24),
+
+                  _buildSectionTitle('الوسوم (اختياري)'),
+                  const SizedBox(height: 10),
+                  _inputField(_tagsCtrl, 'خصم, عرض, رمضان', Icons.tag_rounded),
+                  const SizedBox(height: 12),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
+          ),
 
-            // 5) الوصف بالعربي
-            _buildSectionTitle('الوصف بالعربية'),
-            const SizedBox(height: 10),
-            _inputField(
-              _descArCtrl,
-              'اكتب وصف العرض بالعربية',
-              Icons.description_rounded,
-              maxLines: 3,
+          // ✅ الأزرار الثابتة في الأسفل
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              border: Border(top: BorderSide(color: Colors.grey[200]!)),
             ),
-            const SizedBox(height: 24),
-
-            // 6) الوصف بالانجليزي
-            _buildSectionTitle('الوصف بالإنجليزية'),
-            const SizedBox(height: 10),
-            _inputField(
-              _descEnCtrl,
-              'Write offer description in English',
-              Icons.description_rounded,
-              maxLines: 3,
-            ),
-            const SizedBox(height: 24),
-
-            // 7) كود الخصم
-            _buildSectionTitle('كود الخصم'),
-            const SizedBox(height: 10),
-            _inputField(
-              _codeCtrl,
-              'مثال: RBHAN20',
-              Icons.confirmation_number_rounded,
-            ),
-            const SizedBox(height: 24),
-
-            // 8) رابط المتجر
-            _buildSectionTitle('رابط المتجر'),
-            const SizedBox(height: 10),
-            _inputField(
-              _storeUrlCtrl,
-              'https://store.com',
-              Icons.link_rounded,
-            ),
-            const SizedBox(height: 24),
-
-            _buildSectionTitle('الوسوم (اختياري)'),
-            const SizedBox(height: 10),
-            _inputField(_tagsCtrl, 'خصم, عرض, رمضان', Icons.tag_rounded),
-            const SizedBox(height: 32),
-
-            // زرين
-            Row(
+            child: Row(
               children: [
                 Expanded(
                   child: SizedBox(
@@ -1244,9 +1262,8 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

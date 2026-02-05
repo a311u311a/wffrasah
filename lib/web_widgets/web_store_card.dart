@@ -38,8 +38,8 @@ class _WebStoreCardState extends State<WebStoreCard> {
           transform: Matrix4.identity()
             ..translateByDouble(0.0, isHovered ? -5.0 : 0.0, 0.0, 1.0),
           child: Card(
-            elevation: isHovered ? 12 : 3,
-            shadowColor: Constants.primaryColor.withValues(alpha: 0.2),
+            elevation: isHovered ? 20 : 8, // ✅ ظلال أكثر وضوحاً
+            shadowColor: Constants.primaryColor.withValues(alpha: 0.35),
             clipBehavior: Clip.antiAlias, // ✅ يقص أي محتوى زائد
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
@@ -74,10 +74,10 @@ class _WebStoreCardState extends State<WebStoreCard> {
 
   Widget _buildStoreImage() {
     return Container(
-      width: 60,
-      height: 60,
+      width: 100, // ✅ زيادة الحجم
+      height: 100,
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
+        borderRadius: BorderRadius.circular(16), // ✅ مربعة بزوايا دائرية
         boxShadow: [
           BoxShadow(
             color: Colors.white,
@@ -86,10 +86,11 @@ class _WebStoreCardState extends State<WebStoreCard> {
           ),
         ],
       ),
-      child: ClipOval(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16), // ✅ مربعة بزوايا دائرية
         child: CachedNetworkImage(
           imageUrl: widget.store.image,
-          fit: BoxFit.cover,
+          fit: BoxFit.contain,
           placeholder: (context, url) => Container(
             color: Colors.grey[200],
             child: const Center(

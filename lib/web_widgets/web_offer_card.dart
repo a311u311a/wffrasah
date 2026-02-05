@@ -122,7 +122,7 @@ class _WebOfferCardState extends State<WebOfferCard> {
   Widget _buildOfferImage(bool isFavorite, FavoriteProvider favoriteProvider) {
     return ClipRRect(
       child: AspectRatio(
-        aspectRatio: 2.3 / 1, // ✅ تصغير الارتفاع
+        aspectRatio: 1.8 / 1, // ✅ زيادة ارتفاع الصورة
         child: CachedNetworkImage(
           imageUrl: widget.offer.image,
           fit: BoxFit.fill,
