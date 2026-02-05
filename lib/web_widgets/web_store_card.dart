@@ -43,6 +43,10 @@ class _WebStoreCardState extends State<WebStoreCard> {
             clipBehavior: Clip.antiAlias, // ✅ يقص أي محتوى زائد
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(
+                color: Colors.grey,
+                width: 6,
+              ),
             ),
             child: Container(
               decoration: BoxDecoration(
@@ -74,8 +78,8 @@ class _WebStoreCardState extends State<WebStoreCard> {
 
   Widget _buildStoreImage() {
     return Container(
-      width: 100, // ✅ زيادة الحجم
-      height: 100,
+      width: 120, // ✅ زيادة الحجم
+      height: 120,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16), // ✅ مربعة بزوايا دائرية
         boxShadow: [
@@ -90,7 +94,7 @@ class _WebStoreCardState extends State<WebStoreCard> {
         borderRadius: BorderRadius.circular(16), // ✅ مربعة بزوايا دائرية
         child: CachedNetworkImage(
           imageUrl: widget.store.image,
-          fit: BoxFit.contain,
+          fit: BoxFit.fill,
           placeholder: (context, url) => Container(
             color: Colors.grey[200],
             child: const Center(
