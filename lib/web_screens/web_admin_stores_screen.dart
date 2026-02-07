@@ -37,12 +37,31 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
   Uint8List? _pickedImageBytes;
   bool _isSaving = false;
 
+  // الفئة المختارة
+  String? _selectedCategoryId;
+  List<Map<String, dynamic>> _categories = [];
+
   // Picker
   final ImagePicker _picker = ImagePicker();
 
   // UI state
   final TextEditingController _searchCtrl = TextEditingController();
   String _search = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final data = await _sb.from('categories').select().order('name_ar');
+      if (mounted) {
+        setState(() => _categories = List<Map<String, dynamic>>.from(data));
+      }
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -63,6 +82,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
     _storeDescEnCtrl.clear();
     _pickedStoreImageFile = null;
     _pickedImageBytes = null;
+    _selectedCategoryId = null;
   }
 
   String _toSlug(String input) {
@@ -106,6 +126,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
       _storeDescEnCtrl.text =
           (store['description_en'] ?? store['description'] ?? '').toString();
       _editingImageUrl = (store['image'] ?? '').toString();
+      _selectedCategoryId = store['category_id']?.toString();
     }
 
     if (!mounted) return;
@@ -159,8 +180,21 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
                   children: [
                     const SizedBox(height: 10),
 
-                    // صورة المتجر
-                    _imagePickerCard(setStateDialog),
+                    // صورة المتجر + اختيار الفئة
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // صورة المتجر
+                        Expanded(
+                          child: _imagePickerCard(setStateDialog),
+                        ),
+                        const SizedBox(width: 12),
+                        // اختيار الفئة
+                        Expanded(
+                          child: _categoryDropdown(setStateDialog),
+                        ),
+                      ],
+                    ),
 
                     const SizedBox(height: 16),
 
@@ -335,6 +369,91 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
     );
   }
 
+  /// Dropdown لاختيار الفئة
+  Widget _categoryDropdown(StateSetter setStateDialog) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.category_rounded,
+                  color: Constants.primaryColor, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'الفئة',
+                style: TextStyle(
+                  fontFamily: _font,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.grey[900],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[200]!),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _selectedCategoryId,
+                isExpanded: true,
+                hint: Text(
+                  'اختر الفئة',
+                  style: TextStyle(
+                    fontFamily: _font,
+                    color: Colors.grey[500],
+                  ),
+                ),
+                items: [
+                  DropdownMenuItem<String>(
+                    value: null,
+                    child: Text(
+                      'بدون فئة',
+                      style: TextStyle(
+                        fontFamily: _font,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                  ..._categories.map((cat) {
+                    final id = cat['id'].toString();
+                    final name =
+                        (cat['name_ar'] ?? cat['name'] ?? '').toString();
+                    return DropdownMenuItem<String>(
+                      value: id,
+                      child: Text(
+                        name,
+                        style: TextStyle(
+                          fontFamily: _font,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+                onChanged: (value) {
+                  setStateDialog(() => _selectedCategoryId = value);
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _twoColumns({required Widget left, required Widget right}) {
     final isDesktop = ResponsiveLayout.isDesktop(context);
     if (!isDesktop) {
@@ -432,6 +551,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
         'description': _storeDescArCtrl.text.trim(),
         'slug': slug,
         'image': finalImageUrl ?? '',
+        'category_id': _selectedCategoryId,
       };
 
       if (_editingId == null) {

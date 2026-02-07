@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../constants.dart';
@@ -21,12 +20,10 @@ class WebCouponsScreen extends StatefulWidget {
 
 class _WebCouponsScreenState extends State<WebCouponsScreen> {
   final supabase = Supabase.instance.client;
-  List<Coupon> coupons = []; // الكوبونات المفلترة
-  List<Coupon> allCoupons = []; // كل الكوبونات (للفلاتر)
+  List<Coupon> coupons = [];
   List<Store> stores = [];
   Map<String, Store> storesMap = {};
   bool isLoading = true;
-  String? selectedStoreId;
   String searchQuery = '';
 
   @override
@@ -55,21 +52,10 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
       storesMap = {for (var store in loadedStores) store.id: store};
 
       // تحميل الكوبونات
-      // ⚠️ مهم: الكوبونات تستخدم slug في store_id، ليس UUID!
-      dynamic couponsData;
-
-      if (selectedStoreId != null) {
-        couponsData = await supabase
-            .from('coupons')
-            .select()
-            .eq('store_id', selectedStoreId!)
-            .order('created_at', ascending: false);
-      } else {
-        couponsData = await supabase
-            .from('coupons')
-            .select()
-            .order('created_at', ascending: false);
-      }
+      final couponsData = await supabase
+          .from('coupons')
+          .select()
+          .order('created_at', ascending: false);
 
       final loadedCoupons = (couponsData as List)
           .map((coupon) => Coupon.fromSupabase(coupon, langCode))
@@ -78,10 +64,6 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
       setState(() {
         stores = loadedStores;
         coupons = loadedCoupons;
-        // حفظ كل الكوبونات عند التحميل الأول فقط
-        if (selectedStoreId == null) {
-          allCoupons = loadedCoupons;
-        }
         isLoading = false;
       });
     } catch (e) {
@@ -187,14 +169,6 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
   }
 
   Widget _buildFilters() {
-    // المتاجر التي لديها كوبونات - استخدام allCoupons بدلاً من coupons
-    final storesWithCoupons = stores
-        .where((store) {
-          return allCoupons.any((coupon) => coupon.storeId == store.slug);
-        })
-        .take(20)
-        .toList(); // زيادة العدد إلى 20
-
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: ResponsivePadding.page(context).horizontal,
@@ -240,146 +214,7 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 24),
-
-          // عنوان الفلاتر
-          Row(
-            children: [
-              Icon(
-                Icons.filter_list_rounded,
-                color: Constants.primaryColor,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'فلترة حسب المتجر:',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.grey[800],
-                  fontFamily: 'Tajawal',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // القائمة الأفقية للفلاتر
-          SizedBox(
-            height: 48,
-            child: ScrollConfiguration(
-              behavior: ScrollConfiguration.of(context).copyWith(
-                dragDevices: {
-                  PointerDeviceKind.touch,
-                  PointerDeviceKind.mouse,
-                },
-                scrollbars: false,
-              ),
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                children: [
-                  // زر "الكل"
-                  _buildFilterButton(
-                    label: 'الكل 🎯',
-                    isSelected: selectedStoreId == null,
-                    onTap: () {
-                      setState(() => selectedStoreId = null);
-                      _loadData();
-                    },
-                    isPrimary: true,
-                  ),
-                  const SizedBox(width: 12),
-
-                  // أزرار المتاجر
-                  ...storesWithCoupons.map((store) {
-                    final couponCount =
-                        allCoupons.where((c) => c.storeId == store.slug).length;
-                    return Padding(
-                      padding: const EdgeInsets.only(left: 12),
-                      child: _buildFilterButton(
-                        label: '${store.name} ($couponCount)',
-                        isSelected: selectedStoreId == store.slug,
-                        onTap: () {
-                          setState(() => selectedStoreId = store.slug);
-                          _loadData();
-                        },
-                        isPrimary: false,
-                      ),
-                    );
-                  }),
-                ],
-              ),
-            ),
-          ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildFilterButton({
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-    required bool isPrimary,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          decoration: BoxDecoration(
-            gradient: isSelected
-                ? LinearGradient(
-                    colors: [
-                      Constants.primaryColor,
-                      Constants.primaryColor.withValues(alpha: 0.8),
-                    ],
-                  )
-                : null,
-            color: isSelected ? null : Colors.grey[100],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? Constants.primaryColor : Colors.grey[300]!,
-              width: isSelected ? 2 : 1,
-            ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Constants.primaryColor.withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : [],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (isSelected && isPrimary)
-                const Padding(
-                  padding: EdgeInsets.only(left: 8),
-                  child: Icon(
-                    Icons.check_circle_rounded,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                ),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: isSelected ? Colors.white : Colors.grey[700],
-                  fontFamily: 'Tajawal',
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

@@ -9,6 +9,7 @@ class Store {
   final String descriptionAr;
   final String descriptionEn;
   final String image;
+  final String? categoryId; // ✅ الفئة
 
   Store({
     required this.id,
@@ -20,6 +21,7 @@ class Store {
     required this.descriptionAr,
     required this.descriptionEn,
     required this.image,
+    this.categoryId,
   });
 
   /// ✅ مفتاح الربط الموحّد:
@@ -60,6 +62,7 @@ class Store {
       descriptionAr: dAr,
       descriptionEn: dEn,
       image: (data['image'] ?? '').toString().trim(),
+      categoryId: data['category_id']?.toString(),
     );
   }
 
@@ -71,6 +74,7 @@ class Store {
       'description_en': descriptionEn,
       'image': image,
       'slug': slug,
+      'category_id': categoryId,
     };
   }
 }

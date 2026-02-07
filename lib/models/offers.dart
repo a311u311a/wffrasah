@@ -22,6 +22,9 @@ class Offer {
   final List<String> tags;
   final DateTime? expiryDate;
 
+  /// ✅ الكود يُخزّن كأول عنصر في tags (اختياري)
+  String get code => tags.isNotEmpty ? tags.first : '';
+
   Offer({
     required this.id,
     required this.categoryId,

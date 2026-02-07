@@ -45,7 +45,7 @@ class _WebStoreCardState extends State<WebStoreCard> {
               borderRadius: BorderRadius.circular(16),
               side: const BorderSide(
                 color: Colors.grey,
-                width: 6,
+                width: 1,
               ),
             ),
             child: Container(
@@ -94,7 +94,7 @@ class _WebStoreCardState extends State<WebStoreCard> {
         borderRadius: BorderRadius.circular(16), // ✅ مربعة بزوايا دائرية
         child: CachedNetworkImage(
           imageUrl: widget.store.image,
-          fit: BoxFit.fill,
+          fit: BoxFit.contain,
           placeholder: (context, url) => Container(
             color: Colors.grey[200],
             child: const Center(

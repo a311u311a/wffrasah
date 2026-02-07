@@ -53,7 +53,8 @@ class _WebOfferCardState extends State<WebOfferCard> {
                 transform: Matrix4.identity()
                   ..translateByDouble(0.0, isHovered ? -4.0 : 0.0, 0.0, 1.0),
                 child: Card(
-                  elevation: isHovered ? 12 : 3,
+                  elevation: isHovered ? 20 : 8, // ✅ ظلال أكثر وضوحاً
+                  shadowColor: Constants.primaryColor.withValues(alpha: 0.35),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -69,16 +70,7 @@ class _WebOfferCardState extends State<WebOfferCard> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // ✅ رأس البطاقة المحسّن: يظهر أولاً قبل الصورة
-                        if (widget.storeName != null ||
-                            widget.storeImage != null)
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                            child:
-                                _buildStoreHeader(isFavorite, favoriteProvider),
-                          ),
-
-                        // صورة العرض
+                        // صورة العرض مع الكود عليها
                         _buildOfferImage(isFavorite, favoriteProvider),
 
                         Expanded(
@@ -86,7 +78,7 @@ class _WebOfferCardState extends State<WebOfferCard> {
                             padding: const EdgeInsets.all(16),
                             child: Column(
                               children: [
-                                // منطقة المحتوى القابلة للتمرير (العنوان والوصف)
+                                // منطقة المحتوى القابلة للتمرير
                                 Expanded(
                                   child: SingleChildScrollView(
                                     physics: const BouncingScrollPhysics(),
@@ -94,8 +86,10 @@ class _WebOfferCardState extends State<WebOfferCard> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        _buildTitle(),
-                                        const SizedBox(height: 8),
+                                        // صف اسم المتجر والكود
+                                        _buildStoreAndCodeRow(),
+                                        const SizedBox(height: 10),
+                                        // الوصف
                                         _buildDescription(),
                                       ],
                                     ),
@@ -121,110 +115,193 @@ class _WebOfferCardState extends State<WebOfferCard> {
 
   Widget _buildOfferImage(bool isFavorite, FavoriteProvider favoriteProvider) {
     return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(16),
+        topRight: Radius.circular(16),
+      ),
       child: AspectRatio(
-        aspectRatio: 1.8 / 1, // ✅ زيادة ارتفاع الصورة
-        child: CachedNetworkImage(
-          imageUrl: widget.offer.image,
-          fit: BoxFit.fill,
-          placeholder: (context, url) => Container(
-            color: Colors.grey[200],
-            child: const Center(
-              child: CircularProgressIndicator(),
-            ),
-          ),
-          errorWidget: (context, url, error) => Container(
-            color: Colors.grey[200],
-            child: Icon(
-              Icons.local_mall_rounded,
-              size: 48,
-              color: Constants.primaryColor,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStoreHeader(bool isFavorite, FavoriteProvider favoriteProvider) {
-    return Row(
-      children: [
-        if (widget.storeImage != null)
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.grey[100]!),
-              color: Colors.white,
-            ),
-            child: ClipOval(
-              child: CachedNetworkImage(
-                imageUrl: widget.storeImage!,
-                fit: BoxFit.contain,
-                errorWidget: (context, url, error) =>
-                    const Icon(Icons.store_rounded, size: 20),
+        aspectRatio: 1.8 / 1,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // الصورة
+            CachedNetworkImage(
+              imageUrl: widget.offer.image,
+              fit: BoxFit.fill,
+              placeholder: (context, url) => Container(
+                color: Colors.grey[200],
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+              errorWidget: (context, url, error) => Container(
+                color: Colors.grey[200],
+                child: Icon(
+                  Icons.local_mall_rounded,
+                  size: 48,
+                  color: Constants.primaryColor,
+                ),
               ),
             ),
-          ),
-        if (widget.storeImage != null) const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            widget.storeName ?? 'متجر',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-              color: Constants.primaryColor,
-              fontFamily: 'Tajawal',
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        // Favorite Button
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              favoriteProvider.toggleFavorite(widget.offer, context);
-              HapticFeedback.mediumImpact();
-            },
-            borderRadius: BorderRadius.circular(30),
-            child: Container(
-              padding: const EdgeInsets.all(8),
+            // طبقة تعتيم خفيفة
+            Container(
               decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Icon(
-                isFavorite ? Icons.favorite : Icons.favorite_border,
-                size: 20,
-                color: isFavorite ? Colors.red : Colors.grey[600],
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.5),
+                  ],
+                ),
               ),
             ),
-          ),
+
+            // زر المفضلة
+            Positioned(
+              top: 12,
+              left: 12,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    favoriteProvider.toggleFavorite(widget.offer, context);
+                    HapticFeedback.mediumImpact();
+                  },
+                  borderRadius: BorderRadius.circular(30),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      isFavorite ? Icons.favorite : Icons.favorite_border,
+                      size: 20,
+                      color: isFavorite ? Colors.red : Colors.grey[600],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
-  Widget _buildTitle() {
-    return Text(
-      widget.offer.name,
-      style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w700,
-        color: Colors.black87,
-        fontFamily: 'Tajawal',
-      ),
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
+  /// صف اسم المتجر (يمين) والكود (يسار)
+  Widget _buildStoreAndCodeRow() {
+    final hasCode = widget.offer.code.isNotEmpty;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // اسم المتجر على اليمين
+        Expanded(
+          child: Row(
+            children: [
+              // شعار المتجر إذا وجد
+              if (widget.storeImage != null && widget.storeImage!.isNotEmpty)
+                Container(
+                  width: 35,
+                  height: 35,
+                  margin: const EdgeInsets.only(left: 8),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.grey[200]!),
+                    color: Colors.white,
+                  ),
+                  child: ClipOval(
+                    child: CachedNetworkImage(
+                      imageUrl: widget.storeImage!,
+                      fit: BoxFit.contain,
+                      errorWidget: (context, url, error) => Icon(
+                          Icons.store_rounded,
+                          size: 16,
+                          color: Colors.grey[400]),
+                    ),
+                  ),
+                ),
+              // اسم المتجر
+              Expanded(
+                child: Text(
+                  widget.storeName ?? '',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Constants.primaryColor,
+                    fontFamily: 'Tajawal',
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // الكود على اليسار (إذا وجد) - قابل للنسخ
+        if (hasCode)
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                Clipboard.setData(ClipboardData(text: widget.offer.code));
+                HapticFeedback.mediumImpact();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'تم نسخ الكود: ${widget.offer.code}',
+                      style: const TextStyle(fontFamily: 'Tajawal'),
+                    ),
+                    backgroundColor: Colors.green,
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              },
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Constants.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Constants.primaryColor.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.content_copy_rounded,
+                      size: 14,
+                      color: Constants.primaryColor,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      widget.offer.code,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Constants.primaryColor,
+                        fontFamily: 'Tajawal',
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 

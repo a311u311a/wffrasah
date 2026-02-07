@@ -231,7 +231,7 @@ class _WebCouponCardState extends State<WebCouponCard> {
       style: TextStyle(
         fontSize: 13,
         color: Colors.grey[700],
-        height: 1.35,
+        height: 1.20,
         fontFamily: 'Tajawal',
       ),
       maxLines: maxLines,
@@ -241,12 +241,12 @@ class _WebCouponCardState extends State<WebCouponCard> {
 
   Widget _buildCouponCode() {
     return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Constants.primaryColor.withValues(alpha: 0.1),
-              Constants.primaryColor.withValues(alpha: 0.05),
+              Colors.white.withValues(alpha: 0.1),
+              Colors.white.withValues(alpha: 0.05),
             ],
           ),
           borderRadius: BorderRadius.circular(12),
@@ -303,65 +303,69 @@ class _WebCouponCardState extends State<WebCouponCard> {
   }
 
   Widget _buildActions(bool isFavorite, FavoriteProvider favoriteProvider) {
-    return Row(
-      children: [
-        Expanded(
-          child: SizedBox(
-            height: 42,
-            child: ElevatedButton(
-              onPressed: _copyCode,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Constants.primaryColor,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0, top: 12.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Expanded(
+            child: SizedBox(
+              height: 42,
+              child: ElevatedButton(
+                onPressed: _copyCode,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Constants.primaryColor,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-              ),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.copy_all_rounded, size: 16),
-                    const SizedBox(width: 6),
-                    Text(
-                      widget.coupon.code.isNotEmpty
-                          ? 'نسخ واستخدام'
-                          : 'استخدام العرض',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                        fontFamily: 'Tajawal',
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.copy_all_rounded, size: 16),
+                      const SizedBox(width: 6),
+                      Text(
+                        widget.coupon.code.isNotEmpty
+                            ? 'نسخ واستخدام'
+                            : 'استخدام العرض',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                          fontFamily: 'Tajawal',
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-        const SizedBox(width: 8),
-        SizedBox(
-          width: 42,
-          height: 42,
-          child: Material(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(12),
-            child: InkWell(
-              onTap: _share,
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 42,
+            height: 42,
+            child: Material(
+              color: Colors.grey[100],
               borderRadius: BorderRadius.circular(12),
-              child: Icon(
-                Icons.share_rounded,
-                size: 20,
-                color: Colors.grey[700],
+              child: InkWell(
+                onTap: _share,
+                borderRadius: BorderRadius.circular(12),
+                child: Icon(
+                  Icons.share_rounded,
+                  size: 20,
+                  color: Colors.grey[700],
+                ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
