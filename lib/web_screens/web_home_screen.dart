@@ -766,7 +766,9 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: ResponsiveGrid.columns(context, max: 6),
+                  crossAxisCount: ResponsiveLayout.isDesktop(context)
+                      ? ResponsiveGrid.columns(context, max: 6)
+                      : ResponsiveGrid.columns(context, max: 2),
                   crossAxisSpacing: ResponsiveGrid.spacing(context),
                   mainAxisSpacing: ResponsiveGrid.spacing(context),
                   mainAxisExtent: _couponCardExtent(context),
@@ -920,8 +922,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
               physics: const NeverScrollableScrollPhysics(),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: ResponsiveLayout.isDesktop(context)
-                    ? ResponsiveGrid.columns(context,
-                        max: 4) // ✅ توحيد مع صفحة العروض
+                    ? ResponsiveGrid.columns(context, max: 4)
                     : ResponsiveGrid.columns(context, max: 2),
                 crossAxisSpacing: ResponsiveGrid.spacing(context),
                 mainAxisSpacing: ResponsiveGrid.spacing(context),
@@ -929,9 +930,9 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
               ),
               itemCount: () {
                 final cols = ResponsiveLayout.isDesktop(context)
-                    ? ResponsiveGrid.columns(context, max: 6)
+                    ? ResponsiveGrid.columns(context, max: 4)
                     : ResponsiveGrid.columns(context, max: 2);
-                final limit = cols * 2; // ✅ 2 rows only
+                final limit = cols * 3; // ✅ 3 rows
                 return latestOffers.length > limit
                     ? limit
                     : latestOffers.length;

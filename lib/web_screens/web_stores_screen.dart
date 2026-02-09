@@ -118,169 +118,143 @@ class _WebStoresScreenState extends State<WebStoresScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: const WebNavigationBar(),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Header Section
-            _buildHeader(),
+      body: Column(
+        children: [
+          // ✅ Header ثابت في الأعلى
+          _buildHeader(),
+          // ✅ المحتوى القابل للتمرير
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // المحتوى الرئيسي: القائمة الجانبية + شبكة المتاجر
+                  Padding(
+                    padding: ResponsivePadding.page(context),
+                    child: isDesktop
+                        ? Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // شبكة المتاجر (الجزء الأكبر)
+                              Expanded(
+                                flex: 4,
+                                child: _buildStoresGrid(),
+                              ),
+                              const SizedBox(width: 24),
+                              // قائمة الفئات على اليمين
+                              SizedBox(
+                                width: 220,
+                                child: _buildCategoriesSidebar(),
+                              ),
+                            ],
+                          )
+                        : Column(
+                            children: [
+                              // قائمة الفئات أفقية للموبايل
+                              _buildCategoriesHorizontal(),
+                              const SizedBox(height: 20),
+                              _buildStoresGrid(),
+                            ],
+                          ),
+                  ),
 
-            // Search Section
-            _buildSearchSection(),
-
-            // المحتوى الرئيسي: القائمة الجانبية + شبكة المتاجر
-            Padding(
-              padding: ResponsivePadding.page(context),
-              child: isDesktop
-                  ? Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // شبكة المتاجر (الجزء الأكبر)
-                        Expanded(
-                          flex: 4,
-                          child: _buildStoresGrid(),
-                        ),
-                        const SizedBox(width: 24),
-                        // قائمة الفئات على اليمين
-                        SizedBox(
-                          width: 220,
-                          child: _buildCategoriesSidebar(),
-                        ),
-                      ],
-                    )
-                  : Column(
-                      children: [
-                        // قائمة الفئات أفقية للموبايل
-                        _buildCategoriesHorizontal(),
-                        const SizedBox(height: 20),
-                        _buildStoresGrid(),
-                      ],
-                    ),
+                  // Footer
+                  const WebFooter(),
+                ],
+              ),
             ),
-
-            // Footer
-            const WebFooter(),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildHeader() {
     return Container(
-      padding: ResponsivePadding.page(context),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Constants.primaryColor.withValues(alpha: 0.1),
-            Colors.white,
-          ],
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 40),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Constants.primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.storefront_rounded,
-                  color: Constants.primaryColor,
-                  size: 32,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Text(
-                'جميع المتاجر',
-                style: TextStyle(
-                  fontSize: ResponsiveLayout.isDesktop(context) ? 42 : 32,
-                  fontWeight: FontWeight.w900,
-                  color: Constants.primaryColor,
-                  fontFamily: 'Tajawal',
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            '🛍️ تصفح متاجرك المفضلة واحصل على أفضل العروض والكوبونات',
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey[700],
-              fontFamily: 'Tajawal',
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 40),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSearchSection() {
-    return Container(
       padding: EdgeInsets.symmetric(
         horizontal: ResponsivePadding.page(context).horizontal,
-        vertical: 30,
+        vertical: 10,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 4,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // شريط البحث
           Container(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: TextField(
-              controller: searchController,
-              onChanged: _filterStores,
-              decoration: InputDecoration(
-                hintText: 'ابحث عن متجر...',
-                hintStyle: const TextStyle(fontFamily: 'Tajawal'),
-                prefixIcon: Icon(Icons.search, color: Constants.primaryColor),
-                suffixIcon: searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          searchController.clear();
-                          _filterStores('');
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide:
-                      BorderSide(color: Constants.primaryColor, width: 2),
-                ),
-                filled: true,
-                fillColor: Colors.grey[50],
-              ),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Constants.primaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              Icons.storefront_rounded,
+              color: Constants.primaryColor,
+              size: 24,
             ),
           ),
+          const SizedBox(width: 12),
+          Text(
+            'جميع المتاجر',
+            style: TextStyle(
+              fontSize: ResponsiveLayout.isDesktop(context) ? 28 : 22,
+              fontWeight: FontWeight.w800,
+              color: Constants.primaryColor,
+              fontFamily: 'Tajawal',
+            ),
+          ),
+          const Spacer(),
+          // ✅ شريط البحث في اليمين (للديسكتوب)
+          if (ResponsiveLayout.isDesktop(context))
+            Container(
+              constraints: const BoxConstraints(maxWidth: 280),
+              height: 40,
+              child: TextField(
+                controller: searchController,
+                onChanged: _filterStores,
+                decoration: InputDecoration(
+                  hintText: 'ابحث عن متجر...',
+                  hintStyle:
+                      const TextStyle(fontFamily: 'Tajawal', fontSize: 13),
+                  prefixIcon: Icon(Icons.search,
+                      color: Constants.primaryColor, size: 18),
+                  suffixIcon: searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 18),
+                          onPressed: () {
+                            searchController.clear();
+                            _filterStores('');
+                          },
+                        )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide:
+                        BorderSide(color: Constants.primaryColor, width: 2),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  isDense: true,
+                ),
+              ),
+            ),
         ],
       ),
     );

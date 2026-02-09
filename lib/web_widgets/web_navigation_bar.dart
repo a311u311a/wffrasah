@@ -395,12 +395,59 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
   Widget _buildMobileMenu(AppLocalizations? localizations, bool isArabic) {
     return IconButton(
       onPressed: () {
-        showModalBottomSheet(
+        showGeneralDialog(
           context: context,
-          backgroundColor: Colors.white,
-          shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-          builder: (context) => _buildMobileMenuSheet(localizations, isArabic),
+          barrierDismissible: true,
+          barrierLabel: 'Menu',
+          barrierColor: Colors.black54,
+          transitionDuration: const Duration(milliseconds: 300),
+          pageBuilder: (context, animation, secondaryAnimation) {
+            return Align(
+              alignment:
+                  isArabic ? Alignment.centerLeft : Alignment.centerRight,
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.85,
+                  constraints: const BoxConstraints(maxWidth: 350),
+                  height: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: isArabic
+                        ? const BorderRadius.only(
+                            topRight: Radius.circular(24),
+                            bottomRight: Radius.circular(24),
+                          )
+                        : const BorderRadius.only(
+                            topLeft: Radius.circular(24),
+                            bottomLeft: Radius.circular(24),
+                          ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 20,
+                        offset: Offset(isArabic ? 5 : -5, 0),
+                      ),
+                    ],
+                  ),
+                  child: _buildMobileMenuSheet(localizations, isArabic),
+                ),
+              ),
+            );
+          },
+          transitionBuilder: (context, animation, secondaryAnimation, child) {
+            final slideAnimation = Tween<Offset>(
+              begin: Offset(isArabic ? -1 : 1, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+            ));
+            return SlideTransition(
+              position: slideAnimation,
+              child: child,
+            );
+          },
         );
       },
       icon: Icon(Icons.menu_rounded, color: Colors.grey[800]),
@@ -444,20 +491,12 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
       return true;
     }).toList();
 
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.85,
-      ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+    return SafeArea(
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
           // Header with gradient
           Container(
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -467,103 +506,85 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
                   Constants.primaryColor.withValues(alpha: 0.02),
                 ],
               ),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(24)),
             ),
-            child: Column(
+            child: Row(
               children: [
-                // Drag indicator
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
+                if (user != null) ...[
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor:
+                        Constants.primaryColor.withValues(alpha: 0.15),
+                    backgroundImage: user.userMetadata?['avatar_url'] != null
+                        ? NetworkImage(user.userMetadata!['avatar_url'])
+                        : null,
+                    child: user.userMetadata?['avatar_url'] == null
+                        ? Icon(Icons.person_rounded,
+                            size: 28, color: Constants.primaryColor)
+                        : null,
                   ),
-                ),
-                const SizedBox(height: 16),
-                // User info or Logo
-                Row(
-                  children: [
-                    if (user != null) ...[
-                      CircleAvatar(
-                        radius: 28,
-                        backgroundColor:
-                            Constants.primaryColor.withValues(alpha: 0.15),
-                        backgroundImage:
-                            user.userMetadata?['avatar_url'] != null
-                                ? NetworkImage(user.userMetadata!['avatar_url'])
-                                : null,
-                        child: user.userMetadata?['avatar_url'] == null
-                            ? Icon(Icons.person_rounded,
-                                size: 28, color: Constants.primaryColor)
-                            : null,
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              user.userMetadata?['full_name'] ?? 'مرحباً!',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.black87,
-                                fontFamily: 'Tajawal',
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              user.email ?? '',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey[600],
-                                fontFamily: 'Tajawal',
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user.userMetadata?['full_name'] ?? 'مرحباً!',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.black87,
+                            fontFamily: 'Tajawal',
+                          ),
                         ),
-                      ),
-                    ] else ...[
-                      SvgPicture.asset(
-                        'assets/image/Rbhan.svg',
-                        height: 40,
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        isArabic ? 'ربحان' : 'Rbhan',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w900,
-                          color: Constants.primaryColor,
-                          fontFamily: 'Tajawal',
+                        const SizedBox(height: 2),
+                        Text(
+                          user.email ?? '',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[600],
+                            fontFamily: 'Tajawal',
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
-                    const Spacer(),
-                    // Close button
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.08),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Icon(Icons.close_rounded,
-                            size: 20, color: Colors.grey[700]),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
+                ] else ...[
+                  SvgPicture.asset(
+                    'assets/image/Rbhan.svg',
+                    height: 40,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    isArabic ? 'ربحان' : 'Rbhan',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      color: Constants.primaryColor,
+                      fontFamily: 'Tajawal',
+                    ),
+                  ),
+                ],
+                const Spacer(),
+                // Close button
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Icon(Icons.close_rounded,
+                        size: 20, color: Colors.grey[700]),
+                  ),
                 ),
               ],
             ),

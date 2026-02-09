@@ -45,7 +45,7 @@ class _WebStoreCardState extends State<WebStoreCard> {
               borderRadius: BorderRadius.circular(16),
               side: const BorderSide(
                 color: Colors.grey,
-                width: 1,
+                width: .5,
               ),
             ),
             child: Container(

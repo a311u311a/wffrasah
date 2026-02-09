@@ -30,6 +30,8 @@ class _WebCouponCardState extends State<WebCouponCard> {
 
   // ✅ يمنع ضغطات النسخ المتكررة بسرعة
   bool _copyLock = false;
+  bool _copied = false;
+  bool _showCode = false;
 
   @override
   Widget build(BuildContext context) {
@@ -45,82 +47,70 @@ class _WebCouponCardState extends State<WebCouponCard> {
           ..translateByVector3(
               vector.Vector3(0.0, isHovered ? -10.0 : 0.0, 0.0))
           ..scaleByVector3(vector.Vector3.all(isHovered ? 1.02 : 1.0)),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-
-            // ✅ تظبيط الظل للكارد فقط
-            boxShadow: [
-              BoxShadow(
-                color: isHovered
-                    ? Constants.primaryColor.withValues(alpha: 0.18)
-                    : Colors.black.withValues(alpha: 0.07),
-                blurRadius: isHovered ? 26 : 14,
-                offset: Offset(0, isHovered ? 14 : 8),
-                spreadRadius: isHovered ? 1 : 0,
-              ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+        child: Card(
+          elevation: isHovered ? 12 : 4,
+          shadowColor: isHovered
+              ? Constants.primaryColor.withValues(alpha: 0.35)
+              : Colors.black.withValues(alpha: 0.15),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(
+              color: Colors.grey,
+              width: .5,
+            ),
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white,
-                    Colors.grey[50]!,
-                  ],
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // ✅ الصورة: نفس الحجم (لا تكبر/تقص) + Padding من جميع الجهات
-                  _buildCouponImageFixedHeight(isFavorite, favoriteProvider),
-
-                  // ✅ المحتوى (بدون Badge المتجر)
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Column(
-                        children: [
-                          // منطقة النصوص القابلة للتمرير
-                          Expanded(
-                            child: SingleChildScrollView(
-                              physics: const BouncingScrollPhysics(),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildTitle(maxLines: 2),
-                                  const SizedBox(height: 6),
-                                  _buildDescription(
-                                      maxLines:
-                                          null), // ✅ بدون حد لتمكين التمرير
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          // العناصر المثبتة في الأسفل
-                          const SizedBox(height: 8),
-                          if (widget.coupon.code.isNotEmpty) ...[
-                            _buildCouponCode(),
-                            const SizedBox(height: 8),
-                          ],
-                          _buildActions(isFavorite, favoriteProvider),
-                        ],
-                      ),
-                    ),
-                  ),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white,
+                  Colors.grey[50]!,
                 ],
               ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ✅ الصورة: نفس الحجم (لا تكبر/تقص) + Padding من جميع الجهات
+                _buildCouponImageFixedHeight(isFavorite, favoriteProvider),
+
+                // ✅ المحتوى (بدون Badge المتجر)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Column(
+                      children: [
+                        // منطقة النصوص القابلة للتمرير
+                        Expanded(
+                          child: SingleChildScrollView(
+                            physics: const BouncingScrollPhysics(),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildTitle(maxLines: 2),
+                                const SizedBox(height: 6),
+                                _buildDescription(
+                                    maxLines: null), // ✅ بدون حد لتمكين التمرير
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        // العناصر المثبتة في الأسفل
+                        const SizedBox(height: 8),
+                        if (widget.coupon.code.isNotEmpty) ...[
+                          _buildCouponCode(),
+                          const SizedBox(height: 8),
+                        ],
+                        _buildActions(isFavorite, favoriteProvider),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -240,8 +230,25 @@ class _WebCouponCardState extends State<WebCouponCard> {
   }
 
   Widget _buildCouponCode() {
-    return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+    return GestureDetector(
+      onTap: () {
+        Clipboard.setData(ClipboardData(text: widget.coupon.code));
+
+        setState(() {
+          _showCode = true;
+          _copied = true;
+        });
+
+        Future.delayed(const Duration(seconds: 8), () {
+          if (!mounted) return;
+          setState(() {
+            _showCode = false;
+            _copied = false;
+          });
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
@@ -250,56 +257,91 @@ class _WebCouponCardState extends State<WebCouponCard> {
             ],
           ),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Constants.primaryColor.withValues(alpha: 0.3),
-            width: 1.5,
-          ),
+          border: Border.all(color: Colors.grey, width: .5),
         ),
         child: Row(
           children: [
-            Text(
-              'كود الخصم',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[600],
-                fontFamily: 'Tajawal',
-              ),
-            ),
-
-            const SizedBox(width: 12), // ✅ تقليل المسافة بين النص والبادج
-
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 4), // ✅ أقل
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: (_showCode && _copied) ? Colors.green : Colors.white,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Center(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    child: Text(
-                      widget.coupon.code,
-                      maxLines: 1,
-                      softWrap: false,
-                      overflow: TextOverflow.visible, // ✅ بدون نقاط
-                      style: TextStyle(
-                        fontSize: 13, // ✅ أصغر شوي عشان يظهر أكثر
-                        fontWeight: FontWeight.w900,
-                        color: Constants.primaryColor,
-                        fontFamily: 'Courier',
-                        letterSpacing: 1.0, // ✅ تقليل تباعد الحروف
-                      ),
-                    ),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: _showCode
+                        ? SingleChildScrollView(
+                            key: const ValueKey('shown'),
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // ✅ تم النسخ
+                                Text(
+                                  'تم النسخ ✅',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w900,
+                                    color: (_copied)
+                                        ? Colors.white
+                                        : Colors.grey[700],
+                                    fontFamily: 'Tajawal',
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+
+                                // ✅ الكوبون
+                                Text(
+                                  widget.coupon.code,
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  overflow: TextOverflow.visible,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w900,
+                                    color: (_copied)
+                                        ? Colors.white
+                                        : Constants.primaryColor,
+                                    fontFamily: 'Courier',
+                                    letterSpacing: 1.0,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : Row(
+                            key: const ValueKey('hidden'),
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.copy,
+                                  size: 16, color: Colors.grey[600]),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  'اضغط لنسخ الكوبون',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey[600],
+                                    fontFamily: 'Tajawal',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                   ),
                 ),
               ),
             ),
           ],
-        ));
+        ),
+      ),
+    );
   }
 
   Widget _buildActions(bool isFavorite, FavoriteProvider favoriteProvider) {

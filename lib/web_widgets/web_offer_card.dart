@@ -57,6 +57,10 @@ class _WebOfferCardState extends State<WebOfferCard> {
                   shadowColor: Constants.primaryColor.withValues(alpha: 0.35),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
+                    side: const BorderSide(
+                      color: Colors.grey,
+                      width: .5,
+                    ),
                   ),
                   child: Container(
                     decoration: BoxDecoration(
