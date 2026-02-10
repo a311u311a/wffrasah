@@ -117,7 +117,7 @@ class WebFooter extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Text(
-              localizations?.translate('app_name') ?? 'ربحان',
+              'كوبونات وعروض',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w900,
@@ -138,8 +138,53 @@ class WebFooter extends StatelessWidget {
             fontFamily: 'Tajawal',
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 0),
+        Wrap(
+          spacing: 12, // Horizontal space between children
+          runSpacing: 1, // Vertical space between lines
+          children: [
+            _buildStoreBadge(
+              'assets/image/app-store.svg',
+              'https://apps.apple.com/us/app/rbhan/id6444086616',
+            ),
+            _buildStoreBadge(
+              'assets/image/google-play.svg',
+              'https://play.google.com/store/apps/details?id=com.rbhan.rbhan',
+            ),
+            _buildStoreBadge(
+              'assets/image/huawei-appgallery.svg',
+              'https://appgallery.huawei.com/#/app/C107576207',
+            ),
+          ],
+        ),
       ],
+    );
+  }
+
+  Widget _buildStoreBadge(String assetPath, String url,
+      {double width = 150.0}) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () async {
+          if (await canLaunchUrl(Uri.parse(url))) {
+            await launchUrl(Uri.parse(url));
+          }
+        },
+        child: SvgPicture.asset(
+          assetPath,
+          width: width,
+          placeholderBuilder: (BuildContext context) => Container(
+            width: width,
+            height: width * 0.3, // Approx ratio
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(5),
+            ),
+            child: Icon(Icons.broken_image, color: Colors.grey[400], size: 20),
+          ),
+        ),
+      ),
     );
   }
 

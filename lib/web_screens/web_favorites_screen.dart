@@ -91,80 +91,68 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[50],
       appBar: const WebNavigationBar(),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildHeader(),
-            _buildFavoritesGrid(),
-            const WebFooter(),
-          ],
-        ),
+      body: Column(
+        children: [
+          _buildHeader(),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildFavoritesGrid(),
+                  const WebFooter(),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildHeader() {
-    final totalItems = favoriteCoupons.length + favoriteOffers.length;
     return Container(
-      padding: ResponsivePadding.page(context),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Constants.primaryColor.withValues(alpha: 0.1),
-            Colors.white,
-          ],
-        ),
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsivePadding.page(context).horizontal,
+        vertical: 10,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 40),
-          Row(
-            children: [
-              Icon(
-                Icons.favorite,
-                color: Constants.primaryColor,
-                size: ResponsiveLayout.isDesktop(context) ? 48 : 36,
-              ),
-              const SizedBox(width: 16),
-              Text(
-                'المفضلة',
-                style: TextStyle(
-                  fontSize: ResponsiveLayout.isDesktop(context) ? 42 : 32,
-                  fontWeight: FontWeight.w900,
-                  color: Constants.primaryColor,
-                  fontFamily: 'Tajawal',
-                ),
-              ),
-            ],
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
-          const SizedBox(height: 12),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Constants.primaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              Icons.favorite_rounded,
+              color: Constants.primaryColor,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
           Text(
-            'الكوبونات والعروض المحفوظة في قائمتك المفضلة',
+            'المفضلة',
             style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey[700],
+              fontSize: ResponsiveLayout.isDesktop(context) ? 28 : 22,
+              fontWeight: FontWeight.w800,
+              color: Constants.primaryColor,
               fontFamily: 'Tajawal',
             ),
           ),
-          if (!isLoading && totalItems > 0)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                'لديك $totalItems عنصر في المفضلة',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[500],
-                  fontFamily: 'Tajawal',
-                ),
-              ),
-            ),
-          const SizedBox(height: 40),
         ],
       ),
     );
