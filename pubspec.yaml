@@ -76,7 +76,7 @@ flutter:
     - assets/icon/
     - assets/lang/ar.json
     - assets/lang/en.json
-    - .env
+    
 
   fonts:
     - family: Tajawal
