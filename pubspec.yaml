@@ -1,8 +1,8 @@
-name: rbhan
+name: wffrasah
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.3+4
 
 environment:
   sdk: ^3.6.1
@@ -17,6 +17,7 @@ dependencies:
 
   intl: any
   cupertino_icons: ^1.0.8
+  flutter_dotenv: ^5.1.0
 
   # Supabase
   supabase_flutter: ^2.10.1
@@ -75,6 +76,7 @@ flutter:
     - assets/icon/
     - assets/lang/ar.json
     - assets/lang/en.json
+    - .env
 
   fonts:
     - family: Tajawal

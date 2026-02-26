@@ -1,5 +1,5 @@
-import 'package:rbhan/screens/admin/admin_offers_screen.dart';
-import 'package:rbhan/widgets/bottom_navigation_bar.dart';
+import 'package:wffrasah/screens/admin/admin_offers_screen.dart';
+import 'package:wffrasah/widgets/bottom_navigation_bar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import '../../constants.dart';

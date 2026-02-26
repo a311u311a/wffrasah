@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:rbhan/screens/signup.dart';
+import 'package:wffrasah/screens/signup.dart';
 import '../screens/login_signup/widgets/button.dart';
 import '../constants.dart';
 import '../localization/app_localizations.dart';

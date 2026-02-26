@@ -1,14 +1,18 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../constants.dart';
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
+import '../localization/app_localizations.dart';
 
 class WebPrivacyScreen extends StatelessWidget {
   const WebPrivacyScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final isDesktop = ResponsiveLayout.isDesktop(context);
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: const WebNavigationBar(),
@@ -22,15 +26,44 @@ class WebPrivacyScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 40),
-                  _buildHeader(context),
+                  // Header
+                  Center(
+                    child: Text(
+                      l10n?.translate('privacy_title') ?? 'Privacy Policy',
+                      style: TextStyle(
+                        fontSize: isDesktop ? 42 : 32,
+                        fontWeight: FontWeight.w900,
+                        color: Constants.primaryColor,
+                        fontFamily: 'Tajawal',
+                      ),
+                    ),
+                  ),
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        l10n?.translate('privacy_top_note') ??
+                            'Privacy Policy - wffrasah سياسة الخصوصية . موقع وتطبيق وفرها صح This Privacy Policy explains how wffrasah collects, uses. and protects your personal information when you use our website and services',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: 'Tajawal',
+                          color: Colors.black87,
+                          height: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 40),
                   _buildSectionContainer(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // ✅ عنوان واضح للـ Google Bot
+                        // Section Title
                         Text(
-                          'Privacy Policy – Rbhan',
+                          l10n?.translate('privacy_subtitle') ??
+                              'Privacy Policy – wffrasah',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
@@ -38,102 +71,85 @@ class WebPrivacyScreen extends StatelessWidget {
                             color: Constants.primaryColor,
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'سياسة الخصوصية – موقع وتطبيقربحان',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            fontFamily: 'Tajawal',
-                            color: Colors.black.withValues(alpha: 0.75),
-                          ),
-                        ),
-
                         const SizedBox(height: 18),
-
-                        // ✅ فقرة إنجليزية قصيرة (مهمة للتحقق)
-                        const Text(
-                          'This Privacy Policy explains how Rbhan collects, uses, and protects your personal information when you use our website and services.',
+                        // Intro Text
+                        Text(
+                          l10n?.translate('privacy_intro') ?? '',
                           textAlign: TextAlign.justify,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontFamily: 'Tajawal',
-                            height: 1.6,
-                            color: Colors.black87,
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // محتواك العربي
-                        const Text(
-                          'نحن نحترم خصوصية وسرية البيانات الشخصية لعملائنا وزبائننا وزوارنا وجميع الأشخاص الذين نتعامل معهم أثناء تقديم خدماتنا. وبينما نسعى لتقديم تجربة تسوق محسّنة لعملائنا، فإننا ندرك أن من أهم مخاوفهم سلامة معلوماتهم الشخصية، ولذلك نلتزم بضمان بقاء جميع البيانات الشخصية المقدمة لنا آمنة وعدم استخدامها إلا للأغراض التي وافق عليها العميل.\n\nفي البداية، نقوم بجمع المعلومات الشخصية الضرورية فقط لتقديم الخدمات التي طلبتها، وفهم احتياجاتك، وخدمتك بشكل أفضل. كما أننا نزود شركاءنا من التجار فقط بالمعلومات اللازمة للتحقق من مكافآتك وتتبعها.\n\nنحن لا نبيع معلوماتك تحت أي ظرف.',
-                          textAlign: TextAlign.justify,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 16,
                             fontFamily: 'Tajawal',
                             height: 1.6,
                             color: Colors.black87,
                           ),
                         ),
-
                         const SizedBox(height: 30),
-
+                        // Policy Points
                         _buildPolicyPoint(
-                          'Privacy Policy (السياسة)',
-                          'يهدف هذا المستند إلى توضيح كيفية قيام Rbhan بإدارة وجمع واستخدام والإفصاح عن البيانات الشخصية الخاصة بك وبمستخدمي موقعنا الإلكتروني وتطبيقاتنا وبرامجنا ومنصاتنا الأخرى.\n\nنحن نزاول أعمالنا وفقًا لقوانين حماية البيانات المعمول بها، وقد قمنا بتطبيق تدابير إضافية لحماية معلوماتك الشخصية. ويُعد استمرار استخدامك لخدماتنا موافقة منك على الالتزام بسياسة الخصوصية هذه كما يتم تحديثها من وقت لآخر.',
+                          l10n?.translate('privacy_point1_title') ??
+                              'Privacy Policy',
+                          l10n?.translate('privacy_point1_body') ?? '',
                         ),
                         _buildPolicyPoint(
-                          'Personal Data (البيانات الشخصية)',
-                          'يقصد بمصطلح "البيانات الشخصية" أي بيانات تتعلق بشخص يمكن التعرف عليه من خلالها، سواء بشكل مباشر أو غير مباشر، بما في ذلك البيانات الموجودة في سجلاتنا.',
+                          l10n?.translate('privacy_point2_title') ??
+                              'Personal Data',
+                          l10n?.translate('privacy_point2_body') ?? '',
                         ),
                         _buildPolicyPoint(
-                          'Collecting Personal Data (جمع البيانات)',
-                          'تعتمد البيانات التي قد تجمعها Rbhan على المنتجات والخدمات والعروض التي تستخدمها أو تشترك فيها. ويتم جمع هذه البيانات لتمكين المنصات من العمل بشكل صحيح ولمعرفة كيفية استخدامها على مختلف الأجهزة والمتصفحات.\n\nعادةً نقوم بجمع بياناتك عندما تقوم بما يلي:\n\nتزويدنا بمعلومات الاتصال بعد زيارة أو استخدام أو تثبيت مواقعنا أو تطبيقاتنا.\nالتسجيل في خدماتنا أو تعبئة أي نماذج.\nالاشتراك في التنبيهات أو النشرات البريدية.\nالتواصل معنا للاستفسار أو طلب المساعدة.\nالمشاركة في المسابقات أو الاستبيانات.\nتقديم السيرة الذاتية أو طلبات التوظيف.\nإحالتك إلينا من شركاء أو أطراف ثالثة.',
+                          l10n?.translate('privacy_point3_title') ??
+                              'Collecting Personal Data',
+                          l10n?.translate('privacy_point3_body') ?? '',
                         ),
                         _buildPolicyPoint(
-                          'Data We May Collect (قد تشمل البيانات)',
-                          'الهوية: الاسم الكامل، البريد الإلكتروني، تاريخ الميلاد، رقم الهاتف، الصور، عنوان IP، معرف الجهاز، ومعلومات الدفع.\nالتفاعلات معنا: تسجيلات المكالمات والبريد الإلكتروني والمراسلات.\nالحساب: معلومات حساب Rbhan الخاص بك.\nاستخدام الخدمات: بيانات التصفح وملفات تعريف الارتباط (Cookies).\nالتفضيلات: المنتجات والعلامات التجارية المفضلة وطرق التواصل.',
+                          l10n?.translate('privacy_point4_title') ??
+                              'Data We May Collect',
+                          l10n?.translate('privacy_point4_body') ?? '',
                         ),
                         _buildPolicyPoint(
-                          'Security (أمان البيانات)',
-                          'نطبق إجراءات صارمة لحماية بياناتك، ومنها:\n\nاستخدام اتصال SSL مشفّر 128-bit.\nتخزين البيانات على خوادم آمنة.\nتقييد الوصول للمعلومات.\nتطبيق آليات تحقق صارمة.\nإتلاف البيانات عند عدم الحاجة إليها.',
+                          l10n?.translate('privacy_point5_title') ?? 'Security',
+                          l10n?.translate('privacy_point5_body') ?? '',
                         ),
                         _buildPolicyPoint(
-                          'How We Use Data (استخدام البيانات)',
-                          'لا نقوم ببيع أو المتاجرة ببياناتك الشخصية. ونستخدمها من أجل:\n\n1) إدارة الخدمات\nلتنفيذ الطلبات، تتبع المعاملات، إضافة الكاش باك، وتقديم العروض والمكافآت.\n\n2) تحسين الخدمات\nتحليل الشكاوى، تحسين الأداء، تخصيص المحتوى، وإرسال الإعلانات ذات الصلة.\n\n3) خدمة العملاء\nالرد على الاستفسارات وتقديم الدعم.\n\n4) الأمان والامتثال\nمنع الاحتيال والالتزام بالأنظمة والقوانين.\n\n5) طلبات التوظيف\nمعالجة طلبات التوظيف وإدارة السجلات الوظيفية.\n\nنحتفظ بالبيانات فقط للمدة اللازمة قانونيًا أو تشغيليًا.',
+                          l10n?.translate('privacy_point6_title') ??
+                              'How We Use Data',
+                          l10n?.translate('privacy_point6_body') ?? '',
                         ),
                         _buildPolicyPoint(
-                          'Sharing (مشاركة البيانات)',
-                          'قد نشارك بياناتك مع:\n\nشركائنا ومقدمي الخدمات.\nالمستثمرين أو الأطراف المشاركة في صفقات استحواذ أو اندماج.\nالجهات الحكومية أو التنظيمية عند الطلب.',
+                          l10n?.translate('privacy_point7_title') ?? 'Sharing',
+                          l10n?.translate('privacy_point7_body') ?? '',
                         ),
                         _buildPolicyPoint(
-                          'Emails (النشرات البريدية)',
-                          'قد نرسل لك رسائل ترويجية، ويمكنك إلغاء الاشتراك في أي وقت.',
+                          l10n?.translate('privacy_point8_title') ?? 'Emails',
+                          l10n?.translate('privacy_point8_body') ?? '',
                         ),
                         _buildPolicyPoint(
-                          'Advertising Partners (الإفصاح للإعلانات)',
-                          'قد تتعاون Rbhan مع أطراف ثالثة لعرض إعلانات مخصصة بناءً على نشاطك على الإنترنت. ولا تغطي هذه السياسة ممارسات تلك الأطراف.',
+                          l10n?.translate('privacy_point9_title') ??
+                              'Advertising Partners',
+                          l10n?.translate('privacy_point9_body') ?? '',
                         ),
                         _buildPolicyPoint(
-                          'Update Your Data (تحديث البيانات)',
-                          'يمكنك تحديث بياناتك من خلال حسابك، أو التواصل معنا عبر:\ncontact@rbhan.com',
+                          l10n?.translate('privacy_point10_title') ??
+                              'Update Your Data',
+                          l10n?.translate('privacy_point10_body') ?? '',
                         ),
                         _buildPolicyPoint(
-                          'Your Rights (حقوقك)',
-                          'يمكنك طلب الوصول إلى بياناتك أو سحب موافقتك في أي وقت عبر البريد أعلاه.\nقد يؤدي سحب الموافقة إلى عدم قدرتنا على تقديم بعض الخدمات.',
+                          l10n?.translate('privacy_point11_title') ??
+                              'Your Rights',
+                          l10n?.translate('privacy_point11_body') ?? '',
                         ),
                         _buildPolicyPoint(
-                          'Delete Account (حذف البيانات)',
-                          'لطلب حذف حسابك وبياناتك، راسلنا من بريدك المسجل.\n\nيرجى ملاحظة:\n\nستفقد أي كاش باك متبقي.\nسيتم حذف جميع بياناتك الشخصية.\nسنحتفظ بسجلات المعاملات لأغراض تدقيقية.\nلن تتمكن من تسجيل الدخول مجددًا.',
+                          l10n?.translate('privacy_point12_title') ??
+                              'Delete Account',
+                          l10n?.translate('privacy_point12_body') ?? '',
                         ),
                         _buildPolicyPoint(
-                          'Changes (التعديلات)',
-                          'تحتفظ Rbhan بحق تعديل السياسة في أي وقت، وسيتم نشر التحديثات على الموقع.',
+                          l10n?.translate('privacy_point13_title') ?? 'Changes',
+                          l10n?.translate('privacy_point13_body') ?? '',
                         ),
                         _buildPolicyPoint(
-                          'Governing Law (القانون الحاكم)',
-                          'تخضع هذه السياسة لقوانين الدولة التي تقيم فيها.',
+                          l10n?.translate('privacy_point14_title') ??
+                              'Governing Law',
+                          l10n?.translate('privacy_point14_body') ?? '',
                         ),
                       ],
                     ),
@@ -145,36 +161,6 @@ class WebPrivacyScreen extends StatelessWidget {
             const WebFooter(),
           ],
         ),
-      ),
-    );
-  }
-
-  // ✅ هيدر صار فيه English + Arabic
-  Widget _buildHeader(BuildContext context) {
-    final isDesktop = ResponsiveLayout.isDesktop(context);
-    return Center(
-      child: Column(
-        children: [
-          Text(
-            'Privacy Policy',
-            style: TextStyle(
-              fontSize: isDesktop ? 42 : 32,
-              fontWeight: FontWeight.w900,
-              color: Constants.primaryColor,
-              fontFamily: 'Tajawal',
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'سياسة الخصوصية',
-            style: TextStyle(
-              fontSize: isDesktop ? 26 : 20,
-              fontWeight: FontWeight.w800,
-              color: Colors.black.withValues(alpha: 0.75),
-              fontFamily: 'Tajawal',
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -198,6 +184,7 @@ class WebPrivacyScreen extends StatelessWidget {
   }
 
   Widget _buildPolicyPoint(String title, String body) {
+    if (body.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

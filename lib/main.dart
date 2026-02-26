@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'providers/theme_provider.dart';
 import 'providers/favorites_provider.dart';
@@ -16,19 +17,29 @@ import 'screens/splash_screen.dart';
 import 'web_app.dart';
 import 'screens/change_password_screen.dart';
 
-/// ضع بيانات Supabase هنا (Project Settings -> API)
-const supabaseUrl = 'https://ilfbqykxkjructxunuxm.supabase.co';
-const supabaseAnonKey =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlsZmJxeWt4a2pydWN0eHVudXhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MTkyODMsImV4cCI6MjA4MzI5NTI4M30.b3_5GkLGUlQCQI_B8XOhLUoK4YboPNn-FyhQCInZpxo';
-
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // تفعيل Path Url Strategy للويب (لإزالة # من الرابط)
   if (kIsWeb) {
     usePathUrlStrategy();
+  }
+
+  // ✅ تحميل .env
+  await dotenv.load(fileName: ".env");
+
+  final supabaseUrl = dotenv.env['SUPABASE_URL'];
+  final supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'];
+
+  if (supabaseUrl == null ||
+      supabaseUrl.isEmpty ||
+      supabaseAnonKey == null ||
+      supabaseAnonKey.isEmpty) {
+    throw Exception(
+      'Missing SUPABASE_URL or SUPABASE_ANON_KEY in .env',
+    );
   }
 
   await Supabase.initialize(
@@ -87,7 +98,7 @@ class _MyAppState extends State<MyApp> {
 
     return MaterialApp(
       navigatorKey: navigatorKey,
-      title: 'Rbhan',
+      title: 'wffrasah',
       debugShowCheckedModeBanner: false,
       theme: themeProvider.getTheme,
       locale: localeProvider.locale,

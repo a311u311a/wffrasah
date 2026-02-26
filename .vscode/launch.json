@@ -5,18 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "rbhan",
+            "name": "wffrasah",
             "request": "launch",
             "type": "dart"
         },
         {
-            "name": "rbhan (profile mode)",
+            "name": "wffrasah (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "rbhan (release mode)",
+            "name": "wffrasah (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"

@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:rbhan/screens/login_signup/widgets/snackbar.dart';
+import 'package:wffrasah/screens/login_signup/widgets/snackbar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../constants.dart';
 import '../models/offers.dart';

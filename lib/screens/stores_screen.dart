@@ -1,8 +1,8 @@
 // صفحة المتاجر (تعرض كل المتاجر)
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:rbhan/screens/store_coupons_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:wffrasah/screens/store_coupons_screen.dart';
 
 import '../constants.dart';
 import '../models/store.dart';
