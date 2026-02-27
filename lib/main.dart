@@ -4,7 +4,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'providers/theme_provider.dart';
 import 'providers/favorites_provider.dart';
@@ -26,18 +25,13 @@ Future<void> main() async {
     usePathUrlStrategy();
   }
 
-  // ✅ تحميل .env
-  await dotenv.load(fileName: ".env");
+  const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+  const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
-  final supabaseUrl = dotenv.env['SUPABASE_URL'];
-  final supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY'];
-
-  if (supabaseUrl == null ||
-      supabaseUrl.isEmpty ||
-      supabaseAnonKey == null ||
-      supabaseAnonKey.isEmpty) {
+  if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
     throw Exception(
-      'Missing SUPABASE_URL or SUPABASE_ANON_KEY in .env',
+      'Missing SUPABASE_URL or SUPABASE_ANON_KEY. '
+      'Provide them via --dart-define or --dart-define-from-file.',
     );
   }
 
