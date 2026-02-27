@@ -71,6 +71,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - .env
     - assets/animations/coupon_animation.json
     - assets/image/
     - assets/icon/

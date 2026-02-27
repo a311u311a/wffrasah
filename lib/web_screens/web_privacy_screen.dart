@@ -43,7 +43,7 @@ class WebPrivacyScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Text(
                         l10n?.translate('privacy_top_note') ??
-                            'Privacy Policy - wffrasah سياسة الخصوصية . موقع وتطبيق وفرها صح This Privacy Policy explains how wffrasah collects, uses. and protects your personal information when you use our website and services',
+                            'Privacy Policy - wffrasah  سياسة الخصوصية . موقع وتطبيق وفرها صح This Privacy Policy explains how wffrasah collects, uses. and protects your personal information when you use our website and services',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 16,
