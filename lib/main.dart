@@ -11,7 +11,6 @@ import 'providers/favorites_provider.dart';
 import 'providers/locale_provider.dart';
 import 'providers/user_provider.dart';
 import 'providers/notification_provider.dart';
-
 import 'localization/app_localizations.dart';
 import 'screens/splash_screen.dart';
 import 'web_app.dart';
