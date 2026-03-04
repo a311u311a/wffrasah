@@ -117,7 +117,7 @@ class _MyAppState extends State<MyApp> {
 
     return MaterialApp(
       navigatorKey: navigatorKey,
-      title: 'wffrasah',
+      title: 'وفرها صح',
       debugShowCheckedModeBanner: false,
       theme: themeProvider.getTheme,
       locale: localeProvider.locale,
