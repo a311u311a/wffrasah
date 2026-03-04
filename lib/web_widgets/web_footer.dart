@@ -150,7 +150,7 @@ class WebFooter extends StatelessWidget {
             ),
             _buildStoreBadge(
               'assets/image/google-play.svg',
-              'https://play.google.com/store/apps/details?id=com.rbhan.rbhan',
+              'https://play.google.com/store/apps/details?id=com.rbhan.app&pcampaignid=web_share',
             ),
             _buildStoreBadge(
               'assets/image/huawei-appgallery.svg',
