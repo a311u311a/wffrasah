@@ -68,7 +68,7 @@ class FaqScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: 20),
             child: Text(
-              '© ${DateTime.now().year} ${t?.translate('rights_reserved_rbhan') ?? "All rights reserved. Rbhan App & Website"}',
+              '© ${DateTime.now().year} ${t?.translate('rights_reserved_Wffrasah') ?? "جميع الحقوق محفوظة لتطبيق وموقع وفرها صح"}',
               style: TextStyle(
                   fontSize: 10, color: Colors.grey[400], fontFamily: 'Tajawal'),
             ),

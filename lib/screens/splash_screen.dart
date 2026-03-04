@@ -135,7 +135,7 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'مع تطبيق ربحان الكل ربحان',
+                    ' تطبيق وفرها صح',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w400,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../constants.dart';
 import '../localization/app_localizations.dart';
@@ -12,7 +13,7 @@ class AboutAppScreen extends StatefulWidget {
 
 class _AboutAppScreenState extends State<AboutAppScreen> {
   String _version = '';
-  final String _appName = 'Rbhan';
+  final String _appName = 'وفرها صح';
 
   @override
   void initState() {
@@ -70,10 +71,15 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                     ),
                   ],
                 ),
-                padding: const EdgeInsets.all(15),
-                child: Image.asset('assets/image/Rbhan.png',
+                padding: const EdgeInsets.all(5),
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/image/Rbhan.png',
+                    fit: BoxFit.cover,
                     errorBuilder: (c, e, s) => Icon(Icons.shopping_bag,
-                        size: 40, color: Constants.primaryColor)),
+                        size: 40, color: Constants.primaryColor),
+                  ),
+                ),
               ),
               const SizedBox(height: 15),
 
@@ -113,7 +119,7 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                     const SizedBox(height: 10),
                     Text(
                       localizations?.translate('about_app_intro_body') ??
-                          'At Rbhan, we believe that fun shopping shouldn\'t be expensive...',
+                          'في وفرها صح، نؤمن بأن التسوق الممتع لا ينبغي أن يكون باهظ الثمن...',
                       textAlign: TextAlign.justify,
                       style: const TextStyle(
                           fontSize: 14,
@@ -164,7 +170,7 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                             'Exclusive Offers',
                         localizations
                                 ?.translate('feature_exclusive_offers_desc') ??
-                            'Special discount codes for Rbhan users only...'),
+                            'Special discount codes for wffrasah users only...'),
                     _buildFeatureItem(
                         localizations
                                 ?.translate('feature_smart_alerts_title') ??
@@ -197,18 +203,18 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                     ),
                     const SizedBox(height: 15),
                     _buildSocialRow('assets/icon/x.png', 'X (تويتر سابقاً)',
-                        '@rbhanco'), // استبدل @CouponApp بالحساب الفعلي
-                    _buildSocialRow(
-                        'assets/icon/instagram.png', 'إنستغرام', '@rbhan.co'),
-                    _buildSocialRow(
-                        'assets/icon/tiktok.png', 'تيك توك', '@rbhan.co'),
+                        '@wffrhasah', 'https://x.com/wffrhasah'),
+                    _buildSocialRow('assets/icon/instagram.png', 'إنستغرام',
+                        '@wffrhasah', 'https://www.instagram.com/wffrhasah'),
+                    _buildSocialRow('assets/icon/tiktok.png', 'تيك توك',
+                        '@wffrhasah', 'https://www.tiktok.com/@wffrhasah'),
                   ],
                 ),
               ),
 
               const SizedBox(height: 30),
               Text(
-                '© ${DateTime.now().year} ${localizations?.translate('rights_reserved_rbhan') ?? "All rights reserved. Rbhan App & Website"}',
+                '© ${DateTime.now().year} ${localizations?.translate('rights_reserved_Wffrasah') ?? "جميع الحقوق محفوظة لتطبيق وموقع وفرها صح"}',
                 style: TextStyle(
                     fontSize: 10,
                     color: Colors.grey[400],
@@ -264,27 +270,40 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
     );
   }
 
-  Widget _buildSocialRow(String iconPath, String platform, String handle) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // عرض أيقونة الصورة إذا كانت متوفرة، وإلا عرض أيقونة رابط
-          SizedBox(
-              width: 24,
-              height: 24,
-              child: Image.asset(iconPath,
-                  errorBuilder: (context, error, stackTrace) =>
-                      Icon(Icons.link, color: Colors.grey[400], size: 20))),
-          const SizedBox(width: 10),
-          Text('$platform: ',
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold, fontFamily: 'Tajawal')),
-          Text(handle,
-              style:
-                  const TextStyle(color: Colors.blue, fontFamily: 'Tajawal')),
-        ],
+  Widget _buildSocialRow(
+      String iconPath, String platform, String handle, String url) {
+    return InkWell(
+      onTap: () async {
+        final uri = Uri.parse(url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // عرض أيقونة الصورة إذا كانت متوفرة، وإلا عرض أيقونة رابط
+            SizedBox(
+                width: 24,
+                height: 24,
+                child: Image.asset(iconPath,
+                    errorBuilder: (context, error, stackTrace) =>
+                        Icon(Icons.link, color: Colors.grey[400], size: 20))),
+            const SizedBox(width: 10),
+            Text('$platform: ',
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold, fontFamily: 'Tajawal')),
+            Text(handle,
+                style: const TextStyle(
+                    color: Colors.blue,
+                    fontFamily: 'Tajawal',
+                    decoration: TextDecoration.underline,
+                    decorationColor: Colors.blue)),
+          ],
+        ),
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:app_settings/app_settings.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../screens/login_signup/widgets/edit_profile_page.dart';
 import '../constants.dart';
 import '../localization/app_localizations.dart';
@@ -197,7 +198,14 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                                 icon: Icons.star_rounded,
                                 title: localizations?.translate('rate_app') ??
                                     'Rate App',
-                                onTap: () {},
+                                onTap: () async {
+                                  final Uri url = Uri.parse(
+                                      'https://play.google.com/store/apps/details?id=com.rbhan.app&pcampaignid=web_share');
+                                  if (!await launchUrl(url,
+                                      mode: LaunchMode.externalApplication)) {
+                                    debugPrint('Could not launch $url');
+                                  }
+                                },
                               ),
                               _buildDivider(),
                               _buildMenuTile(
@@ -206,10 +214,11 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                                     'Share App',
                                 onTap: () async {
                                   const String appLink =
-                                      "https://play.google.com/store/apps/details?id=com.yourapp.package";
+                                      "https://play.google.com/store/apps/details?id=com.rbhan.app&pcampaignid=web_share";
+                                  // Share.share is the standard method for the share_plus package
                                   await SharePlus.instance.share(ShareParams(
                                       text:
-                                          'Check out this amazing app for coupons! $appLink'));
+                                          '${localizations?.translate('share_text') ?? "شارك واستفد مع تطبيق وفرها صح!"} $appLink'));
                                 },
                               ),
                               _buildDivider(),

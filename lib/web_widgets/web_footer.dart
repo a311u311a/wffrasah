@@ -146,6 +146,7 @@ class WebFooter extends StatelessWidget {
             _buildStoreBadge(
               'assets/image/app-store.svg',
               'https://apps.apple.com/us/app/rbhan/id6444086616',
+              enabled: false, // تعطيل الضغط على متجر آبل حالياً
             ),
             _buildStoreBadge(
               'assets/image/google-play.svg',
@@ -162,7 +163,28 @@ class WebFooter extends StatelessWidget {
   }
 
   Widget _buildStoreBadge(String assetPath, String url,
-      {double width = 150.0}) {
+      {double width = 150.0, bool enabled = true}) {
+    final badge = SvgPicture.asset(
+      assetPath,
+      width: width,
+      placeholderBuilder: (BuildContext context) => Container(
+        width: width,
+        height: width * 0.3, // Approx ratio
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(5),
+        ),
+        child: Icon(Icons.broken_image, color: Colors.grey[400], size: 20),
+      ),
+    );
+
+    if (!enabled) {
+      return Opacity(
+        opacity: 0.5,
+        child: badge,
+      );
+    }
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
@@ -171,19 +193,7 @@ class WebFooter extends StatelessWidget {
             await launchUrl(Uri.parse(url));
           }
         },
-        child: SvgPicture.asset(
-          assetPath,
-          width: width,
-          placeholderBuilder: (BuildContext context) => Container(
-            width: width,
-            height: width * 0.3, // Approx ratio
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(5),
-            ),
-            child: Icon(Icons.broken_image, color: Colors.grey[400], size: 20),
-          ),
-        ),
+        child: badge,
       ),
     );
   }
@@ -385,7 +395,7 @@ class WebFooter extends StatelessWidget {
   Widget _buildCopyright(AppLocalizations? localizations) {
     return Center(
       child: Text(
-        '© ${DateTime.now().year} ${localizations?.translate('app_name') ?? 'ربحان'}. ${localizations?.translate('rights_reserved_rbhan') ?? 'جميع الحقوق محفوظة.'}',
+        '© ${DateTime.now().year} ${localizations?.translate('app_name') ?? 'وفرها صح'}. ${localizations?.translate('rights_reserved_Wffrasah') ?? 'جميع الحقوق محفوظة لتطبيق وموقع وفرها صح'}',
         style: TextStyle(
           fontSize: 13,
           color: Colors.grey[600],
