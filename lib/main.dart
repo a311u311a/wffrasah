@@ -17,7 +17,6 @@ import 'screens/change_password_screen.dart';
 import 'screens/splash_screen.dart';
 import 'services/notification_service.dart';
 import 'web_app.dart';
-import 'config/supabase_config.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -32,16 +31,13 @@ Future<void> main() async {
     const envSupabaseUrl = String.fromEnvironment('SUPABASE_URL');
     const envSupabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
-    final String supabaseUrl =
-        envSupabaseUrl.isNotEmpty ? envSupabaseUrl : SupabaseConfig.url;
-    final String supabasePublishableKey = envSupabaseAnonKey.isNotEmpty
-        ? envSupabaseAnonKey
-        : SupabaseConfig.publishableKey;
+    const String supabaseUrl = envSupabaseUrl;
+    const String supabasePublishableKey = envSupabaseAnonKey;
 
     if (supabaseUrl.isEmpty || supabasePublishableKey.isEmpty) {
       throw Exception(
         'Missing SUPABASE_URL or SUPABASE_ANON_KEY. '
-        'Set them in Vercel Project Settings -> Environment Variables or config/supabase_config.dart.',
+        'Set them in Vercel Project Settings -> Environment Variables.',
       );
     }
 
