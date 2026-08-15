@@ -147,36 +147,48 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: ListTile(
+                        child: InkWell(
                           onTap: () => setState(() => _selectedIndex = index),
-                          leading: Icon(
-                            _icons[index],
-                            color: isSelected
-                                ? Constants.primaryColor
-                                : Colors.grey[600],
-                          ),
-                          title: Text(
-                            _titles[index],
-                            style: TextStyle(
-                              color: isSelected
-                                  ? Constants.primaryColor
-                                  : Colors.grey[800],
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                              fontFamily: 'Tajawal',
-                              fontSize: 15,
+                          borderRadius: BorderRadius.circular(10),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 14),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _icons[index],
+                                  color: isSelected
+                                      ? Constants.primaryColor
+                                      : Colors.grey[600],
+                                  size: 24,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    _titles[index],
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Constants.primaryColor
+                                          : Colors.grey[800],
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                      fontFamily: 'Tajawal',
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                _AdminCountBadge(
+                                  future: _countRows(_countSources[index]),
+                                  color: Constants.primaryColor,
+                                  isSelected: isSelected,
+                                ),
+                              ],
                             ),
                           ),
-                          trailing: _AdminCountBadge(
-                            future: _countRows(_countSources[index]),
-                            color: Constants.primaryColor,
-                            isSelected: isSelected,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 4),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
                         ),
                       );
                     },
