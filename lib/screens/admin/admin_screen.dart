@@ -23,8 +23,12 @@ class _AdminScreenState extends State<AdminScreen> {
   // bool _isLoadingAdmitad = false; // Removed as requested
 
   Future<int> _countRows(String tableName) async {
-    final rows = await _supabase.from(tableName).select('id');
-    return (rows as List).length;
+    try {
+      final rows = await _supabase.from(tableName).select('id');
+      return (rows as List).length;
+    } catch (_) {
+      return 0;
+    }
   }
 
   // (اختياري) إذا تبين Admitad لاحقًا
@@ -141,6 +145,7 @@ class _AdminScreenState extends State<AdminScreen> {
                       icon: Icons.storefront_rounded,
                       color: Colors.blueGrey,
                       destination: const AdminStoresScreen(),
+                      countFuture: _countRows('stores'),
                     ),
                     const SizedBox(height: 12),
                     _buildAdminButton(
@@ -150,6 +155,7 @@ class _AdminScreenState extends State<AdminScreen> {
                       icon: Icons.confirmation_number_outlined,
                       color: Colors.deepPurple,
                       destination: const AdminCouponsScreen(),
+                      countFuture: _countRows('coupons'),
                     ),
                     const SizedBox(height: 12),
                     _buildAdminButton(
@@ -159,6 +165,7 @@ class _AdminScreenState extends State<AdminScreen> {
                       icon: Icons.pending_actions_rounded,
                       color: Colors.amber,
                       destination: const AdminPendingCouponsScreen(),
+                      countFuture: _countRows('admin_pending_coupons'),
                     ),
                     const SizedBox(height: 12),
                     _buildAdminButton(
@@ -168,6 +175,7 @@ class _AdminScreenState extends State<AdminScreen> {
                       icon: Icons.category_rounded,
                       color: Colors.indigo,
                       destination: const AdminCategoriesScreen(),
+                      countFuture: _countRows('categories'),
                     ),
                     const SizedBox(height: 12),
                     _buildAdminButton(
@@ -177,6 +185,7 @@ class _AdminScreenState extends State<AdminScreen> {
                       icon: Icons.local_offer_rounded,
                       color: Colors.orange,
                       destination: const AdminOfferScreen(),
+                      countFuture: _countRows('offers'),
                     ),
                     const SizedBox(height: 12),
                     _buildAdminButton(
@@ -186,6 +195,7 @@ class _AdminScreenState extends State<AdminScreen> {
                       icon: Icons.photo_library_outlined,
                       color: Colors.teal,
                       destination: const AdminCarouselScreen(),
+                      countFuture: _countRows('carousel'),
                     ),
                     const SizedBox(height: 12),
                     _buildAdminButton(
@@ -195,6 +205,7 @@ class _AdminScreenState extends State<AdminScreen> {
                       icon: Icons.notifications_active_rounded,
                       color: Colors.redAccent,
                       destination: const AdminNotificationsScreen(),
+                      countFuture: _countRows('notifications'),
                     ),
                     const SizedBox(height: 16),
                   ],
@@ -269,6 +280,7 @@ class _AdminScreenState extends State<AdminScreen> {
     required IconData icon,
     required Color color,
     required Widget destination,
+    Future<int>? countFuture,
   }) {
     return InkWell(
       onTap: () => Navigator.push(
@@ -308,10 +320,60 @@ class _AdminScreenState extends State<AdminScreen> {
                 ],
               ),
             ),
+            if (countFuture != null) ...[
+              _AdminButtonCountBadge(future: countFuture, color: color),
+              const SizedBox(width: 10),
+            ],
             const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _AdminButtonCountBadge extends StatelessWidget {
+  final Future<int> future;
+  final Color color;
+
+  const _AdminButtonCountBadge({
+    required this.future,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<int>(
+      future: future,
+      builder: (context, snapshot) {
+        return Container(
+          constraints: const BoxConstraints(minWidth: 36, minHeight: 28),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(9),
+            border: Border.all(color: color.withValues(alpha: 0.16)),
+          ),
+          alignment: Alignment.center,
+          child: snapshot.connectionState == ConnectionState.waiting
+              ? SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: color,
+                  ),
+                )
+              : Text(
+                  '${snapshot.data ?? 0}',
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+        );
+      },
     );
   }
 }

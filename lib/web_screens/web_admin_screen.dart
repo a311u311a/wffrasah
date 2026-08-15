@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../constants.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import 'web_admin_stores_screen.dart';
@@ -20,6 +21,7 @@ class WebAdminScreen extends StatefulWidget {
 
 class _WebAdminScreenState extends State<WebAdminScreen> {
   int _selectedIndex = 0;
+  final SupabaseClient _sb = Supabase.instance.client;
 
   final List<String> _titles = [
     'إدارة المتاجر',
@@ -40,6 +42,25 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
     Icons.view_carousel_rounded,
     Icons.notifications_active_rounded,
   ];
+
+  final List<String> _countSources = [
+    'stores',
+    'coupons',
+    'admin_pending_coupons',
+    'categories',
+    'offers',
+    'carousel',
+    'notifications',
+  ];
+
+  Future<int> _countRows(String source) async {
+    try {
+      final rows = await _sb.from(source).select('id');
+      return (rows as List).length;
+    } catch (_) {
+      return 0;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -147,6 +168,11 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
                               fontSize: 15,
                             ),
                           ),
+                          trailing: _AdminCountBadge(
+                            future: _countRows(_countSources[index]),
+                            color: Constants.primaryColor,
+                            isSelected: isSelected,
+                          ),
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 4),
                           shape: RoundedRectangleBorder(
@@ -184,6 +210,63 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AdminCountBadge extends StatelessWidget {
+  final Future<int> future;
+  final Color color;
+  final bool isSelected;
+
+  const _AdminCountBadge({
+    required this.future,
+    required this.color,
+    required this.isSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<int>(
+      future: future,
+      builder: (context, snapshot) {
+        final count = snapshot.data;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          constraints: const BoxConstraints(minWidth: 34, minHeight: 26),
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? color.withValues(alpha: 0.14)
+                : Colors.grey.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isSelected
+                  ? color.withValues(alpha: 0.22)
+                  : Colors.grey.withValues(alpha: 0.12),
+            ),
+          ),
+          alignment: Alignment.center,
+          child: snapshot.connectionState == ConnectionState.waiting
+              ? SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: isSelected ? color : Colors.grey[500],
+                  ),
+                )
+              : Text(
+                  '${count ?? 0}',
+                  style: TextStyle(
+                    color: isSelected ? color : Colors.grey[700],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: 'Tajawal',
+                  ),
+                ),
+        );
+      },
     );
   }
 }
