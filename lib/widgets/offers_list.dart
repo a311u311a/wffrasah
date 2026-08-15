@@ -34,7 +34,7 @@ class OffersList extends StatelessWidget {
 
         final rows = snapshot.data ?? [];
         final offers =
-        rows.map((row) => Offer.fromSupabase(row, langCode)).toList();
+            rows.map((row) => Offer.fromSupabase(row, langCode)).toList();
 
         final filtered = offers.where((o) {
           if (searchQuery.trim().isEmpty) return true;
@@ -49,7 +49,7 @@ class OffersList extends StatelessWidget {
         if (filtered.isEmpty) {
           return ErrorMessage(
             message: AppLocalizations.of(context)
-                ?.translate('no_offers_available_category') ??
+                    ?.translate('no_offers_available_category') ??
                 'لا توجد عروض',
           );
         }
@@ -77,7 +77,10 @@ class OffersList extends StatelessWidget {
       SupabaseClient supabase) async {
     // لو ما فيه تصنيف محدد
     if (selectedCategoryId == null || selectedCategoryId!.isEmpty) {
-      final res = await supabase.from('offers').select('*');
+      final res = await supabase
+          .from('offers')
+          .select('*')
+          .timeout(const Duration(seconds: 12));
       return (res as List).cast<Map<String, dynamic>>();
     }
 
@@ -87,7 +90,8 @@ class OffersList extends StatelessWidget {
     final res1 = await supabase
         .from('offers')
         .select('*')
-        .eq('category_id', selected);
+        .eq('category_id', selected)
+        .timeout(const Duration(seconds: 12));
 
     final list1 = (res1 as List).cast<Map<String, dynamic>>();
     if (list1.isNotEmpty) return list1;
@@ -98,7 +102,8 @@ class OffersList extends StatelessWidget {
       final res2 = await supabase
           .from('offers')
           .select('*')
-          .eq('categoryId', selected);
+          .eq('categoryId', selected)
+          .timeout(const Duration(seconds: 12));
 
       final list2 = (res2 as List).cast<Map<String, dynamic>>();
       if (list2.isNotEmpty) return list2;
@@ -108,7 +113,8 @@ class OffersList extends StatelessWidget {
       final res3 = await supabase
           .from('offers')
           .select('*')
-          .eq('category', selected);
+          .eq('category', selected)
+          .timeout(const Duration(seconds: 12));
 
       final list3 = (res3 as List).cast<Map<String, dynamic>>();
       if (list3.isNotEmpty) return list3;

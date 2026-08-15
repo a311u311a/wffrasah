@@ -47,11 +47,29 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
   // UI state
   final TextEditingController _searchCtrl = TextEditingController();
   String _search = '';
+  late Future<List<Map<String, dynamic>>> _storesFuture;
 
   @override
   void initState() {
     super.initState();
+    _storesFuture = _fetchStores();
     _loadCategories();
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchStores() async {
+    final rows = await _sb
+        .from('stores')
+        .select('*')
+        .eq('approval_status', 'approved')
+        .order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
+  void _refreshStores() {
+    if (!mounted) return;
+    setState(() {
+      _storesFuture = _fetchStores();
+    });
   }
 
   Future<void> _loadCategories() async {
@@ -119,12 +137,10 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
       _editingId = (store['id'] ?? '').toString();
       _storeNameArCtrl.text =
           (store['name_ar'] ?? store['name'] ?? '').toString();
-      _storeNameEnCtrl.text =
-          (store['name_en'] ?? store['name'] ?? '').toString();
+      _storeNameEnCtrl.text = (store['name_en'] ?? '').toString();
       _storeDescArCtrl.text =
           (store['description_ar'] ?? store['description'] ?? '').toString();
-      _storeDescEnCtrl.text =
-          (store['description_en'] ?? store['description'] ?? '').toString();
+      _storeDescEnCtrl.text = (store['description_en'] ?? '').toString();
       _editingImageUrl = (store['image'] ?? '').toString();
       _selectedCategoryId = store['category_id']?.toString();
     }
@@ -533,28 +549,23 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
         if (url != null) finalImageUrl = url;
       }
 
-      final baseForSlug = _storeNameEnCtrl.text.trim().isNotEmpty
-          ? _storeNameEnCtrl.text.trim()
-          : _storeNameArCtrl.text.trim();
-      final slug = _toSlug(baseForSlug);
-
       final payload = {
         'name_ar': _storeNameArCtrl.text.trim(),
-        'name_en': _storeNameEnCtrl.text.trim().isEmpty
-            ? _storeNameArCtrl.text.trim()
-            : _storeNameEnCtrl.text.trim(),
+        'name_en': _storeNameEnCtrl.text.trim(),
         'description_ar': _storeDescArCtrl.text.trim(),
-        'description_en': _storeDescEnCtrl.text.trim().isEmpty
-            ? _storeDescArCtrl.text.trim()
-            : _storeDescEnCtrl.text.trim(),
+        'description_en': _storeDescEnCtrl.text.trim(),
         'name': _storeNameArCtrl.text.trim(),
         'description': _storeDescArCtrl.text.trim(),
-        'slug': slug,
         'image': finalImageUrl ?? '',
         'category_id': _selectedCategoryId,
       };
 
       if (_editingId == null) {
+        final baseForSlug = _storeNameEnCtrl.text.trim().isNotEmpty
+            ? _storeNameEnCtrl.text.trim()
+            : _storeNameArCtrl.text.trim();
+        payload['slug'] = _toSlug(baseForSlug);
+
         await _sb.from('stores').insert(payload);
       } else {
         await _sb.from('stores').update(payload).eq('id', _editingId!);
@@ -562,6 +573,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
 
       if (!mounted) return;
       Navigator.pop(context);
+      _refreshStores();
       showSnackBar(
         context,
         _editingId == null ? 'تمت الإضافة بنجاح' : 'تم التحديث بنجاح',
@@ -600,7 +612,10 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
     if (confirm == true) {
       try {
         await _sb.from('stores').delete().eq('id', id);
-        if (mounted) showSnackBar(context, 'تم حذف المتجر');
+        if (mounted) {
+          _refreshStores();
+          showSnackBar(context, 'تم حذف المتجر');
+        }
       } catch (e) {
         if (mounted) showSnackBar(context, 'خطأ في الحذف: $e', isError: true);
       }
@@ -766,13 +781,10 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
           _searchWithAddButton(),
 
           const SizedBox(height: 18),
-          StreamBuilder<List<Map<String, dynamic>>>(
-            stream: _sb.from('stores').stream(primaryKey: ['id']).order(
-              'created_at',
-              ascending: false,
-            ),
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: _storesFuture,
             builder: (context, snapshot) {
-              if (!snapshot.hasData) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
                   child: Padding(
                     padding: EdgeInsets.all(40),
@@ -780,8 +792,20 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
                   ),
                 );
               }
+              if (snapshot.hasError) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(40),
+                    child: Text(
+                      'خطأ في تحميل المتاجر: ${snapshot.error}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.redAccent),
+                    ),
+                  ),
+                );
+              }
 
-              final all = snapshot.data!;
+              final all = snapshot.data ?? [];
               if (all.isEmpty) {
                 return Center(
                   child: Padding(

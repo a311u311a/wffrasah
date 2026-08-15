@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<style>
+@font-face{font-family:Tajawal;src:url("../../fonts/Tajawal-Regular.ttf")}
+@font-face{font-family:Tajawal;font-weight:700;src:url("../../fonts/Tajawal-Bold.ttf")}
+@font-face{font-family:Tajawal;font-weight:800;src:url("../../fonts/Tajawal-ExtraBold.ttf")}
+*{box-sizing:border-box}
+body{margin:0;background:#111;font-family:Tajawal,Arial,sans-serif}
+.board{position:relative;overflow:hidden;background:#141414;color:#fff}
+.poster{width:100%;height:100%;position:relative;isolation:isolate}
+.hero{position:absolute;inset:0;background-image:linear-gradient(180deg,rgba(0,0,0,.16),rgba(0,0,0,.72)),url("../../images/offers/shein_offer.png");background-size:cover;background-position:center}
+.pin .hero,.reel .hero{background-position:58% center}
+.shade{position:absolute;inset:auto 0 0 0;height:48%;background:linear-gradient(0deg,rgba(0,0,0,.91),rgba(0,0,0,0));z-index:1}
+.top{position:absolute;left:54px;top:48px;z-index:2;display:flex;align-items:center;gap:14px;direction:ltr}
+.logo{width:82px;height:82px;border-radius:22px;box-shadow:0 14px 34px rgba(0,0,0,.32)}
+.brand{font-size:31px;font-weight:800;line-height:1;color:#fff}
+.tag{font-size:19px;color:#f2f2f2;margin-top:8px}
+.content{position:absolute;z-index:3;left:58px;right:58px;bottom:78px;text-align:right}
+.store{display:inline-flex;align-items:center;border:2px solid rgba(255,255,255,.74);border-radius:999px;padding:12px 23px;font-size:31px;font-weight:800;background:rgba(0,0,0,.42);backdrop-filter:blur(8px)}
+h1{font-size:82px;line-height:1.02;margin:28px 0 16px;font-weight:800;letter-spacing:0}
+.feed h1{font-size:72px}.pin h1{font-size:70px}
+.sub{font-size:34px;line-height:1.32;margin:0 0 34px;color:#fff}
+.feed .sub{font-size:30px}.pin .sub{font-size:29px}
+.cta{display:flex;align-items:center;justify-content:space-between;gap:18px;direction:rtl}
+.button{background:#caff16;color:#111;border-radius:999px;padding:22px 34px;font-size:38px;font-weight:800;line-height:1;box-shadow:0 15px 34px rgba(202,255,22,.28)}
+.handle{font-size:28px;color:#f7f7f7;direction:ltr;text-align:left;font-weight:700}
+.pin .top{left:44px;top:44px}.pin .logo{width:72px;height:72px}.pin .brand{font-size:27px}.pin .content{left:46px;right:46px;bottom:54px}.pin .button{font-size:32px;padding:19px 29px}.pin .handle{font-size:24px}
+.feed .top{left:50px;top:44px}.feed .content{bottom:58px}.feed .button{font-size:34px;padding:20px 31px}.feed .handle{font-size:25px}
+.reel .content{bottom:315px}.reel h1{font-size:92px}.reel .sub{font-size:36px;max-width:760px}.reel .button{font-size:38px}.reel .handle{font-size:28px}
+.spark{position:absolute;z-index:2;width:210px;height:210px;border-radius:50%;background:#ff6eae;filter:blur(52px);opacity:.42;right:-70px;bottom:170px}
+.spark.two{width:170px;height:170px;background:#caff16;left:-55px;right:auto;top:210px;opacity:.33}
+.note{position:absolute;z-index:3;right:58px;top:160px;background:#ff6eae;color:#111;border-radius:999px;padding:12px 20px;font-size:26px;font-weight:800;transform:rotate(3deg)}
+.feed .note{top:144px}.pin .note{right:46px;top:136px;font-size:23px}.reel .note{top:206px;right:64px;font-size:30px}
+</style>
+</head>
+<body>
+<div id="instagram" class="board feed" style="width:1080px;height:1350px"><div class="poster"><div class="hero"></div><div class="spark"></div><div class="spark two"></div><div class="shade"></div><div class="top"><img class="logo" src="../../image/wffrhasah.png"><div><div class="brand">وفرها صح</div><div class="tag">عروض وكوبونات مختارة</div></div></div><div class="note">اختيار اليوم</div><div class="content"><div class="store">SHEIN</div><h1>ستايل جديد<br>بسعر أوفر</h1><p class="sub">تابع أحدث عروض الموضة والكوبونات قبل ما تفوتك.</p><div class="cta"><div class="button">تسوق الآن</div><div class="handle">@wffrhasah</div></div></div></div></div>
+<div id="tiktok" class="board reel" style="width:1080px;height:1920px"><div class="poster"><div class="hero"></div><div class="spark"></div><div class="spark two"></div><div class="shade"></div><div class="top"><img class="logo" src="../../image/wffrhasah.png"><div><div class="brand">وفرها صح</div><div class="tag">تابع العروض أول بأول</div></div></div><div class="note">عرض SHEIN</div><div class="content"><div class="store">SHEIN</div><h1>لا تدفع أكثر<br>وفرها صح</h1><p class="sub">عروض موضة وكوبونات جاهزة للتوفير.</p><div class="cta"><div class="button">شاهد العرض</div><div class="handle">@wffrhasah</div></div></div></div></div>
+<div id="pinterest" class="board pin" style="width:1000px;height:1500px"><div class="poster"><div class="hero"></div><div class="spark"></div><div class="spark two"></div><div class="shade"></div><div class="top"><img class="logo" src="../../image/wffrhasah.png"><div><div class="brand">وفرها صح</div><div class="tag">أفضل الصفقات في مكان واحد</div></div></div><div class="note">موضة وتوفير</div><div class="content"><div class="store">SHEIN</div><h1>عروض SHEIN<br>لا تفوتك</h1><p class="sub">احفظ البِن وتابع وفرها صح لأحدث الخصومات والكوبونات.</p><div class="cta"><div class="button">احفظ العرض</div><div class="handle">pinterest.com/wffrhasah</div></div></div></div></div>
+</body>
+</html>

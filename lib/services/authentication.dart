@@ -8,6 +8,14 @@ class AuthMethod {
 
   static const String mobileRedirectUrl = 'com.rbhan.app://login-callback/';
 
+  String get _webRedirectUrl => Uri.base
+      .replace(
+        path: '/signin',
+        queryParameters: null,
+        fragment: null,
+      )
+      .toString();
+
   Future<AuthResponse> signUp({
     required String email,
     required String password,
@@ -36,7 +44,7 @@ class AuthMethod {
       // نستخدم Uri.base.origin للعودة إلى الصفحة الرئيسية
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: Uri.base.origin,
+        redirectTo: _webRedirectUrl,
       );
     } else {
       // على التطبيق: استخدام inAppWebView للبقاء داخل التطبيق
@@ -46,6 +54,15 @@ class AuthMethod {
         authScreenLaunchMode: LaunchMode.inAppWebView,
       );
     }
+  }
+
+  Future<void> signInWithApple() async {
+    await _supabase.auth.signInWithOAuth(
+      OAuthProvider.apple,
+      redirectTo: kIsWeb ? _webRedirectUrl : mobileRedirectUrl,
+      authScreenLaunchMode:
+          kIsWeb ? LaunchMode.platformDefault : LaunchMode.externalApplication,
+    );
   }
 
   Future<void> signOut() => _supabase.auth.signOut();
@@ -73,6 +90,14 @@ class AuthMethods {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   static const String _mobileRedirectUrl = 'com.rbhan.app://login-callback/';
+
+  String get _webRedirectUrl => Uri.base
+      .replace(
+        path: '/signin',
+        queryParameters: null,
+        fragment: null,
+      )
+      .toString();
 
   Future<AuthResponse> signUpWithEmail({
     required String email,
@@ -118,7 +143,7 @@ class AuthMethods {
       // نستخدم Uri.base.origin للعودة إلى الصفحة الرئيسية
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: Uri.base.origin,
+        redirectTo: _webRedirectUrl,
       );
     } else {
       // على التطبيق: استخدام inAppWebView للبقاء داخل التطبيق
@@ -128,6 +153,15 @@ class AuthMethods {
         authScreenLaunchMode: LaunchMode.inAppWebView,
       );
     }
+  }
+
+  Future<void> signInWithApple() async {
+    await _supabase.auth.signInWithOAuth(
+      OAuthProvider.apple,
+      redirectTo: kIsWeb ? _webRedirectUrl : _mobileRedirectUrl,
+      authScreenLaunchMode:
+          kIsWeb ? LaunchMode.platformDefault : LaunchMode.externalApplication,
+    );
   }
 
   Future<void> signOut() => _supabase.auth.signOut();

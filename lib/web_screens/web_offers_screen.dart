@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../constants.dart';
 import '../models/offers.dart';
 import '../models/store.dart';
 import '../providers/locale_provider.dart';
@@ -19,7 +19,20 @@ class WebOffersScreen extends StatefulWidget {
 }
 
 class _WebOffersScreenState extends State<WebOffersScreen> {
+  static const Color bg = Color(0xFFFAFAFF);
+  static const Color panel = Color(0xFFFFFFFF);
+  static const Color panelDark = Color(0xFFF2F0FF);
+  static const Color stroke = Color(0xFFE2DEFF);
+  static const Color line = Color(0xFFEDEAFF);
+  static const Color ink = Color(0xFF25213B);
+  static const Color orange = Color(0xFF6C63FF);
+  static const Color pink = Color(0xFF8B84FF);
+  static const Color yellow = Color(0xFFFF6584);
+  static const Color secondary = Color(0xFF68627F);
+  static const Color faded = Color(0xFF9B96B6);
+
   final supabase = Supabase.instance.client;
+  final TextEditingController searchController = TextEditingController();
   List<Offer> offers = [];
   List<Offer> allOffers = [];
   Map<String, Store> storesMap = {};
@@ -30,6 +43,12 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -93,106 +112,211 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: const WebNavigationBar(),
-      body: Column(
+    final theme = Theme.of(context);
+
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Theme(
+        data: theme.copyWith(
+          scaffoldBackgroundColor: bg,
+          textTheme: GoogleFonts.cairoTextTheme(theme.textTheme),
+        ),
+        child: Scaffold(
+          backgroundColor: bg,
+          appBar: const WebNavigationBar(),
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1440),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildHeroHeader(),
+                          const SizedBox(height: 28),
+                          _buildOffersSection(),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const WebFooter(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroHeader() {
+    return Container(
+      padding: EdgeInsets.all(ResponsiveLayout.isDesktop(context) ? 28 : 20),
+      decoration: BoxDecoration(
+        color: panel,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: stroke),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1A6C63FF),
+            blurRadius: 28,
+            offset: Offset(0, 18),
+          ),
+        ],
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 900;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0EEFF),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: const Color(0xFFD8D4FF)),
+                ),
+                child: Text(
+                  'تصفح جميع العروض وابحث حسب المتجر أو الوصف',
+                  style: GoogleFonts.cairo(
+                    color: ink,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 22),
+              ShaderMask(
+                shaderCallback: (bounds) =>
+                    const LinearGradient(colors: [orange, yellow, pink])
+                        .createShader(bounds),
+                child: Text(
+                  'جميع العروض في واجهة موحدة وسريعة',
+                  style: GoogleFonts.cairo(
+                    color: Colors.white,
+                    fontSize: compact ? 28 : 38,
+                    height: 1.25,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'ابحث عن العرض المناسب، شاهد المتجر المرتبط به، وانتقل للعرض مباشرة من نفس الشاشة.',
+                style: GoogleFonts.cairo(
+                  color: secondary,
+                  fontSize: compact ? 14 : 16,
+                  height: 1.9,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 24),
+              _buildSearchBar(),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: panelDark,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: searchQuery.isNotEmpty ? orange : stroke,
+          width: 1.4,
+        ),
+      ),
+      child: Row(
         children: [
-          // ✅ Header ثابت في الأعلى
-          _buildHeader(),
-          // ✅ المحتوى القابل للتمرير
+          const Icon(Icons.search_rounded, color: secondary),
+          const SizedBox(width: 12),
           Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildOffersGrid(),
-                  const WebFooter(),
-                ],
+            child: TextField(
+              controller: searchController,
+              onChanged: (value) => setState(() => searchQuery = value),
+              style: GoogleFonts.cairo(
+                color: ink,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintText: 'ابحث عن عرض...',
+                hintStyle: GoogleFonts.cairo(
+                  color: faded,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
+          if (searchQuery.isNotEmpty) ...[
+            const SizedBox(width: 8),
+            IconButton(
+              onPressed: () {
+                searchController.clear();
+                setState(() => searchQuery = '');
+              },
+              icon: const Icon(Icons.clear_rounded, color: secondary),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildOffersSection() {
+    return _buildSection(
+      title: 'العروض',
+      subtitle:
+          'كل العروض المتاحة مرتبة في شبكة واحدة مع البحث المباشر حسب المتجر أو الوصف.',
+      child: _buildOffersGrid(),
+    );
+  }
+
+  Widget _buildSection({
+    required String title,
+    required String subtitle,
+    required Widget child,
+  }) {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: ResponsivePadding.page(context).horizontal,
-        vertical: 10,
-      ),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: panelDark,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: line),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Constants.primaryColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              Icons.local_offer_rounded,
-              color: Constants.primaryColor,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
           Text(
-            'العروض الخاصة',
-            style: TextStyle(
-              fontSize: ResponsiveLayout.isDesktop(context) ? 28 : 22,
-              fontWeight: FontWeight.w800,
-              color: Constants.primaryColor,
-              fontFamily: 'Tajawal',
+            title,
+            style: GoogleFonts.cairo(
+              color: ink,
+              fontSize: 26,
+              fontWeight: FontWeight.w900,
             ),
           ),
-          const Spacer(),
-          // ✅ شريط البحث في اليمين (للديسكتوب)
-          if (ResponsiveLayout.isDesktop(context))
-            Container(
-              constraints: const BoxConstraints(maxWidth: 280),
-              height: 40,
-              child: TextField(
-                onChanged: (value) => setState(() => searchQuery = value),
-                decoration: InputDecoration(
-                  hintText: 'ابحث عن عرض...',
-                  hintStyle:
-                      const TextStyle(fontFamily: 'Tajawal', fontSize: 13),
-                  prefixIcon: Icon(Icons.search,
-                      color: Constants.primaryColor, size: 18),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide:
-                        BorderSide(color: Constants.primaryColor, width: 2),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  isDense: true,
-                ),
-              ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: GoogleFonts.cairo(
+              color: secondary,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
             ),
+          ),
+          const SizedBox(height: 22),
+          child,
         ],
       ),
     );
@@ -211,74 +335,69 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
     final displayOffers = filteredOffers;
 
     if (displayOffers.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(60),
-          child: Column(
-            children: [
-              Icon(
-                Icons.local_offer_outlined,
-                size: 80,
-                color: Colors.grey[300],
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(40),
+        decoration: BoxDecoration(
+          color: panel,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: stroke),
+        ),
+        child: Column(
+          children: [
+            const Icon(Icons.local_offer_outlined, size: 80, color: faded),
+            const SizedBox(height: 20),
+            Text(
+              searchQuery.isNotEmpty
+                  ? 'لا توجد نتائج للبحث عن "$searchQuery"'
+                  : 'لا توجد عروض متاحة حالياً',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.cairo(
+                fontSize: 18,
+                color: secondary,
+                fontWeight: FontWeight.w700,
               ),
-              const SizedBox(height: 20),
-              Text(
-                searchQuery.isNotEmpty
-                    ? 'لا توجد نتائج للبحث'
-                    : 'لا توجد عروض متاحة حالياً',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.grey[600],
-                  fontFamily: 'Tajawal',
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     }
 
-    return Container(
-      padding: ResponsivePadding.page(context),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // عداد النتائج
-          Padding(
-            padding: const EdgeInsets.only(bottom: 20),
-            child: Text(
-              'تم العثور على ${displayOffers.length} عرض',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[700],
-                fontFamily: 'Tajawal',
-                fontWeight: FontWeight.w600,
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 20),
+          child: Text(
+            'تم العثور على ${displayOffers.length} عرض',
+            style: GoogleFonts.cairo(
+              fontSize: 16,
+              color: secondary,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          // الشبكة
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: ResponsiveGrid.columns(context, max: 4),
-              crossAxisSpacing: ResponsiveGrid.spacing(context),
-              mainAxisSpacing: ResponsiveGrid.spacing(context),
-              childAspectRatio: 0.8,
-            ),
-            itemCount: displayOffers.length,
-            itemBuilder: (context, index) {
-              final offer = displayOffers[index];
-              final store = storesMap[offer.storeId.toLowerCase().trim()];
-              return WebOfferCard(
-                offer: offer,
-                storeName: store?.name ?? 'متجر',
-                storeImage: store?.image,
-              );
-            },
+        ),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: ResponsiveLayout.isDesktop(context) ? 4 : 2,
+            crossAxisSpacing: ResponsiveGrid.spacing(context),
+            mainAxisSpacing: ResponsiveGrid.spacing(context),
+            childAspectRatio: ResponsiveLayout.isDesktop(context) ? 0.8 : 0.72,
           ),
-        ],
-      ),
+          itemCount: displayOffers.length,
+          itemBuilder: (context, index) {
+            final offer = displayOffers[index];
+            final store = storesMap[offer.storeId.toLowerCase().trim()];
+            return WebOfferCard(
+              offer: offer,
+              storeName: store?.name ?? 'متجر',
+              storeImage: store?.image,
+            );
+          },
+        ),
+      ],
     );
   }
 }

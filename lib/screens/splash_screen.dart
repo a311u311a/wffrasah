@@ -4,7 +4,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../constants.dart';
 import '../widgets/bottom_navigation_bar.dart';
-import '../services/notification_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -27,10 +26,6 @@ class _SplashScreenState extends State<SplashScreen>
     _controller = AnimationController(vsync: this);
 
     // ✅ شغّل تهيئة Firebase بعد أول فريم لتقليل التقطيع (Skipped frames)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      NotificationService.initFirebase();
-    });
-
     // تفعيل ظهور النص بعد نصف ثانية من بدء الأنميشن
     Future.delayed(const Duration(milliseconds: 500), () {
       if (!mounted) return;
@@ -124,7 +119,7 @@ class _SplashScreenState extends State<SplashScreen>
               child: Column(
                 children: [
                   Text(
-                    'كوبونات وعروض',
+                    'وفرها صح',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.w900,
@@ -135,7 +130,7 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    ' تطبيق وفرها صح',
+                    'كوبونات وعروض',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w400,

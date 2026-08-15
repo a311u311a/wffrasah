@@ -1,27 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
-import '../constants.dart';
-import '../models/coupon.dart';
-import '../models/store.dart';
 import '../models/carousel.dart';
+import '../models/coupon.dart';
 import '../models/offers.dart';
-
+import '../models/store.dart';
 import '../providers/locale_provider.dart';
-
 import '../web_widgets/responsive_layout.dart';
-import '../web_widgets/web_navigation_bar.dart';
-import '../web_widgets/web_footer.dart';
-import '../web_widgets/web_coupon_card.dart';
 import '../web_widgets/web_banner_carousel.dart';
-
-import '../web_widgets/web_store_card.dart';
+import '../web_widgets/web_coupon_card.dart';
+import '../web_widgets/web_footer.dart';
+import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_offer_card.dart';
-import '../localization/app_localizations.dart';
 
-/// الصفحة الرئيسية الاحترافية المحدثة للويب (UI فقط)
 class WebHomeScreen extends StatefulWidget {
   const WebHomeScreen({super.key});
 
@@ -30,965 +23,529 @@ class WebHomeScreen extends StatefulWidget {
 }
 
 class _WebHomeScreenState extends State<WebHomeScreen> {
-  final supabase = Supabase.instance.client;
+  static const Color bg = Color(0xFFFAFAFF);
+  static const Color panel = Color(0xFFFFFFFF);
+  static const Color panelDark = Color(0xFFF2F0FF);
+  static const Color stroke = Color(0xFFE2DEFF);
+  static const Color ink = Color(0xFF25213B);
+  static const Color orange = Color(0xFF6C63FF);
+  static const Color pink = Color(0xFF8B84FF);
+  static const Color secondary = Color(0xFF68627F);
+  static const Color faded = Color(0xFF9B96B6);
 
-  List<dynamic> displayItems = []; // كوبونات + عروض
-  List<Store> stores = [];
+  final TextEditingController searchController = TextEditingController();
+  final FocusNode searchFocusNode = FocusNode();
+
+  final SupabaseClient supabase = Supabase.instance.client;
   List<Carousel> carouselItems = [];
-  List<Offer> latestOffers = []; // أحدث العروض للقسم الجديد
-  bool isLoading = true;
-  bool isFiltering = false;
-  String? selectedStoreId;
-  final GlobalKey _couponsSectionKey = GlobalKey(); // ✅ مفتاح التمرير
-
+  List<Store> stores = [];
+  List<Coupon> coupons = [];
+  List<Offer> offers = [];
   @override
   void initState() {
     super.initState();
-    _loadData();
+    searchFocusNode.addListener(() => setState(() {}));
+    _loadHomeData();
   }
 
-  Future<void> _loadData() async {
-    setState(() {
-      if (stores.isNotEmpty && selectedStoreId != null) {
-        isFiltering = true;
-      } else {
-        isLoading = true;
-      }
-    });
+  @override
+  void dispose() {
+    searchController.dispose();
+    searchFocusNode.dispose();
+    super.dispose();
+  }
 
-    final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
-    final langCode = localeProvider.locale.languageCode;
+  Future<void> _loadHomeData() async {
+    final langCode =
+        Provider.of<LocaleProvider>(context, listen: false).locale.languageCode;
 
     try {
-      List<Store> loadedStores = stores;
-      List<Carousel> loadedCarousel = carouselItems;
-
-      // 1) تحميل المتاجر والبنر مرة واحدة
-      if (stores.isEmpty) {
-        final storesData = await supabase
-            .from('stores')
-            .select()
-            .order('name_ar', ascending: true);
-
-        loadedStores = (storesData as List)
-            .map((store) => Store.fromSupabase(store, langCode))
-            .toList();
-
-        final carouselData = await supabase.from('carousel').select();
-        loadedCarousel = (carouselData as List)
-            .map((item) => Carousel.fromMap(item, langCode))
-            .toList();
-      }
-
-      // 2) حالة الفلترة حسب المتجر
-      if (selectedStoreId != null) {
-        final selectedStore = loadedStores.firstWhere(
-          (s) => s.id == selectedStoreId,
-          orElse: () => Store(
-            id: selectedStoreId!,
-            slug: selectedStoreId!,
-            name: '',
-            description: '',
-            nameAr: '',
-            nameEn: '',
-            descriptionAr: '',
-            descriptionEn: '',
-            image: '',
-          ),
-        );
-
-        final storeKey = selectedStore.slug.isNotEmpty
-            ? selectedStore.slug
-            : selectedStoreId!;
-
-        // جلب الكوبونات
-        final couponsResponse = await supabase
-            .from('coupons')
-            .select()
-            .eq('store_id', storeKey.trim())
-            .order('created_at', ascending: false);
-
-        // جلب العروض
-        final offersResponse = await supabase
-            .from('offers')
-            .select()
-            .eq('store_id', storeKey.trim())
-            .order('created_at', ascending: false);
-
-        final loadedCoupons = (couponsResponse as List)
-            .map((data) => Coupon.fromSupabase(data, langCode))
-            .toList();
-
-        final loadedOffers = (offersResponse as List)
-            .map((data) => Offer.fromSupabase(data, langCode))
-            .toList();
-
-        final List<dynamic> allItems = [...loadedCoupons, ...loadedOffers];
-
-        if (mounted) {
-          setState(() {
-            stores = loadedStores;
-            carouselItems = loadedCarousel;
-            displayItems = allItems;
-            isLoading = false;
-            isFiltering = false;
-          });
-        }
-        return;
-      }
-
-      // 3) الحالة الافتراضية: أحدث الكوبونات
+      final carouselData = await supabase.from('carousel').select();
+      final storesData = await supabase
+          .from('stores')
+          .select()
+          .order('name_ar', ascending: true);
       final couponsData = await supabase
           .from('coupons')
           .select()
+          .eq('approval_status', 'approved')
           .order('created_at', ascending: false)
-          .limit(20);
-
+          .limit(24);
       final offersData = await supabase
           .from('offers')
           .select()
           .order('created_at', ascending: false)
-          .limit(20);
-
-      final loadedCoupons = (couponsData as List)
-          .map((coupon) => Coupon.fromSupabase(coupon, langCode))
-          .toList();
-
-      final loadedOffers = (offersData as List)
-          .map((offer) => Offer.fromSupabase(offer, langCode))
-          .toList();
-
-      if (mounted) {
-        setState(() {
-          stores = loadedStores;
-          carouselItems = loadedCarousel;
-          displayItems = loadedCoupons;
-          latestOffers = loadedOffers;
-          isLoading = false;
-          isFiltering = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-          isFiltering = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '${AppLocalizations.of(context)?.translate('error_loading_data')}: $e',
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+          .limit(12);
+      if (!mounted) return;
+      setState(() {
+        carouselItems = (carouselData as List)
+            .map((item) => Carousel.fromMap(item, langCode))
+            .toList();
+        stores = (storesData as List)
+            .where((item) {
+              final importSource =
+                  (item['import_source'] ?? 'manual').toString();
+              final approvalStatus =
+                  (item['approval_status'] ?? 'approved').toString();
+              return importSource == 'manual' || approvalStatus == 'approved';
+            })
+            .map((item) => Store.fromSupabase(item, langCode))
+            .toList();
+        coupons = (couponsData as List)
+            .map((item) => Coupon.fromSupabase(item, langCode))
+            .toList();
+        offers = (offersData as List)
+            .map((item) => Offer.fromSupabase(item, langCode))
+            .toList();
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        carouselItems = [];
+        stores = [];
+        coupons = [];
+        offers = [];
+      });
     }
   }
 
-  // =========================
-  // ✅ ستايل موحّد (UI فقط)
-  // =========================
-  static const String _font = 'Tajawal';
-
-  TextStyle _h1(BuildContext context) => TextStyle(
-        fontSize: ResponsiveLayout.isDesktop(context) ? 34 : 26,
-        fontWeight: FontWeight.w900,
-        fontFamily: _font,
-        color: Colors.grey[900],
-        height: 1.2,
-      );
-
-  TextStyle _sub(BuildContext context) => TextStyle(
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-        fontFamily: _font,
-        color: Colors.grey[600],
-        height: 1.4,
-      );
-
-  TextStyle _chipText() => const TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w800,
-        fontFamily: _font,
-      );
-
-  BoxDecoration _softCard() => BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey[100]!, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      );
-
-  BoxDecoration _sectionBackground() => const BoxDecoration(
-        color: Colors.white,
-      );
-
-  Widget _sectionHeader({
-    required BuildContext context,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    Widget? trailing,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Constants.primaryColor.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: Constants.primaryColor.withValues(alpha: 0.15),
-              ),
-            ),
-            child: Icon(
-              icon,
-              color: Constants.primaryColor,
-              size: 26,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: _h1(context)),
-                const SizedBox(height: 8),
-                Text(subtitle, style: _sub(context)),
-              ],
-            ),
-          ),
-          if (trailing != null) ...[
-            const SizedBox(width: 12),
-            trailing,
-          ],
-        ],
-      ),
-    );
+  Map<String, Store> get _storesMap {
+    final map = <String, Store>{};
+    for (final store in stores) {
+      if (store.id.trim().isNotEmpty) {
+        map[store.id.toLowerCase().trim()] = store;
+      }
+      if (store.slug.trim().isNotEmpty) {
+        map[store.slug.toLowerCase().trim()] = store;
+      }
+    }
+    return map;
   }
 
-  Widget _pillButton({
-    required String text,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Constants.primaryColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border:
-            Border.all(color: Constants.primaryColor.withValues(alpha: 0.18)),
-      ),
-      child: TextButton.icon(
-        onPressed: onTap,
-        icon: Icon(icon, color: Constants.primaryColor),
-        label: Text(
-          text,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w800,
-            fontFamily: _font,
-          ).copyWith(color: Constants.primaryColor),
-        ),
-        style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      ),
-    );
-  }
-
-  // =========================
-  // UI
-  // =========================
   @override
   Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
-
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: const WebNavigationBar(),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildSearchSection(localizations),
-            _buildHeroSection(localizations),
-            _buildCouponsSection(localizations),
-            _buildOffersSection(localizations),
-            _buildStoresSection(localizations),
-            const WebFooter(),
-          ],
+    final theme = Theme.of(context);
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Theme(
+        data: theme.copyWith(
+          scaffoldBackgroundColor: bg,
+          textTheme: GoogleFonts.cairoTextTheme(theme.textTheme),
         ),
-      ),
-    );
-  }
-
-  // شريط البحث (مُحسّن شكلاً)
-  Widget _buildSearchSection(AppLocalizations? localizations) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey[100]!)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Hero
-  Widget _buildHeroSection(AppLocalizations? localizations) {
-    if (isLoading && stores.isEmpty) return const SizedBox.shrink();
-
-    return Container(
-      decoration: _sectionBackground(),
-      child: Padding(
-        padding: ResponsivePadding.page(context),
-        child: ResponsiveLayout.isDesktop(context)
-            ? SizedBox(
-                height: 400,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Scaffold(
+          backgroundColor: bg,
+          appBar: const WebNavigationBar(),
+          body: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Column(
                   children: [
-                    Expanded(
-                      flex: 5,
-                      child: Container(
-                        decoration: _softCard(), // ✅ Shadow enabled
-                        clipBehavior: Clip.antiAlias,
-                        child: _buildFeaturedCarousel(),
-                      ),
-                    ),
-                    const SizedBox(width: 18),
-                    Expanded(
-                      flex: 2,
-                      child: _buildBestStoresSidePanel(localizations),
-                    ),
-                  ],
-                ),
-              )
-            : Column(
-                children: [
-                  Container(
-                    decoration: _softCard(), // ✅ Shadow enabled
-                    clipBehavior: Clip.antiAlias,
-                    child: _buildFeaturedCarousel(),
-                  ),
-                  const SizedBox(height: 14),
-                  _buildBestStoresSidePanel(localizations),
-                ],
-              ),
-      ),
-    );
-  }
-
-  Widget _buildBestStoresSidePanel(AppLocalizations? localizations) {
-    final topStores = stores.take(9).toList();
-    if (topStores.isEmpty) return const SizedBox.shrink();
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: _softCard(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  localizations?.translate('top_stores') ?? 'أشهر المتاجر',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    fontFamily: _font,
-                    color: Colors.grey[900],
-                  ),
-                ),
-              ),
-              InkWell(
-                onTap: () => Navigator.pushNamed(context, '/stores'),
-                borderRadius: BorderRadius.circular(10),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  child: Text(
-                    localizations?.translate('show_all') ?? 'عرض الكل',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                      fontFamily: _font,
-                      color: Constants.primaryColor,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Grid 3x3
-          Column(
-            children: [
-              for (int i = 0; i < 3; i++) ...[
-                if (i > 0) const SizedBox(height: 10),
-                Row(
-                  children: [
-                    for (int j = 0; j < 3; j++) ...[
-                      if (j > 0) const SizedBox(width: 10),
-                      Expanded(
-                        child: Builder(
-                          builder: (context) {
-                            final index = i * 3 + j;
-                            if (index >= topStores.length) {
-                              return const SizedBox();
-                            }
-                            final store = topStores[index];
-                            final isSelected = selectedStoreId == store.id;
-
-                            return InkWell(
-                              onTap: () {
-                                setState(() => selectedStoreId = store.id);
-                                _loadData();
-
-                                Future.delayed(
-                                    const Duration(milliseconds: 250), () {
-                                  if (_couponsSectionKey.currentContext !=
-                                      null) {
-                                    Scrollable.ensureVisible(
-                                      _couponsSectionKey.currentContext!,
-                                      duration:
-                                          const Duration(milliseconds: 600),
-                                      curve: Curves.easeInOut,
-                                      alignment: 0.1,
-                                    );
-                                  }
-                                });
-                              },
-                              borderRadius: BorderRadius.circular(14),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 180),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? Constants.primaryColor
-                                          .withValues(alpha: 0.08)
-                                      : Colors.white,
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? Constants.primaryColor
-                                            .withValues(alpha: 0.55)
-                                        : Colors.grey[200]!,
-                                    width: isSelected ? 1.6 : 1.0,
-                                  ),
-                                ),
-                                child: AspectRatio(
-                                  aspectRatio: 1.3,
-                                  child: store.image.isNotEmpty
-                                      ? ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          child: CachedNetworkImage(
-                                            imageUrl: store.image,
-                                            fit: BoxFit.contain,
-                                            alignment: Alignment.center,
-                                            placeholder: (context, url) =>
-                                                Container(
-                                              color: Colors.grey[200],
-                                            ),
-                                            errorWidget:
-                                                (context, url, error) => Icon(
-                                                    Icons.store,
-                                                    color: Colors.grey[500]),
-                                          ),
-                                        )
-                                      : Center(
-                                          child: Icon(
-                                            Icons.store_rounded,
-                                            color: Constants.primaryColor,
-                                            size: 28,
-                                          ),
-                                        ),
-                                ),
-                              ),
-                            );
-                          },
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1440),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              WebBannerCarousel(items: carouselItems),
+                              if (carouselItems.isNotEmpty)
+                                const SizedBox(height: 28),
+                              _buildSearch(),
+                              const SizedBox(height: 36),
+                              _buildStoresSection(),
+                              const SizedBox(height: 36),
+                              _buildCouponsSection(),
+                              const SizedBox(height: 36),
+                              _buildOffersSection(),
+                            ],
+                          ),
                         ),
                       ),
-                    ],
+                    ),
+                    const WebFooter(),
                   ],
                 ),
-              ],
+              ),
             ],
           ),
-          const SizedBox(height: 10),
-          if (selectedStoreId != null)
-            Container(
-              margin: const EdgeInsets.only(top: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: Constants.primaryColor.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: Constants.primaryColor.withValues(alpha: 0.18)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.filter_alt_rounded,
-                      color: Constants.primaryColor, size: 18),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '${localizations?.translate('offers_for') ?? 'عروض'} ${_getStoreName(selectedStoreId!)}',
-                      style: _chipText().copyWith(color: Colors.grey[900]),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildFeaturedCarousel() {
-    if (carouselItems.isEmpty) return const SizedBox.shrink();
+  Widget _buildSearch() {
+    final focused = searchFocusNode.hasFocus;
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: panel,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: focused ? orange : stroke, width: 1.4),
+        boxShadow: const [
+          BoxShadow(
+              color: Color(0x126C63FF), blurRadius: 24, offset: Offset(0, 12)),
+        ],
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 640;
+          final field = Expanded(
+            child: TextField(
+              controller: searchController,
+              focusNode: searchFocusNode,
+              style: GoogleFonts.cairo(
+                  color: ink, fontSize: 15, fontWeight: FontWeight.w700),
+              decoration: InputDecoration(
+                border: InputBorder.none,
+                hintText: 'ابحث عن متجر، كوبون، أو عرض ساخن...',
+                hintStyle: GoogleFonts.cairo(
+                    color: faded, fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+            ),
+          );
 
-    return SizedBox(
-      height: ResponsiveLayout.isDesktop(context) ? 400 : 300,
-      child: WebBannerCarousel(items: carouselItems),
+          if (compact) {
+            return Column(
+              children: [
+                Row(children: [
+                  const Icon(Icons.search_rounded, color: secondary),
+                  const SizedBox(width: 12),
+                  field
+                ]),
+                const SizedBox(height: 12),
+                SizedBox(
+                    width: double.infinity,
+                    child: _gradientButton(label: 'بحث', onPressed: () {})),
+              ],
+            );
+          }
+
+          return Row(
+            children: [
+              const Icon(Icons.search_rounded, color: secondary),
+              const SizedBox(width: 12),
+              field,
+              const SizedBox(width: 12),
+              _gradientButton(label: 'بحث', onPressed: () {}),
+            ],
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildStoresSection(AppLocalizations? localizations) {
-    if (isLoading && stores.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(60),
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Constants.primaryColor),
-          ),
-        ),
-      );
-    }
-
+  Widget _buildStoresSection() {
     if (stores.isEmpty) return const SizedBox.shrink();
 
     return Container(
-      margin: const EdgeInsets.only(top: 38),
-      decoration: _sectionBackground(),
-      child: Padding(
-        padding: ResponsivePadding.page(context),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _sectionHeader(
-              context: context,
-              icon: Icons.store_rounded,
-              title: localizations?.translate('popular_stores') ??
-                  'المتاجر الشهيرة',
-              subtitle: localizations?.translate('popular_stores_subtitle') ??
-                  '🛍️ تسوق من أفضل المتاجر وابدأ التوفير',
-              trailing: ResponsiveLayout.isDesktop(context)
-                  ? _pillButton(
-                      text: localizations?.translate('show_all') ?? 'عرض الكل',
-                      icon: Icons.arrow_back,
-                      onTap: () => Navigator.pushNamed(context, '/stores'),
-                    )
-                  : null,
-            ),
-            const SizedBox(height: 26),
-
-            // Grid
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: ResponsiveLayout.isDesktop(context)
-                    ? ResponsiveGrid.columns(context, max: 6)
-                    : ResponsiveGrid.columns(context, max: 2),
-                crossAxisSpacing: ResponsiveGrid.spacing(context),
-                mainAxisSpacing: ResponsiveGrid.spacing(context),
-                mainAxisExtent: 220,
-              ),
-              itemCount: () {
-                final cols = ResponsiveLayout.isDesktop(context)
-                    ? ResponsiveGrid.columns(context, max: 6)
-                    : ResponsiveGrid.columns(context, max: 2);
-                final limit = cols * 2;
-                return stores.length > limit ? limit : stores.length;
-              }(),
-              itemBuilder: (context, index) {
-                return WebStoreCard(
-                  store: stores[index],
-                  onTap: () {
-                    setState(() {
-                      selectedStoreId = stores[index].id;
-                    });
-                    _loadData();
-                  },
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-          ],
-        ),
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: panelDark,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: stroke),
       ),
-    );
-  }
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final columns = width >= 1180
+              ? 6
+              : width >= 900
+                  ? 5
+                  : width >= 680
+                      ? 4
+                      : 2;
+          final visibleStores = stores.take(columns * 2).toList();
 
-  Widget _buildCouponsSection(AppLocalizations? localizations) {
-    if (isLoading && displayItems.isEmpty) return const SizedBox.shrink();
-
-    final title = selectedStoreId != null
-        ? '${localizations?.translate('offers_for') ?? 'عروض'} ${_getStoreName(selectedStoreId!)}'
-        : (localizations?.translate('latest_coupons') ?? 'أحدث الكوبونات');
-
-    return Container(
-      margin: const EdgeInsets.only(top: 38),
-      child: Padding(
-        padding: ResponsivePadding.page(context),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              key: _couponsSectionKey,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: _sectionHeader(
-                    context: context,
-                    icon: Icons.local_offer_rounded,
-                    title: title,
-                    subtitle:
-                        localizations?.translate('coupons_section_subtitle') ??
-                            '🎁 احصل على أفضل العروض والخصومات',
-                    trailing: (selectedStoreId == null &&
-                            ResponsiveLayout.isDesktop(context))
-                        ? _pillButton(
-                            text: localizations?.translate('show_all') ??
-                                'عرض الكل',
-                            icon: Icons.arrow_back,
-                            onTap: () =>
-                                Navigator.pushNamed(context, '/coupons'),
-                          )
-                        : null,
-                  ),
-                ),
-                if (selectedStoreId != null)
-                  Container(
-                    margin: const EdgeInsets.only(top: 4),
-                    child: TextButton.icon(
-                      onPressed: () {
-                        setState(() => selectedStoreId = null);
-                        _loadData();
-                      },
-                      icon: const Icon(Icons.clear),
-                      label: Text(localizations?.translate('clear_filter') ??
-                          'إلغاء الفلتر'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 12),
-                        textStyle: const TextStyle(
-                          fontFamily: _font,
-                          fontWeight: FontWeight.w900,
-                        ),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'المتاجر',
+                      style: GoogleFonts.cairo(
+                        color: ink,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
                   ),
-              ],
-            ),
-
-            const SizedBox(height: 22),
-
-            // Loading state when filtering
-            if (isFiltering)
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(40.0),
-                  child: CircularProgressIndicator(
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(Constants.primaryColor),
-                  ),
-                ),
-              )
-            // Empty state
-            else if (displayItems.isEmpty)
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.all(56),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.grey[200]!),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(Icons.inbox_rounded,
-                          size: 80, color: Colors.grey[400]),
-                      const SizedBox(height: 18),
-                      Text(
-                        localizations?.translate('no_results_for_store') ??
-                            'لا توجد كوبونات أو عروض متاحة لهذا المتجر',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[700],
-                          fontFamily: _font,
-                          fontWeight: FontWeight.w800,
-                        ),
-                        textAlign: TextAlign.center,
+                  TextButton(
+                    onPressed: () => Navigator.pushNamed(context, '/stores'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: orange,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                    ),
+                    child: Text(
+                      'تصفح أكثر',
+                      style: GoogleFonts.cairo(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              )
-            // Grid items
-            else
+                ],
+              ),
+              const SizedBox(height: 18),
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
+                itemCount: visibleStores.length,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: ResponsiveLayout.isDesktop(context)
-                      ? ResponsiveGrid.columns(context, max: 6)
-                      : ResponsiveGrid.columns(context, max: 2),
-                  crossAxisSpacing: ResponsiveGrid.spacing(context),
-                  mainAxisSpacing: ResponsiveGrid.spacing(context),
-                  mainAxisExtent: _couponCardExtent(context),
+                  crossAxisCount: columns,
+                  crossAxisSpacing: 14,
+                  mainAxisSpacing: 14,
+                  childAspectRatio: width < 680 ? 1.05 : 1.12,
                 ),
-                itemCount: () {
-                  final cols = ResponsiveGrid.columns(context, max: 6);
-                  final limit = cols * 2; // ✅ 2 rows only
-                  return displayItems.length > limit
-                      ? limit
-                      : displayItems.length;
-                }(),
                 itemBuilder: (context, index) {
-                  final item = displayItems[index];
-
-                  if (item is Coupon) {
-                    final store = stores.firstWhere(
-                      (s) => s.id == item.storeId || s.slug == item.storeId,
-                      orElse: () => Store(
-                        id: '',
-                        slug: '',
-                        name: 'متجر',
-                        description: '',
-                        nameAr: 'متجر',
-                        nameEn: 'Store',
-                        descriptionAr: '',
-                        descriptionEn: '',
-                        image: '',
-                      ),
-                    );
-
-                    return WebCouponCard(
-                      coupon: item,
-                      storeName: store.name,
-                    );
-                  } else if (item is Offer) {
-                    final store = stores.firstWhere(
-                      (s) => s.id == item.storeId || s.slug == item.storeId,
-                      orElse: () => Store(
-                        id: '',
-                        slug: '',
-                        name: 'متجر',
-                        description: '',
-                        nameAr: 'متجر',
-                        nameEn: 'Store',
-                        descriptionAr: '',
-                        descriptionEn: '',
-                        image: '',
-                      ),
-                    );
-
-                    return WebOfferCard(
-                      offer: item,
-                      storeName: store.name,
-                    );
-                  }
-
-                  return const SizedBox.shrink();
+                  return _storeTile(visibleStores[index]);
                 },
               ),
+            ],
+          );
+        },
+      ),
+    );
+  }
 
-            const SizedBox(height: 34),
-
-            // CTA button (محسّن)
-            Center(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Constants.primaryColor,
-                      Constants.primaryColor.withValues(alpha: 0.82),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Constants.primaryColor.withValues(alpha: 0.30),
-                      blurRadius: 22,
-                      offset: const Offset(0, 12),
-                    ),
-                  ],
-                ),
-                child: ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.refresh_rounded, size: 22),
-                  label: Text(
-                    localizations?.translate('view_more') ?? 'عرض المزيد',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 16,
-                      fontFamily: _font,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    foregroundColor: Colors.white,
-                    shadowColor: Colors.transparent,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 54, vertical: 18),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
+  Widget _storeTile(Store store) {
+    return InkWell(
+      onTap: () {
+        final routeKey = store.slug.isNotEmpty ? store.slug : store.id;
+        Navigator.pushNamed(
+          context,
+          '/store/$routeKey',
+          arguments: store,
+        );
+      },
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: panel,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: stroke),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0F6C63FF),
+              blurRadius: 16,
+              offset: Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Center(
+                child: store.image.isEmpty
+                    ? Icon(Icons.store_rounded, color: orange, size: 42)
+                    : Image.network(
+                        store.image,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) =>
+                            Icon(Icons.store_rounded, color: orange, size: 42),
+                      ),
               ),
             ),
             const SizedBox(height: 10),
+            Text(
+              store.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.cairo(
+                color: ink,
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildOffersSection(AppLocalizations? localizations) {
-    if (isLoading && latestOffers.isEmpty) return const SizedBox.shrink();
-    if (latestOffers.isEmpty && selectedStoreId != null) {
-      return const SizedBox.shrink();
-    }
-
-    // في حالة اختيار متجر، العروض تظهر مدمجة في قسم الكوبونات الرئيسي
-    // لذا هذا القسم يظهر فقط في الصفحة الرئيسية العامة
-    if (selectedStoreId != null) return const SizedBox.shrink();
+  Widget _buildCouponsSection() {
+    if (coupons.isEmpty) return const SizedBox.shrink();
 
     return Container(
-      margin: const EdgeInsets.only(top: 38),
-      child: Padding(
-        padding: ResponsivePadding.page(context),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            _sectionHeader(
-              context: context,
-              icon: Icons.flash_on_rounded,
-              title: localizations?.translate('latest_offers') ??
-                  'أحدث العروض والخصومات',
-              subtitle: localizations?.translate('offers_subtitle') ??
-                  '🔥 وفر أكثر مع أقوى العروض الحصرية والمتجددة',
-              trailing: ResponsiveLayout.isDesktop(context)
-                  ? _pillButton(
-                      text: localizations?.translate('show_all') ?? 'عرض الكل',
-                      icon: Icons.arrow_back,
-                      onTap: () => Navigator.pushNamed(context, '/offers'),
-                    )
-                  : null,
-            ),
-            const SizedBox(height: 26),
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: panelDark,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: stroke),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final columns = ResponsiveGrid.columns(context, max: 6);
+          final visibleCoupons = coupons.take(columns * 2).toList();
+          final storesMap = _storesMap;
 
-            // Grid
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: ResponsiveLayout.isDesktop(context)
-                    ? ResponsiveGrid.columns(context, max: 4)
-                    : ResponsiveGrid.columns(context, max: 2),
-                crossAxisSpacing: ResponsiveGrid.spacing(context),
-                mainAxisSpacing: ResponsiveGrid.spacing(context),
-                mainAxisExtent: _couponCardExtent(context),
-              ),
-              itemCount: () {
-                final cols = ResponsiveLayout.isDesktop(context)
-                    ? ResponsiveGrid.columns(context, max: 4)
-                    : ResponsiveGrid.columns(context, max: 2);
-                final limit = cols * 3; // ✅ 3 rows
-                return latestOffers.length > limit
-                    ? limit
-                    : latestOffers.length;
-              }(),
-              itemBuilder: (context, index) {
-                final offer = latestOffers[index];
-                final store = stores.firstWhere(
-                  (s) =>
-                      s.id.toLowerCase().trim() ==
-                          offer.storeId.toLowerCase().trim() ||
-                      s.slug.toLowerCase().trim() ==
-                          offer.storeId.toLowerCase().trim(),
-                  orElse: () => Store(
-                    id: '',
-                    slug: '',
-                    name: 'متجر',
-                    description: '',
-                    nameAr: 'متجر',
-                    nameEn: 'Store',
-                    descriptionAr: '',
-                    descriptionEn: '',
-                    image: '',
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'الكوبونات',
+                      style: GoogleFonts.cairo(
+                        color: ink,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
                   ),
-                );
-
-                return WebOfferCard(
-                  offer: offer,
-                  storeName: store.name,
-                  storeImage: store.image, // ✅ تمرير الشعار
-                );
-              },
-            ),
-          ],
-        ),
+                  TextButton(
+                    onPressed: () => Navigator.pushNamed(context, '/coupons'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: orange,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                    ),
+                    child: Text(
+                      'تصفح أكثر',
+                      style: GoogleFonts.cairo(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: visibleCoupons.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: columns,
+                  crossAxisSpacing: ResponsiveGrid.spacing(context),
+                  mainAxisSpacing: ResponsiveGrid.spacing(context),
+                  childAspectRatio: 0.52,
+                ),
+                itemBuilder: (context, index) {
+                  final coupon = visibleCoupons[index];
+                  final store = storesMap[coupon.storeId.toLowerCase().trim()];
+                  return WebCouponCard(
+                    coupon: coupon,
+                    storeName: store?.name ?? 'متجر',
+                    compact: true,
+                  );
+                },
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
-  // ✅ ارتفاع ثابت للكارد (متجاوب) — يمنع overflow نهائيًا
-  double _couponCardExtent(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    if (width >= 1400) return 410; // زيادة من 390
-    if (width >= 1100) return 410; // زيادة من 390
-    if (width >= 900) return 420; // زيادة من 400
-    if (width >= 700) return 440; // زيادة من 420
-    return 480; // زيادة من 460
+  Widget _buildOffersSection() {
+    if (offers.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: panelDark,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: stroke),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final columns = ResponsiveGrid.columns(context, max: 4);
+          final visibleOffers = offers.take(columns).toList();
+          final storesMap = _storesMap;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'العروض',
+                      style: GoogleFonts.cairo(
+                        color: ink,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pushNamed(context, '/offers'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: orange,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                    ),
+                    child: Text(
+                      'تصفح أكثر',
+                      style: GoogleFonts.cairo(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: visibleOffers.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: columns,
+                  crossAxisSpacing: ResponsiveGrid.spacing(context),
+                  mainAxisSpacing: ResponsiveGrid.spacing(context),
+                  childAspectRatio: 0.8,
+                ),
+                itemBuilder: (context, index) {
+                  final offer = visibleOffers[index];
+                  final store = storesMap[offer.storeId.toLowerCase().trim()];
+                  return WebOfferCard(
+                    offer: offer,
+                    storeName: store?.name ?? 'متجر',
+                    storeImage: store?.image,
+                  );
+                },
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
-  String _getStoreName(String storeId) {
-    try {
-      final store = stores.firstWhere(
-        (s) => s.id == storeId || s.slug == storeId,
-      );
-      return store.name;
-    } catch (_) {
-      return 'المتجر';
-    }
+  Widget _gradientButton({
+    required String label,
+    required VoidCallback onPressed,
+  }) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(colors: [orange, pink]),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: TextButton(
+        onPressed: onPressed,
+        style: TextButton.styleFrom(
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.cairo(fontWeight: FontWeight.w800, fontSize: 15),
+        ),
+      ),
+    );
   }
 }

@@ -31,7 +31,10 @@ class _OffersScreenState extends State<OffersScreen> {
       body: Container(
         color: Colors.white,
         child: Padding(
-          padding: const EdgeInsets.only(bottom: 60, top: 110),
+          padding: EdgeInsets.only(
+            bottom: 60,
+            top: MediaQuery.of(context).padding.top + 85,
+          ),
           child: Column(
             children: [
               const SizedBox(

@@ -2,5 +2,17 @@
     "cSpell.words": [
         "تمرير"
     ],
-    "debug.toolBarLocation": "docked"
+    "debug.toolBarLocation": "docked",
+    "files.exclude": {
+        "build": true,
+        ".dart_tool": true
+    },
+    "search.exclude": {
+        "build": true,
+        ".dart_tool": true
+    },
+    "files.watcherExclude": {
+        "**/build/**": true,
+        "**/.dart_tool/**": true
+    }
 }

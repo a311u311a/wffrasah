@@ -4,25 +4,45 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
-class CustomCarousel extends StatelessWidget {
+class CustomCarousel extends StatefulWidget {
   const CustomCarousel({super.key});
 
   @override
+  State<CustomCarousel> createState() => _CustomCarouselState();
+}
+
+class _CustomCarouselState extends State<CustomCarousel> {
+  List<Map<String, dynamic>> _lastItems = const [];
+  late final Stream<List<Map<String, dynamic>>> _carouselStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _carouselStream = Supabase.instance.client
+        .from('carousel')
+        .stream(primaryKey: ['id']).timeout(const Duration(seconds: 8),
+            onTimeout: (sink) {
+      sink.add(const []);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final supabase = Supabase.instance.client;
-
     return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: supabase.from('carousel').stream(primaryKey: ['id']),
+      stream: _carouselStream,
+      initialData: _lastItems,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
         if (snapshot.hasError) {
-          return const SizedBox.shrink();
+          debugPrint('Carousel stream update failed: ${snapshot.error}');
+          if (_lastItems.isEmpty) return const SizedBox.shrink();
         }
 
-        final items = snapshot.data ?? [];
+        final incomingItems = snapshot.data ?? [];
+        if (incomingItems.isNotEmpty) {
+          _lastItems = incomingItems;
+        }
+
+        final items = incomingItems.isNotEmpty ? incomingItems : _lastItems;
         if (items.isEmpty) return const SizedBox.shrink();
 
         return CarouselSlider(
@@ -57,7 +77,7 @@ class CustomCarousel extends StatelessWidget {
                   borderRadius: BorderRadius.circular(15),
                   image: DecorationImage(
                     image: CachedNetworkImageProvider(imageUrl),
-                    fit: BoxFit.cover,
+                    fit: BoxFit.fill,
                   ),
                 ),
               ),

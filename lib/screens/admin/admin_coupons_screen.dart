@@ -34,11 +34,20 @@ class _AdminCouponsScreenState extends State<AdminCouponsScreen> {
   String? _selectedStoreId; // هنا نخزن الـ slug
   String? _selectedStoreImageUrl;
   String? _selectedStoreName; // اختياري للعرض فقط
+  String? _selectedStoreNameAr;
+  String? _selectedStoreNameEn;
   DateTime? _selectedExpiryDate;
   String? _editingId; // If editing coupon
   String? _editingImageUrl; // Old image if we are editing
   XFile? _pickedCouponImageFile;
   bool _isSaving = false;
+  late Future<List<Map<String, dynamic>>> _couponsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _couponsFuture = _fetchCoupons();
+  }
 
   @override
   void dispose() {
@@ -69,7 +78,25 @@ class _AdminCouponsScreenState extends State<AdminCouponsScreen> {
     _selectedStoreId = null;
     _selectedStoreImageUrl = null;
     _selectedStoreName = null;
+    _selectedStoreNameAr = null;
+    _selectedStoreNameEn = null;
     _selectedExpiryDate = null;
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchCoupons() async {
+    final rows = await _sb
+        .from('coupons')
+        .select('*')
+        .eq('approval_status', 'approved')
+        .order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
+  void _refreshCoupons() {
+    if (!mounted) return;
+    setState(() {
+      _couponsFuture = _fetchCoupons();
+    });
   }
 
   // --- Upload Image (Supabase) ---
@@ -113,6 +140,12 @@ class _AdminCouponsScreenState extends State<AdminCouponsScreen> {
                 final data = stores[i];
                 final storeName =
                     data['name_ar'] ?? data['name'] ?? 'متجر بدون اسم';
+                final storeNameAr =
+                    (data['name_ar'] ?? data['name'] ?? '').toString().trim();
+                final storeNameEn =
+                    (data['name_en'] ?? data['name'] ?? storeNameAr)
+                        .toString()
+                        .trim();
                 final img = data['image'];
 
                 // ✅ نستخدم slug للربط
@@ -148,6 +181,8 @@ class _AdminCouponsScreenState extends State<AdminCouponsScreen> {
                           (data['slug'] ?? data['id']).toString();
                       _selectedStoreImageUrl = img?.toString() ?? '';
                       _selectedStoreName = storeName.toString();
+                      _selectedStoreNameAr = storeNameAr;
+                      _selectedStoreNameEn = storeNameEn;
                     });
                     Navigator.pop(ctx);
                   },
@@ -164,8 +199,10 @@ class _AdminCouponsScreenState extends State<AdminCouponsScreen> {
     _clearForm();
 
     // ✅ Fetch stores (مع slug)
-    final storeRes =
-        await _sb.from('stores').select('id,slug,name,name_ar,name_en,image');
+    final storeRes = await _sb
+        .from('stores')
+        .select('id,slug,name,name_ar,name_en,image')
+        .eq('approval_status', 'approved');
     final stores = List<Map<String, dynamic>>.from(storeRes);
 
     if (coupon != null) {
@@ -188,9 +225,17 @@ class _AdminCouponsScreenState extends State<AdminCouponsScreen> {
 
       if (matchingStore.isNotEmpty) {
         _selectedStoreImageUrl = (matchingStore['image'] ?? '').toString();
-        _selectedStoreName =
+        _selectedStoreNameAr =
             (matchingStore['name_ar'] ?? matchingStore['name'] ?? '')
-                .toString();
+                .toString()
+                .trim();
+        _selectedStoreNameEn =
+            (matchingStore['name_en'] ?? matchingStore['name'] ?? '')
+                .toString()
+                .trim();
+        _selectedStoreName = _selectedStoreNameAr!.isNotEmpty
+            ? _selectedStoreNameAr
+            : _selectedStoreNameEn;
       }
 
       // Parse tags
@@ -628,18 +673,22 @@ class _AdminCouponsScreenState extends State<AdminCouponsScreen> {
           .where((t) => t.isNotEmpty)
           .toList();
 
+      final storeNameAr =
+          (_selectedStoreNameAr ?? _selectedStoreName ?? '').trim();
+      final storeNameEn =
+          (_selectedStoreNameEn ?? _selectedStoreName ?? storeNameAr).trim();
+
       final payload = {
         'code': _couponCodeCtrl.text.trim(),
-        'name_ar': _couponCodeCtrl.text
-            .trim(), // Name input removed, use code as fallback
-        'name_en': _couponCodeCtrl.text.trim(),
+        'name_ar': storeNameAr,
+        'name_en': storeNameEn.isNotEmpty ? storeNameEn : storeNameAr,
         'description_ar': _couponDescArCtrl.text.trim(),
         'description_en': _couponDescEnCtrl.text.trim().isEmpty
             ? _couponDescArCtrl.text.trim()
             : _couponDescEnCtrl.text.trim(),
 
         // Fallbacks
-        'name': _couponCodeCtrl.text.trim(), // Use code as name
+        'name': storeNameAr,
         'description': _couponDescArCtrl.text.trim(),
 
         'web': _couponWebCtrl.text.trim(),
@@ -661,6 +710,7 @@ class _AdminCouponsScreenState extends State<AdminCouponsScreen> {
 
       if (!mounted) return;
       Navigator.pop(context);
+      _refreshCoupons();
       showSnackBar(context,
           _editingId == null ? 'تمت الإضافة بنجاح ✅' : 'تم التحديث بنجاح ✅');
     } catch (e) {
@@ -693,7 +743,10 @@ class _AdminCouponsScreenState extends State<AdminCouponsScreen> {
     if (confirm == true) {
       try {
         await _sb.from('coupons').delete().eq('id', id);
-        if (mounted) showSnackBar(context, 'تم الحذف');
+        if (mounted) {
+          _refreshCoupons();
+          showSnackBar(context, 'تم الحذف');
+        }
       } catch (e) {
         if (mounted) showSnackBar(context, 'خطأ في الحذف: $e', isError: true);
       }
@@ -967,23 +1020,28 @@ class _AdminCouponsScreenState extends State<AdminCouponsScreen> {
             ),
           ),
           Expanded(
-            child: StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _sb.from('coupons').stream(primaryKey: ['id']).order(
-                'created_at',
-                ascending: false,
-              ),
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _couponsFuture,
               builder: (context, snapshot) {
-                if (!snapshot.hasData) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                if (snapshot.data!.isEmpty) {
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text('خطأ في تحميل الكوبونات: ${snapshot.error}',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.red[400])),
+                  );
+                }
+
+                final items = snapshot.data ?? [];
+                if (items.isEmpty) {
                   return Center(
                     child: Text('لا توجد كوبونات حالياً',
                         style: TextStyle(color: Colors.grey[400])),
                   );
                 }
 
-                final items = snapshot.data!;
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   itemCount: items.length,

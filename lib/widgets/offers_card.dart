@@ -22,8 +22,8 @@ class _OffersCardState extends State<OffersCard> {
   bool _isCopied = false;
   bool _isBusy = false;
 
-  // ✅ 4:3
-  static const double _imageAspectRatio = 4 / 3;
+  // ✅ 16:9
+  static const double _imageAspectRatio = 16 / 9;
 
   @override
   Widget build(BuildContext context) {

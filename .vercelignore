@@ -30,11 +30,21 @@ test/
 coverage/
 
 # Other
+.env
+.env.*
+*.jks
+key.properties
+**/key.properties
 *.log
 *.swp
 *~
 .DS_Store
 Thumbs.db
+.codex-remote-attachments/
+.linkaraby-browser/
+.linkaraby-runs/
+.omolaat-browser/
+.omolaat-runs/
 
 # Keep only web build
 !build/web/

@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:wffrasah/screens/login_signup/widgets/snackbar.dart';
+import 'package:wffrhasah/screens/login_signup/widgets/snackbar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../constants.dart';
 import '../models/offers.dart';
@@ -37,7 +37,10 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
 
   Future<void> _fetchStoreNames() async {
     try {
-      final res = await _sb.from('stores').select('slug, name, name_ar');
+      final res = await _sb
+          .from('stores')
+          .select('slug, name, name_ar')
+          .eq('approval_status', 'approved');
       final data = res as List;
       final map = <String, String>{};
       for (final item in data) {
@@ -830,6 +833,7 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
       final res = await _sb
           .from('stores')
           .select('slug, name, name_ar, image')
+          .eq('approval_status', 'approved')
           .order('name');
       if (mounted) {
         setState(() {

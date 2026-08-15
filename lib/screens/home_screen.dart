@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform;
 import '../constants.dart';
 import '../localization/app_localizations.dart';
 import '../widgets/coupons_list.dart';
 import '../widgets/stores_list.dart';
 import '../widgets/carouse.dart';
+import '../widgets/category_list.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,6 +17,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String? selectedStoreId;
+  String? selectedCategoryId;
   bool isSearching = false;
   String searchQuery = ''; // نص البحث
 
@@ -40,11 +44,27 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.only(bottom: 60, top: 110),
+          padding: EdgeInsets.only(
+            bottom: 60,
+            top: MediaQuery.of(context).padding.top +
+                (defaultTargetPlatform == TargetPlatform.iOS ? 85 : 101),
+          ),
           child: Column(
             children: [
               const CustomCarousel(),
               const SizedBox(height: 15),
+              SizedBox(
+                height: 95,
+                child: CategoryList(
+                  selectedCategoryId: selectedCategoryId,
+                  onCategorySelected: (categoryId) {
+                    setState(() {
+                      selectedCategoryId = categoryId;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
               SizedBox(
                 height:
                     100, // زيادة الارتفاع قليلاً لتناسب الحجم الجديد للمتاجر وظلالها

@@ -1,0 +1,56 @@
+{
+  "name": "Wafrah Sah - Omolaat Hourly Import",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "schedule-hourly",
+      "name": "Every Hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        260,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const { execFileSync } = require('child_process');\n\nconst requestScript = `\nfetch('http://host.docker.internal:8787/run', { method: 'POST' })\n  .then(async (response) => {\n    const text = await response.text();\n    if (!response.ok) {\n      console.error(text);\n      process.exit(1);\n    }\n    console.log(text);\n  })\n  .catch((error) => {\n    console.error(error.stack || error.message || String(error));\n    process.exit(1);\n  });\n`;\n\nconst output = execFileSync('node', ['-e', requestScript], {\n  cwd: '/workspace',\n  encoding: 'utf8',\n  timeout: 10 * 60 * 1000,\n});\n\nconst result = JSON.parse(output);\nlet parsed = result;\nif (result.stdout) {\n  try {\n    parsed = JSON.parse(result.stdout);\n  } catch (error) {\n    parsed = result;\n  }\n}\n\nreturn [{ json: parsed }];"
+      },
+      "id": "run-omolaat-import",
+      "name": "Run Omolaat Import",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Every Hour": {
+      "main": [
+        [
+          {
+            "node": "Run Omolaat Import",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

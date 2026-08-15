@@ -9,3 +9,21 @@ entrypoint = "./functions/aliexpress-products/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/aliexpress-products/*.html" ]
+
+[functions.send-push-notification]
+enabled = true
+verify_jwt = true
+import_map = "./functions/send-push-notification/deno.json"
+entrypoint = "./functions/send-push-notification/index.ts"
+
+[functions.admitad-coupons-import]
+enabled = true
+verify_jwt = true
+import_map = "./functions/admitad-coupons-import/deno.json"
+entrypoint = "./functions/admitad-coupons-import/index.ts"
+
+[functions.omolaat-coupons-import]
+enabled = true
+verify_jwt = true
+import_map = "./functions/omolaat-coupons-import/deno.json"
+entrypoint = "./functions/omolaat-coupons-import/index.ts"

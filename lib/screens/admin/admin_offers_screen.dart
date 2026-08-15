@@ -463,7 +463,9 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
         return StreamBuilder<List<Map<String, dynamic>>>(
           stream: _supabase
               .from('stores')
-              .stream(primaryKey: ['id']).order('created_at', ascending: false),
+              .stream(primaryKey: ['id'])
+              .eq('approval_status', 'approved')
+              .order('created_at', ascending: false),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
               return const Center(child: CircularProgressIndicator());

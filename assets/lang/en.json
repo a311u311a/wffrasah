@@ -25,6 +25,7 @@
   "sign_in": "Sign In",
   "or": "Or",
   "sign_in_google": "Sign in with Google",
+  "sign_in_apple": "Sign in with Apple",
   "dont_have_account": "Don't have an account?",
   "sign_up": "Sign Up",
   "login_error": "Invalid email or password",
@@ -129,6 +130,7 @@
   "signup_success": "Account created successfully ✅",
   "login_failed": "Login failed",
   "google_signin_failed": "Google Sign-In failed",
+  "apple_signin_failed": "Apple Sign-In failed",
   "error_prefix": "Error: ",
   "google_signin_error_generic": "An error occurred during Google Sign-In",
   "google_signin_loading": "Loading...",
@@ -179,7 +181,7 @@
   "privacy_point9_title": "Disclosure to Digital Ad Providers",
   "privacy_point9_body": "wffrhasah may cooperate with third parties to display personalized ads based on your activity on the Internet. This policy does not cover the practices of those parties.",
   "privacy_point10_title": "Update Personal Data",
-  "privacy_point10_body": "You can update your data through your account, or contact us via:\ncontact@Wffrasah.com",
+  "privacy_point10_body": "You can update your data through your account, or contact us via:\nwffrhasah@gmail.com",
   "privacy_point11_title": "Your Rights to Access and Withdraw Consent",
   "privacy_point11_body": "You can request access to your data or withdraw your consent at any time via the email above.\nWithdrawal of consent may result in our inability to provide certain services.",
   "privacy_point12_title": "Deletion of Personal Data",
@@ -237,5 +239,9 @@
   "view_more": "View More",
   "clear_filter": "Clear Filter",
   "no_results_for_store": "No coupons or offers available for this store",
-  "offers_for": "Offers for"
+  "offers_for": "Offers for",
+  "version": "Version",
+  "x_platform": "X (formerly Twitter)",
+  "instagram_platform": "Instagram",
+  "tiktok_platform": "TikTok"
 }

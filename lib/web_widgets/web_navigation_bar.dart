@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import '../constants.dart';
@@ -7,7 +7,6 @@ import '../localization/app_localizations.dart';
 import '../providers/locale_provider.dart';
 import '../providers/user_provider.dart';
 import 'responsive_layout.dart';
-import 'web_search_dialog.dart';
 
 /// شريط تنقل احترافي وعصري للويب
 class WebNavigationBar extends StatefulWidget implements PreferredSizeWidget {
@@ -21,14 +20,6 @@ class WebNavigationBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _WebNavigationBarState extends State<WebNavigationBar> {
-  final TextEditingController searchController = TextEditingController();
-
-  @override
-  void dispose() {
-    searchController.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final localeProvider = Provider.of<LocaleProvider>(context);
@@ -61,7 +52,7 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
             _buildLogo(context, isArabic),
 
             // Spacer to separate logo from nav links
-            if (ResponsiveLayout.isDesktop(context)) const SizedBox(width: 60),
+            if (ResponsiveLayout.isDesktop(context)) const SizedBox(width: 32),
 
             // Navigation Links (Desktop only)
             if (ResponsiveLayout.isDesktop(context)) ...[
@@ -90,21 +81,25 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
       onTap: () => Navigator.pushNamed(context, '/'),
       borderRadius: BorderRadius.circular(12),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          SvgPicture.asset(
-            'assets/image/Rbhan.svg',
-            height: 70, // Slightly smaller for balance
-            fit: BoxFit.contain,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.asset(
+              'assets/image/wffrhasah.png',
+              width: 54,
+              height: 54,
+              fit: BoxFit.cover,
+            ),
           ),
           const SizedBox(width: 12),
           Text(
-            isArabic ? 'ربحان' : 'Rbhan',
-            style: TextStyle(
+            isArabic ? 'وفرها صح' : 'Wffrha Sah',
+            style: GoogleFonts.cairo(
               fontSize: 24,
               fontWeight: FontWeight.w900,
               color: Constants.primaryColor,
-              fontFamily: 'Tajawal',
               letterSpacing: isArabic ? 0 : 0.5,
             ),
           ),
@@ -187,25 +182,6 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Search Icon - show on all screens
-        IconButton(
-          onPressed: () {
-            showDialog(
-              context: context,
-              barrierColor: Colors.black54,
-              builder: (context) => const WebSearchDialog(),
-            );
-          },
-          icon: Icon(Icons.search_rounded, color: Colors.grey[600]),
-          tooltip: 'بحث',
-          hoverColor: Constants.primaryColor.withValues(alpha: 0.05),
-          style: IconButton.styleFrom(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-        ),
-        if (!isMobile) const SizedBox(width: 8),
-
         // Language Switcher - compact on mobile
         if (isMobile)
           IconButton(
@@ -550,13 +526,18 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
                     ),
                   ),
                 ] else ...[
-                  SvgPicture.asset(
-                    'assets/image/Rbhan.svg',
-                    height: 40,
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.asset(
+                      'assets/image/wffrhasah.png',
+                      width: 40,
+                      height: 40,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Text(
-                    isArabic ? 'ربحان' : 'Rbhan',
+                    isArabic ? 'وفرها صح' : 'Wffrha Sah',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w900,

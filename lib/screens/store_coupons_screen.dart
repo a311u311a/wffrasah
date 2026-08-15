@@ -68,6 +68,7 @@ class _StoreCouponsScreenState extends State<StoreCouponsScreen> {
           .from('coupons')
           .stream(primaryKey: ['id'])
           .inFilter('store_id', searchKeys)
+          .eq('approval_status', 'approved')
           .order('created_at', ascending: false)
           .listen((data) {
             if (!mounted) return;

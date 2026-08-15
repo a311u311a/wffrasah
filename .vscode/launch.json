@@ -8,8 +8,10 @@
             "name": "wffrasah",
             "request": "launch",
             "type": "dart",
+            "program": "lib/main.dart",
+            "cwd": "${workspaceFolder}",
             "toolArgs": [
-                "--dart-define-from-file=.env"
+                "--dart-define-from-file=${workspaceFolder}/.env"
             ]
         },
         {
@@ -17,8 +19,10 @@
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile",
+            "program": "lib/main.dart",
+            "cwd": "${workspaceFolder}",
             "toolArgs": [
-                "--dart-define-from-file=.env"
+                "--dart-define-from-file=${workspaceFolder}/.env"
             ]
         },
         {
@@ -26,8 +30,10 @@
             "request": "launch",
             "type": "dart",
             "flutterMode": "release",
+            "program": "lib/main.dart",
+            "cwd": "${workspaceFolder}",
             "toolArgs": [
-                "--dart-define-from-file=.env"
+                "--dart-define-from-file=${workspaceFolder}/.env"
             ]
         }
     ]

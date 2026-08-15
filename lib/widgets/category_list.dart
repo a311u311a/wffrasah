@@ -7,7 +7,7 @@ import '../models/category.dart';
 import 'error_message.dart';
 import 'loading_indicator.dart';
 
-class CategoryList extends StatelessWidget {
+class CategoryList extends StatefulWidget {
   final Function(String?) onCategorySelected;
   final String? selectedCategoryId;
 
@@ -18,77 +18,73 @@ class CategoryList extends StatelessWidget {
   });
 
   @override
+  State<CategoryList> createState() => _CategoryListState();
+}
+
+class _CategoryListState extends State<CategoryList> {
+  late Future<List<Category>> _categoriesFuture;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _categoriesFuture = _fetchCategories();
+  }
+
+  Future<List<Category>> _fetchCategories() async {
+    final supabase = Supabase.instance.client;
+    final langCode = AppLocalizations.of(context)?.locale.languageCode ?? 'ar';
+    final results = await Future.wait([
+      supabase.from('offers').select(),
+      supabase.from('categories').select(),
+    ]).timeout(const Duration(seconds: 12));
+
+    final offerRows = (results[0] as List).cast<Map<String, dynamic>>();
+    final activeCategoryIds = offerRows
+        .map((data) => (data['category_id'] ?? data['categoryId'])?.toString())
+        .whereType<String>()
+        .where((id) => id.isNotEmpty)
+        .toSet();
+    final categoryRows = (results[1] as List).cast<Map<String, dynamic>>();
+
+    return categoryRows
+        .map((data) => Category.fromSupabase(data, langCode))
+        .where((category) => activeCategoryIds.contains(category.id))
+        .toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    final supabase = Supabase.instance.client;
-
     return SizedBox(
       height: 100,
-      child: StreamBuilder<List<dynamic>>(
-        // ✅ جدول Supabase الصحيح: offers
-        stream: supabase.from('offers').stream(primaryKey: ['id']),
-        builder: (context, offersSnapshot) {
-          if (offersSnapshot.hasError) return const SizedBox();
-          if (!offersSnapshot.hasData) {
-            return const CustomLoadingIndicator();
+      child: FutureBuilder<List<Category>>(
+        future: _categoriesFuture,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            debugPrint('CategoryList loading failed: ${snapshot.error}');
+            return ErrorMessage(
+              message: localizations?.translate('error_loading_categories') ??
+                  'خطأ في تحميل الفئات',
+            );
           }
-
-          final offerRows =
-              (offersSnapshot.data ?? []).cast<Map<String, dynamic>>();
-
-          // ✅ الحقل الصحيح: category_id (مع fallback لو فيه بيانات قديمة)
-          final Set<String> activeCategoryIds = offerRows
-              .map((data) =>
-                  (data['category_id'] ?? data['categoryId'])?.toString())
-              .where((id) => id != null && id.isNotEmpty)
-              .cast<String>()
-              .toSet();
-
-          return StreamBuilder<List<dynamic>>(
-            // ✅ جدول Supabase الصحيح: categories
-            stream: supabase.from('categories').stream(primaryKey: ['id']),
-            builder: (context, categorySnapshot) {
-              if (categorySnapshot.hasError) {
-                return ErrorMessage(
-                    message:
-                        localizations?.translate('error_loading_categories') ??
-                            'خطأ في تحميل الفئات');
-              }
-              if (!categorySnapshot.hasData) {
-                return const CustomLoadingIndicator();
-              }
-
-              final categoryRows =
-                  (categorySnapshot.data ?? []).cast<Map<String, dynamic>>();
-
-              final categories = categoryRows
-                  .map((data) => Category.fromSupabase(
-                      data, localizations?.locale.languageCode ?? 'ar'))
-                  // ✅ الآن يطابق categories.id لأننا صححنا offers.category_id في DB
-                  .where((category) => activeCategoryIds.contains(category.id))
-                  .toList();
-
-              if (categories.isEmpty) {
-                return const SizedBox();
-              }
-
-              return Padding(
-                padding: const EdgeInsets.only(top: 8.0, left: 8, right: 8),
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: categories.length + 1,
-                  itemBuilder: (context, index) {
-                    if (index == 0) {
-                      return _buildShowAllItem(
-                          context, selectedCategoryId == null);
-                    }
-                    final category = categories[index - 1];
-                    return _buildCategoryItem(
-                        category, selectedCategoryId == category.id);
-                  },
-                ),
-              );
-            },
+          if (!snapshot.hasData) return const CustomLoadingIndicator();
+          final categories = snapshot.data!;
+          if (categories.isEmpty) return const SizedBox();
+          return Padding(
+            padding: const EdgeInsets.only(top: 8.0, left: 8, right: 8),
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: categories.length + 1,
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return _buildShowAllItem(
+                      context, widget.selectedCategoryId == null);
+                }
+                final category = categories[index - 1];
+                return _buildCategoryItem(
+                    category, widget.selectedCategoryId == category.id);
+              },
+            ),
           );
         },
       ),
@@ -97,7 +93,7 @@ class CategoryList extends StatelessWidget {
 
   Widget _buildCategoryItem(Category category, bool isSelected) {
     return GestureDetector(
-      onTap: () => onCategorySelected(category.id),
+      onTap: () => widget.onCategorySelected(category.id),
       child: SizedBox(
         width: 68,
         child: Column(
@@ -160,7 +156,7 @@ class CategoryList extends StatelessWidget {
   Widget _buildShowAllItem(BuildContext context, bool isSelected) {
     final localizations = AppLocalizations.of(context);
     return GestureDetector(
-      onTap: () => onCategorySelected(null),
+      onTap: () => widget.onCategorySelected(null),
       child: SizedBox(
         width: 68,
         child: Column(

@@ -1,6 +1,6 @@
-import 'package:wffrasah/constants.dart';
-import 'package:wffrasah/localization/app_localizations.dart';
-import 'package:wffrasah/screens/splash_screen.dart';
+import 'package:wffrhasah/constants.dart';
+import 'package:wffrhasah/localization/app_localizations.dart';
+import 'package:wffrhasah/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'snackbar.dart';

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform;
 import '../constants.dart';
 import '../localization/app_localizations.dart';
 import '../widgets/coupons_list.dart';
@@ -28,7 +30,11 @@ class _CouponScreenState extends State<CouponScreen> {
       body: Container(
         color: Colors.white,
         child: Padding(
-          padding: const EdgeInsets.only(bottom: 60, top: 110),
+          padding: EdgeInsets.only(
+            bottom: 60,
+            top: MediaQuery.of(context).padding.top +
+                (defaultTargetPlatform == TargetPlatform.iOS ? 85 : 101),
+          ),
           child: Column(
             children: [
               SizedBox(

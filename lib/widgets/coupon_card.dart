@@ -12,8 +12,9 @@ import '../localization/app_localizations.dart';
 
 class CouponCard extends StatefulWidget {
   final Coupon coupon;
+  final EdgeInsetsGeometry? margin;
 
-  const CouponCard({super.key, required this.coupon});
+  const CouponCard({super.key, required this.coupon, this.margin});
 
   @override
   State<CouponCard> createState() => _CouponCardState();
@@ -69,7 +70,8 @@ class _CouponCardState extends State<CouponCard> {
     final localizations = AppLocalizations.of(context)!;
 
     return Card(
-      margin: const EdgeInsets.only(top: 5, left: 15, right: 15, bottom: 15),
+      margin: widget.margin ??
+          const EdgeInsets.only(top: 5, left: 15, right: 15, bottom: 15),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       elevation: 2,
       child: Container(

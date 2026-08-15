@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../constants.dart';
 import '../models/coupon.dart';
 import '../models/offers.dart';
 import '../models/store.dart';
@@ -22,6 +22,18 @@ class WebFavoritesScreen extends StatefulWidget {
 }
 
 class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
+  static const Color bg = Color(0xFFFAFAFF);
+  static const Color panel = Color(0xFFFFFFFF);
+  static const Color panelDark = Color(0xFFF2F0FF);
+  static const Color stroke = Color(0xFFE2DEFF);
+  static const Color line = Color(0xFFEDEAFF);
+  static const Color ink = Color(0xFF25213B);
+  static const Color orange = Color(0xFF6C63FF);
+  static const Color pink = Color(0xFF8B84FF);
+  static const Color yellow = Color(0xFFFF6584);
+  static const Color secondary = Color(0xFF68627F);
+  static const Color faded = Color(0xFF9B96B6);
+
   final supabase = Supabase.instance.client;
   List<Coupon> favoriteCoupons = [];
   List<Offer> favoriteOffers = [];
@@ -46,6 +58,13 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
       // Load stores for displaying store names
       final storesData = await supabase.from('stores').select();
       final loadedStores = (storesData as List)
+          .where((store) {
+            final importSource =
+                (store['import_source'] ?? 'manual').toString();
+            final approvalStatus =
+                (store['approval_status'] ?? 'approved').toString();
+            return importSource == 'manual' || approvalStatus == 'approved';
+          })
           .map((store) => Store.fromSupabase(store, langCode))
           .toList();
 
@@ -90,69 +109,161 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: const WebNavigationBar(),
-      body: Column(
-        children: [
-          _buildHeader(),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildFavoritesGrid(),
-                  const WebFooter(),
-                ],
-              ),
+    final theme = Theme.of(context);
+
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Theme(
+        data: theme.copyWith(
+          scaffoldBackgroundColor: bg,
+          textTheme: GoogleFonts.cairoTextTheme(theme.textTheme),
+        ),
+        child: Scaffold(
+          backgroundColor: bg,
+          appBar: const WebNavigationBar(),
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1440),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildHeroHeader(),
+                          const SizedBox(height: 28),
+                          _buildFavoritesSection(),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const WebFooter(),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeroHeader() {
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: ResponsivePadding.page(context).horizontal,
-        vertical: 10,
-      ),
+      width: double.infinity,
+      padding: EdgeInsets.all(ResponsiveLayout.isDesktop(context) ? 28 : 20),
       decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
+        color: panel,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: stroke),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Color(0x1A6C63FF),
+            blurRadius: 28,
+            offset: Offset(0, 18),
           ),
         ],
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 900;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0EEFF),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: const Color(0xFFD8D4FF)),
+                ),
+                child: Text(
+                  'كل ما أعجبك من كوبونات وعروض في مكان واحد',
+                  style: GoogleFonts.cairo(
+                    color: ink,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 22),
+              ShaderMask(
+                shaderCallback: (bounds) =>
+                    const LinearGradient(colors: [orange, yellow, pink])
+                        .createShader(bounds),
+                child: Text(
+                  'المفضلة في واجهة موحدة وسريعة',
+                  style: GoogleFonts.cairo(
+                    color: Colors.white,
+                    fontSize: compact ? 28 : 38,
+                    height: 1.25,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'ارجع بسرعة إلى الكوبونات والعروض التي حفظتها، واستخدمها مباشرة من نفس الصفحة.',
+                style: GoogleFonts.cairo(
+                  color: secondary,
+                  fontSize: compact ? 14 : 16,
+                  height: 1.9,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildFavoritesSection() {
+    return _buildSection(
+      title: 'المفضلة',
+      subtitle:
+          'العناصر المحفوظة لديك مرتبة حسب النوع لتصل إلى عروضك وكوبوناتك بسرعة.',
+      child: _buildFavoritesGrid(),
+    );
+  }
+
+  Widget _buildSection({
+    required String title,
+    required String subtitle,
+    required Widget child,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: panelDark,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Constants.primaryColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              Icons.favorite_rounded,
-              color: Constants.primaryColor,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
           Text(
-            'المفضلة',
-            style: TextStyle(
-              fontSize: ResponsiveLayout.isDesktop(context) ? 28 : 22,
-              fontWeight: FontWeight.w800,
-              color: Constants.primaryColor,
-              fontFamily: 'Tajawal',
+            title,
+            style: GoogleFonts.cairo(
+              color: ink,
+              fontSize: 26,
+              fontWeight: FontWeight.w900,
             ),
           ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: GoogleFonts.cairo(
+              color: secondary,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 22),
+          child,
         ],
       ),
     );
@@ -171,152 +282,147 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
     final isEmpty = favoriteCoupons.isEmpty && favoriteOffers.isEmpty;
 
     if (isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(60),
-          child: Column(
-            children: [
-              Icon(
-                Icons.favorite_border,
-                size: 100,
-                color: Colors.grey[300],
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(40),
+        decoration: BoxDecoration(
+          color: panel,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: stroke),
+        ),
+        child: Column(
+          children: [
+            const Icon(Icons.favorite_border, size: 90, color: faded),
+            const SizedBox(height: 20),
+            Text(
+              'لا توجد عناصر في المفضلة',
+              style: GoogleFonts.cairo(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: secondary,
               ),
-              const SizedBox(height: 20),
-              Text(
-                'لا توجد عناصر في المفضلة',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[600],
-                  fontFamily: 'Tajawal',
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'ابدأ بإضافة الكوبونات والعروض التي تعجبك إلى المفضلة',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.cairo(
+                fontSize: 16,
+                color: secondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 30),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pushNamed(context, '/'),
+              icon: const Icon(Icons.explore_rounded),
+              label: Text(
+                'استكشف الكوبونات والعروض',
+                style: GoogleFonts.cairo(
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                'ابدأ بإضافة الكوبونات والعروض التي تعجبك إلى المفضلة',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[500],
-                  fontFamily: 'Tajawal',
+              style: ElevatedButton.styleFrom(
+                backgroundColor: orange,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              const SizedBox(height: 30),
-              ElevatedButton.icon(
-                onPressed: () => Navigator.pushNamed(context, '/'),
-                icon: const Icon(Icons.explore_rounded),
-                label: const Text(
-                  'استكشف الكوبونات والعروض',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'Tajawal',
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Constants.primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     }
 
-    return Container(
-      padding: ResponsivePadding.page(context),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // قسم العروض
-          if (favoriteOffers.isNotEmpty) ...[
-            Row(
-              children: [
-                Icon(Icons.local_offer,
-                    color: Constants.primaryColor, size: 24),
-                const SizedBox(width: 8),
-                Text(
-                  'العروض المفضلة (${favoriteOffers.length})',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Constants.primaryColor,
-                    fontFamily: 'Tajawal',
-                  ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // قسم العروض
+        if (favoriteOffers.isNotEmpty) ...[
+          Row(
+            children: [
+              const Icon(Icons.local_offer, color: orange, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                'العروض المفضلة (${favoriteOffers.length})',
+                style: GoogleFonts.cairo(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: ink,
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: ResponsiveGrid.columns(context, max: 4),
-                crossAxisSpacing: ResponsiveGrid.spacing(context),
-                mainAxisSpacing: ResponsiveGrid.spacing(context),
-                childAspectRatio: 0.8,
               ),
-              itemCount: favoriteOffers.length,
-              itemBuilder: (context, index) {
-                final offer = favoriteOffers[index];
-                final store = storesMap[offer.storeId.toLowerCase().trim()];
-                return WebOfferCard(
-                  offer: offer,
-                  storeName: store?.name,
-                  storeImage: store?.image,
-                );
-              },
+            ],
+          ),
+          const SizedBox(height: 16),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: ResponsiveLayout.isDesktop(context) ? 4 : 2,
+              crossAxisSpacing: ResponsiveGrid.spacing(context),
+              mainAxisSpacing: ResponsiveGrid.spacing(context),
+              childAspectRatio:
+                  ResponsiveLayout.isDesktop(context) ? 0.8 : 0.72,
             ),
-            const SizedBox(height: 40),
-          ],
-
-          // قسم الكوبونات
-          if (favoriteCoupons.isNotEmpty) ...[
-            Row(
-              children: [
-                Icon(Icons.confirmation_number,
-                    color: Constants.primaryColor, size: 24),
-                const SizedBox(width: 8),
-                Text(
-                  'الكوبونات المفضلة (${favoriteCoupons.length})',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Constants.primaryColor,
-                    fontFamily: 'Tajawal',
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: ResponsiveGrid.columns(context, max: 4),
-                crossAxisSpacing: ResponsiveGrid.spacing(context),
-                mainAxisSpacing: ResponsiveGrid.spacing(context),
-                childAspectRatio: 0.75,
-              ),
-              itemCount: favoriteCoupons.length,
-              itemBuilder: (context, index) {
-                final coupon = favoriteCoupons[index];
-                final store = storesMap[coupon.storeId.toLowerCase().trim()];
-                return WebCouponCard(
-                  coupon: coupon,
-                  storeName: store?.name,
-                );
-              },
-            ),
-          ],
+            itemCount: favoriteOffers.length,
+            itemBuilder: (context, index) {
+              final offer = favoriteOffers[index];
+              final store = storesMap[offer.storeId.toLowerCase().trim()];
+              return WebOfferCard(
+                offer: offer,
+                storeName: store?.name,
+                storeImage: store?.image,
+              );
+            },
+          ),
+          const SizedBox(height: 40),
         ],
-      ),
+
+        // قسم الكوبونات
+        if (favoriteCoupons.isNotEmpty) ...[
+          Row(
+            children: [
+              const Icon(Icons.confirmation_number, color: orange, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                'الكوبونات المفضلة (${favoriteCoupons.length})',
+                style: GoogleFonts.cairo(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: ink,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: ResponsiveLayout.isDesktop(context) ? 4 : 2,
+              crossAxisSpacing: ResponsiveGrid.spacing(context),
+              mainAxisSpacing: ResponsiveGrid.spacing(context),
+              childAspectRatio:
+                  ResponsiveLayout.isDesktop(context) ? 0.76 : 0.68,
+            ),
+            itemCount: favoriteCoupons.length,
+            itemBuilder: (context, index) {
+              final coupon = favoriteCoupons[index];
+              final store = storesMap[coupon.storeId.toLowerCase().trim()];
+              return WebCouponCard(
+                coupon: coupon,
+                storeName: store?.name,
+                compact: true,
+              );
+            },
+          ),
+        ],
+      ],
     );
   }
 }

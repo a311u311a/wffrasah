@@ -93,7 +93,7 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                 ),
               ),
               Text(
-                'Version $_version',
+                '${localizations?.translate('version') ?? 'Version'} $_version',
                 style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey[600],
@@ -202,12 +202,24 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                           fontSize: 14, height: 1.5, fontFamily: 'Tajawal'),
                     ),
                     const SizedBox(height: 15),
-                    _buildSocialRow('assets/icon/x.png', 'X (تويتر سابقاً)',
-                        '@wffrhasah', 'https://x.com/wffrhasah'),
-                    _buildSocialRow('assets/icon/instagram.png', 'إنستغرام',
-                        '@wffrhasah', 'https://www.instagram.com/wffrhasah'),
-                    _buildSocialRow('assets/icon/tiktok.png', 'تيك توك',
-                        '@wffrhasah', 'https://www.tiktok.com/@wffrhasah'),
+                    _buildSocialRow(
+                        'assets/icon/x.png',
+                        localizations?.translate('x_platform') ??
+                            'X (تويتر سابقاً)',
+                        '@wffrhasah',
+                        'https://x.com/wffrhasah'),
+                    _buildSocialRow(
+                        'assets/icon/instagram.png',
+                        localizations?.translate('instagram_platform') ??
+                            'إنستغرام',
+                        '@wffrhasah',
+                        'https://www.instagram.com/wffrhasah'),
+                    _buildSocialRow(
+                        'assets/icon/tiktok.png',
+                        localizations?.translate('tiktok_platform') ??
+                            'تيك توك',
+                        '@wffrhasah',
+                        'https://www.tiktok.com/@wffrhasah'),
                   ],
                 ),
               ),

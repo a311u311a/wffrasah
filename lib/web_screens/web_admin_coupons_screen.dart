@@ -52,6 +52,29 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
   // ✅ Search (مثل صفحة المتاجر)
   final TextEditingController _searchCtrl = TextEditingController();
   String _search = '';
+  late Future<List<Map<String, dynamic>>> _couponsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _couponsFuture = _fetchCoupons();
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchCoupons() async {
+    final rows = await _sb
+        .from('coupons')
+        .select('*')
+        .eq('approval_status', 'approved')
+        .order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
+  void _refreshCoupons() {
+    if (!mounted) return;
+    setState(() {
+      _couponsFuture = _fetchCoupons();
+    });
+  }
 
   @override
   void dispose() {
@@ -108,8 +131,10 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
   Future<void> _openAddOrEditDialog({Map<String, dynamic>? coupon}) async {
     _clearForm();
 
-    final storeRes =
-        await _sb.from('stores').select('id,slug,name,name_ar,name_en,image');
+    final storeRes = await _sb
+        .from('stores')
+        .select('id,slug,name,name_ar,name_en,image')
+        .eq('approval_status', 'approved');
     final stores = List<Map<String, dynamic>>.from(storeRes);
 
     if (coupon != null) {
@@ -588,6 +613,7 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
 
       if (!mounted) return;
       Navigator.pop(context);
+      _refreshCoupons();
       showSnackBar(context,
           _editingId == null ? 'تمت الإضافة بنجاح ✅' : 'تم التحديث بنجاح ✅');
     } catch (e) {
@@ -621,7 +647,10 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
     if (confirm == true) {
       try {
         await _sb.from('coupons').delete().eq('id', id);
-        if (mounted) showSnackBar(context, 'تم الحذف');
+        if (mounted) {
+          _refreshCoupons();
+          showSnackBar(context, 'تم الحذف');
+        }
       } catch (e) {
         if (mounted) showSnackBar(context, 'خطأ في الحذف: $e', isError: true);
       }
@@ -750,13 +779,10 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
         children: [
           _searchWithAddButton(),
           const SizedBox(height: 18),
-          StreamBuilder<List<Map<String, dynamic>>>(
-            stream: _sb.from('coupons').stream(primaryKey: ['id']).order(
-              'created_at',
-              ascending: false,
-            ),
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: _couponsFuture,
             builder: (context, snapshot) {
-              if (!snapshot.hasData) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
                   child: Padding(
                     padding: EdgeInsets.all(40),
@@ -764,8 +790,20 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                   ),
                 );
               }
+              if (snapshot.hasError) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(40),
+                    child: Text(
+                      'خطأ في تحميل الكوبونات: ${snapshot.error}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.redAccent),
+                    ),
+                  ),
+                );
+              }
 
-              final all = snapshot.data!;
+              final all = snapshot.data ?? [];
               if (all.isEmpty) {
                 return Center(
                   child: Padding(

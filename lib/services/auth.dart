@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:wffrasah/screens/signup.dart';
+import 'package:wffrhasah/screens/signup.dart';
 import '../screens/login_signup/widgets/button.dart';
 import '../constants.dart';
 import '../localization/app_localizations.dart';
@@ -25,6 +25,14 @@ class _SignInState extends State<SignIn> {
   // ✅ لازم يطابق: package + AndroidManifest intent-filter + Supabase Redirect URLs
   // غيّري com.example.coupon لباكيج تطبيقك الحقيقي
   static const String _mobileRedirectUrl = 'com.rbhan.app://login-callback/';
+
+  String get _webRedirectUrl => Uri.base
+      .replace(
+        path: '/signin',
+        queryParameters: null,
+        fragment: null,
+      )
+      .toString();
 
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -141,9 +149,9 @@ class _SignInState extends State<SignIn> {
     setState(() => isLoading = true);
     try {
       if (kIsWeb) {
-        // ✅ للويب: استخدام الإعدادات الافتراضية
         await _supabase.auth.signInWithOAuth(
           OAuthProvider.google,
+          redirectTo: _webRedirectUrl,
         );
       } else {
         // ✅ للجوال: استخدام inAppWebView للبقاء داخل التطبيق

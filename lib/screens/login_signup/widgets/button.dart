@@ -1,4 +1,4 @@
-import 'package:wffrasah/constants.dart';
+import 'package:wffrhasah/constants.dart';
 import 'package:flutter/material.dart';
 
 class MyButtons extends StatelessWidget {

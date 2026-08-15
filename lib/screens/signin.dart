@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -175,6 +176,24 @@ class _SignInState extends State<SignIn> {
     }
   }
 
+  Future<void> signInWithApple() async {
+    final t = AppLocalizations.of(context);
+    setState(() => isLoading = true);
+
+    try {
+      await _auth.signInWithApple();
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      showSnackBar(context, e.message, isError: true);
+    } catch (e) {
+      if (!mounted) return;
+      showSnackBar(context, '${t?.translate('apple_signin_failed')}: $e',
+          isError: true);
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
   void _goBackToMenu() {
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const BottomNavBar(initialIndex: 4)),
@@ -269,6 +288,31 @@ class _SignInState extends State<SignIn> {
                   ],
                 ),
               ),
+              if (Platform.isIOS) ...[
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: isLoading ? null : signInWithApple,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.apple, size: 28, color: Colors.white),
+                      const SizedBox(width: 12),
+                      Text(
+                        t?.translate('sign_in_apple') ?? 'Sign in with Apple',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,

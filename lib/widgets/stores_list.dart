@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_svg/svg.dart';
 import '../constants.dart';
 import '../localization/app_localizations.dart';
@@ -7,7 +8,7 @@ import '../models/store.dart';
 import 'error_message.dart';
 import 'loading_indicator.dart';
 
-class StoresList extends StatelessWidget {
+class StoresList extends StatefulWidget {
   final Function(String?) onStoreSelected;
   final String? selectedStoreId; // slug غالباً
 
@@ -18,96 +19,124 @@ class StoresList extends StatelessWidget {
   });
 
   @override
+  State<StoresList> createState() => _StoresListState();
+}
+
+class _StoresListState extends State<StoresList> {
+  Future<List<Store>>? _storesFuture;
+  bool _didStartLoading = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_didStartLoading) {
+      _didStartLoading = true;
+      final langCode = Localizations.localeOf(context).languageCode;
+      _storesFuture = _fetchStores(langCode);
+    }
+  }
+
+  Future<List<Store>> _fetchStores(String langCode) async {
+    final supabase = Supabase.instance.client;
+
+    final results = await Future.wait([
+      supabase.from('stores').select(),
+      supabase
+          .from('coupons')
+          .select('store_id,import_source,approval_status')
+          .neq('import_source', 'manual'),
+    ]);
+    final storeRows = results[0];
+    final importedCoupons = results[1] as List;
+    final importedStoreIds = importedCoupons
+        .map((coupon) => (coupon['store_id'] ?? '').toString())
+        .where((storeId) => storeId.isNotEmpty)
+        .toSet();
+    final approvedImportedStoreIds = importedCoupons
+        .where((coupon) => coupon['approval_status'] == 'approved')
+        .map((coupon) => (coupon['store_id'] ?? '').toString())
+        .where((storeId) => storeId.isNotEmpty)
+        .toSet();
+
+    final stores = (storeRows as List)
+        .cast<Map<String, dynamic>>()
+        .where((data) {
+          final storeImportSource =
+              (data['import_source'] ?? 'manual').toString();
+          final storeApprovalStatus =
+              (data['approval_status'] ?? 'approved').toString();
+          if (storeImportSource != 'manual' &&
+              storeApprovalStatus != 'approved') {
+            return false;
+          }
+
+          final slug = (data['slug'] ?? '').toString();
+          return !importedStoreIds.contains(slug) ||
+              approvedImportedStoreIds.contains(slug);
+        })
+        .map((data) => Store.fromSupabase(data, langCode))
+        .toList();
+
+    final seen = <String>{};
+    final displayStores = <Store>[];
+    for (final s in stores) {
+      final key = s.key;
+      if (key.isEmpty || seen.contains(key)) continue;
+      seen.add(key);
+      displayStores.add(s);
+    }
+
+    return displayStores;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    final supabase = Supabase.instance.client;
 
     return SizedBox(
       height: 75,
-      child: StreamBuilder<List<dynamic>>(
-        stream: supabase
-            .from('coupons')
-            .stream(primaryKey: ['id']).order('created_at', ascending: false),
-        builder: (context, couponSnapshot) {
-          if (couponSnapshot.hasError) return const SizedBox();
-          if (!couponSnapshot.hasData) return const CustomLoadingIndicator();
+      child: FutureBuilder<List<Store>>(
+        future: _storesFuture,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            debugPrint('StoresList loading failed: ${snapshot.error}');
+            return ErrorMessage(
+              message: kDebugMode
+                  ? 'خطأ تحميل المتاجر: ${snapshot.error}'
+                  : (localizations?.translate('error_loading_stores') ??
+                      'Error loading stores'),
+            );
+          }
+          if (!snapshot.hasData) return const CustomLoadingIndicator();
 
-          final couponRows =
-              (couponSnapshot.data ?? []).cast<Map<String, dynamic>>();
+          final displayStores = snapshot.data ?? [];
 
-          // ✅ كل القيم الموجودة في coupons.store_id (قد تكون slug أو id)
-          final Set<String> activeStoreKeys = couponRows
-              .map((c) => (c['store_id'] ?? c['storeId'])?.toString())
-              .where((v) => v != null && v.trim().isNotEmpty)
-              .cast<String>()
-              .toSet();
+          if (widget.selectedStoreId != null &&
+              widget.selectedStoreId!.isNotEmpty &&
+              !displayStores.any((s) => s.key == widget.selectedStoreId)) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              widget.onStoreSelected(null);
+            });
+          }
 
-          return StreamBuilder<List<dynamic>>(
-            stream: supabase.from('stores').stream(
-                primaryKey: ['id']).order('created_at', ascending: false),
-            builder: (context, storeSnapshot) {
-              if (storeSnapshot.hasError) {
-                return ErrorMessage(
-                  message: localizations?.translate('error_loading_stores') ??
-                      'Error loading stores',
-                );
-              }
-              if (!storeSnapshot.hasData) return const CustomLoadingIndicator();
-
-              final storeRows =
-                  (storeSnapshot.data ?? []).cast<Map<String, dynamic>>();
-
-              final stores = storeRows
-                  .map((data) => Store.fromSupabase(
-                      data, localizations?.locale.languageCode ?? 'ar'))
-                  .where((s) => s.slug.trim().isNotEmpty) // ✅ هنا
-                  .where((s) =>
-                      activeStoreKeys.contains(s.slug) ||
-                      activeStoreKeys.contains(s.id))
-                  .toList();
-
-              // ✅ إزالة التكرار: نعتمد على "المفتاح" الفعلي للعرض (slug إن وجد وإلا id)
-              final seen = <String>{};
-              final displayStores = <Store>[];
-              for (final s in stores) {
-                final key = s.slug.trim().isNotEmpty ? s.slug : s.id;
-                if (seen.contains(key)) continue;
-                seen.add(key);
-                displayStores.add(s);
+          return ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            scrollDirection: Axis.horizontal,
+            itemCount: displayStores.length + 1,
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return _buildShowAllItem(
+                    context, widget.selectedStoreId == null);
               }
 
-              // ✅ لو المتجر المحدد لم يعد موجوداً ضمن النشطين
-              if (selectedStoreId != null &&
-                  selectedStoreId!.isNotEmpty &&
-                  !displayStores.any((s) {
-                    final key = s.slug.trim().isNotEmpty ? s.slug : s.id;
-                    return key == selectedStoreId;
-                  })) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  onStoreSelected(null);
-                });
-              }
+              final store = displayStores[index - 1];
+              final storeKey = store.key;
 
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                scrollDirection: Axis.horizontal,
-                itemCount: displayStores.length + 1, // ✅ هنا
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return _buildShowAllItem(context, selectedStoreId == null);
-                  }
-
-                  final store = displayStores[index - 1]; // ✅ هنا
-                  final storeKey =
-                      store.slug.trim().isNotEmpty ? store.slug : store.id;
-
-                  return _buildStoreItem(
-                    context,
-                    store,
-                    selectedStoreId == storeKey,
-                    storeKey,
-                  );
-                },
+              return _buildStoreItem(
+                context,
+                store,
+                widget.selectedStoreId == storeKey,
+                storeKey,
               );
             },
           );
@@ -123,7 +152,7 @@ class StoresList extends StatelessWidget {
     String storeKey,
   ) {
     return GestureDetector(
-      onTap: () => onStoreSelected(storeKey),
+      onTap: () => widget.onStoreSelected(storeKey),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 100),
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 9),
@@ -170,7 +199,7 @@ class StoresList extends StatelessWidget {
     final localizations = AppLocalizations.of(context);
 
     return GestureDetector(
-      onTap: () => onStoreSelected(null),
+      onTap: () => widget.onStoreSelected(null),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 100),
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 9),

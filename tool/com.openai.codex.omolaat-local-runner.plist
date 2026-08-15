@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.openai.codex.omolaat-local-runner</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/max/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node</string>
+    <string>/Users/max/StudioProjects/wffrhasah/tool/omolaat-local-runner.mjs</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/max/StudioProjects/wffrhasah</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/Users/max/StudioProjects/wffrhasah/.omolaat-runs/local-runner.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/max/StudioProjects/wffrhasah/.omolaat-runs/local-runner.err.log</string>
+</dict>
+</plist>

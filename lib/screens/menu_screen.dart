@@ -1,4 +1,5 @@
-import 'package:wffrasah/screens/signin.dart';
+import 'package:wffrhasah/screens/signin.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
@@ -22,6 +23,11 @@ import 'notifications_history_screen.dart';
 
 import 'package:permission_handler/permission_handler.dart'; // ✅ Re-added for Permission check
 
+bool get _supportsNotificationPermissionCheck =>
+    !kIsWeb &&
+    (defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS);
+
 class MenuScreen extends StatefulWidget {
   const MenuScreen({super.key});
 
@@ -30,7 +36,24 @@ class MenuScreen extends StatefulWidget {
 }
 
 class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
+  static final Uri _androidStoreUrl = Uri.parse(
+    'https://play.google.com/store/apps/details?id=com.rbhan.app&pcampaignid=web_share',
+  );
+  static final Uri _iosStoreUrl = Uri.parse(
+    'https://apps.apple.com/us/app/rbhan/id6444086616',
+  );
+
   bool _isCheckingPermission = false;
+
+  Uri get _storeUrl {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      return _iosStoreUrl;
+    }
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return _androidStoreUrl;
+    }
+    return _androidStoreUrl;
+  }
 
   @override
   void initState() {
@@ -56,6 +79,8 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _checkNotificationPermission() async {
+    if (!_supportsNotificationPermissionCheck) return;
+
     // منع الاستدعاءات المتزامنة
     if (_isCheckingPermission) return;
     _isCheckingPermission = true;
@@ -86,6 +111,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final user = Supabase.instance.client.auth.currentUser;
     final localizations = AppLocalizations.of(context);
+    final topContentPadding = MediaQuery.of(context).padding.top + 96;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -121,7 +147,11 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
             Column(
               children: [
                 Container(
-                  padding: const EdgeInsets.only(left: 20, right: 20, top: 90),
+                  padding: EdgeInsets.only(
+                    left: 20,
+                    right: 20,
+                    top: topContentPadding,
+                  ),
                   child: Column(
                     children: [
                       if (user == null)
@@ -153,120 +183,123 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                               ),
                             ],
                           ),
-                          child: Column(
-                            children: [
-                              if (user != null) ...[
-                                _buildDivider(),
-                                Consumer<UserProvider>(
-                                  builder: (context, userProvider, child) {
-                                    if (userProvider.isLoading) {
-                                      return const SizedBox.shrink();
-                                    }
-                                    if (!userProvider.isAdmin) {
-                                      return const SizedBox.shrink();
-                                    }
+                          child: Material(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                            child: Column(
+                              children: [
+                                if (user != null) ...[
+                                  _buildDivider(),
+                                  Consumer<UserProvider>(
+                                    builder: (context, userProvider, child) {
+                                      if (userProvider.isLoading) {
+                                        return const SizedBox.shrink();
+                                      }
+                                      if (!userProvider.isAdmin) {
+                                        return const SizedBox.shrink();
+                                      }
 
-                                    return _buildMenuTile(
-                                      icon: Icons.admin_panel_settings,
-                                      title: localizations
-                                              ?.translate('admin_panel') ??
-                                          'Admin Panel',
-                                      onTap: () {
-                                        Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (context) =>
-                                                    const AdminScreen()));
-                                      },
-                                    );
+                                      return _buildMenuTile(
+                                        icon: Icons.admin_panel_settings,
+                                        title: localizations
+                                                ?.translate('admin_panel') ??
+                                            'Admin Panel',
+                                        onTap: () {
+                                          Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      const AdminScreen()));
+                                        },
+                                      );
+                                    },
+                                  ),
+                                ],
+                                _buildDivider(),
+                                _buildMenuTile(
+                                  icon: Icons.email,
+                                  title:
+                                      localizations?.translate('contact_us') ??
+                                          'Contact Us',
+                                  onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const ContactUsScreen())),
+                                ),
+                                _buildDivider(),
+                                _buildMenuTile(
+                                  icon: Icons.star_rounded,
+                                  title: localizations?.translate('rate_app') ??
+                                      'Rate App',
+                                  onTap: () async {
+                                    if (!await launchUrl(_storeUrl,
+                                        mode: LaunchMode.externalApplication)) {
+                                      debugPrint('Could not launch $_storeUrl');
+                                    }
                                   },
                                 ),
+                                _buildDivider(),
+                                _buildMenuTile(
+                                  icon: Icons.share_rounded,
+                                  title:
+                                      localizations?.translate('share_app') ??
+                                          'Share App',
+                                  onTap: () async {
+                                    final String appLink = _storeUrl.toString();
+                                    await SharePlus.instance.share(ShareParams(
+                                        text:
+                                            '${localizations?.translate('share_text') ?? "شارك واستفد مع تطبيق وفرها صح!"} $appLink'));
+                                  },
+                                ),
+                                _buildDivider(),
+                                _buildMenuTile(
+                                  icon: Icons.description,
+                                  title: localizations
+                                          ?.translate('terms_of_use') ??
+                                      'Terms of Use',
+                                  onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const TermsScreen())),
+                                ),
+                                _buildDivider(),
+                                _buildMenuTile(
+                                  icon: Icons.privacy_tip,
+                                  title: localizations
+                                          ?.translate('privacy_policy') ??
+                                      'Privacy Policy',
+                                  onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const PrivacyScreen())),
+                                ),
+                                _buildDivider(),
+                                _buildMenuTile(
+                                  icon: Icons.quiz,
+                                  title:
+                                      localizations?.translate('faq') ?? 'FAQ',
+                                  onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const FaqScreen())),
+                                ),
+                                _buildDivider(),
+                                _buildMenuTile(
+                                  icon: Icons.info,
+                                  title: localizations?.translate('about') ??
+                                      'About',
+                                  onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              const AboutAppScreen())),
+                                ),
                               ],
-                              _buildDivider(),
-                              _buildMenuTile(
-                                icon: Icons.email,
-                                title: localizations?.translate('contact_us') ??
-                                    'Contact Us',
-                                onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            const ContactUsScreen())),
-                              ),
-                              _buildDivider(),
-                              _buildMenuTile(
-                                icon: Icons.star_rounded,
-                                title: localizations?.translate('rate_app') ??
-                                    'Rate App',
-                                onTap: () async {
-                                  final Uri url = Uri.parse(
-                                      'https://play.google.com/store/apps/details?id=com.rbhan.app&pcampaignid=web_share');
-                                  if (!await launchUrl(url,
-                                      mode: LaunchMode.externalApplication)) {
-                                    debugPrint('Could not launch $url');
-                                  }
-                                },
-                              ),
-                              _buildDivider(),
-                              _buildMenuTile(
-                                icon: Icons.share_rounded,
-                                title: localizations?.translate('share_app') ??
-                                    'Share App',
-                                onTap: () async {
-                                  const String appLink =
-                                      "https://play.google.com/store/apps/details?id=com.rbhan.app&pcampaignid=web_share";
-                                  // Share.share is the standard method for the share_plus package
-                                  await SharePlus.instance.share(ShareParams(
-                                      text:
-                                          '${localizations?.translate('share_text') ?? "شارك واستفد مع تطبيق وفرها صح!"} $appLink'));
-                                },
-                              ),
-                              _buildDivider(),
-                              _buildMenuTile(
-                                icon: Icons.description,
-                                title:
-                                    localizations?.translate('terms_of_use') ??
-                                        'Terms of Use',
-                                onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            const TermsScreen())),
-                              ),
-                              _buildDivider(),
-                              _buildMenuTile(
-                                icon: Icons.privacy_tip,
-                                title: localizations
-                                        ?.translate('privacy_policy') ??
-                                    'Privacy Policy',
-                                onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            const PrivacyScreen())),
-                              ),
-                              _buildDivider(),
-                              _buildMenuTile(
-                                icon: Icons.quiz,
-                                title: localizations?.translate('faq') ?? 'FAQ',
-                                onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            const FaqScreen())),
-                              ),
-                              _buildDivider(),
-                              _buildMenuTile(
-                                icon: Icons.info,
-                                title: localizations?.translate('about') ??
-                                    'About',
-                                onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            const AboutAppScreen())),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
                         const SizedBox(height: 100),

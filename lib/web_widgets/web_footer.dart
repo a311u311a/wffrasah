@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../constants.dart';
 import '../localization/app_localizations.dart';
@@ -96,6 +97,7 @@ class WebFooter extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
@@ -109,20 +111,20 @@ class WebFooter extends StatelessWidget {
                 ),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: SvgPicture.asset(
-                'assets/image/Rbhan.svg',
+              child: Image.asset(
+                'assets/image/wffrhasah.png',
                 width: 50,
                 height: 50,
+                fit: BoxFit.cover,
               ),
             ),
             const SizedBox(width: 12),
             Text(
-              'كوبونات وعروض',
-              style: TextStyle(
+              'وفرها صح',
+              style: GoogleFonts.cairo(
                 fontSize: 24,
                 fontWeight: FontWeight.w900,
                 color: Constants.primaryColor,
-                fontFamily: 'Tajawal',
               ),
             ),
           ],

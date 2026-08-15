@@ -58,8 +58,12 @@ class _BottomNavBarState extends State<BottomNavBar>
     _selectedIndex = widget.initialIndex;
     WidgetsBinding.instance.addObserver(this);
 
-    // Initialize notifications here so they appear on main pages
-    NotificationService.listenToInAppNotifications(context);
+    // Start after the first frame so Provider/context are fully mounted.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        NotificationService.listenToInAppNotifications(context);
+      }
+    });
   }
 
   @override

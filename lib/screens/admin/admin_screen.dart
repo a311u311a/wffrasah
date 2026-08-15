@@ -1,5 +1,5 @@
-import 'package:wffrasah/screens/admin/admin_offers_screen.dart';
-import 'package:wffrasah/widgets/bottom_navigation_bar.dart';
+import 'package:wffrhasah/screens/admin/admin_offers_screen.dart';
+import 'package:wffrhasah/widgets/bottom_navigation_bar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import '../../constants.dart';
@@ -7,7 +7,9 @@ import '../../constants.dart';
 import 'admin_stores_screen.dart';
 import 'admin_coupons_screen.dart';
 import 'admin_carousel_screen.dart';
+import 'admin_categories_screen.dart';
 import 'admin_notifications_screen.dart';
+import 'admin_pending_coupons_screen.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -20,12 +22,9 @@ class _AdminScreenState extends State<AdminScreen> {
   final _supabase = Supabase.instance.client;
   // bool _isLoadingAdmitad = false; // Removed as requested
 
-  /// ✅ بديل Firestore snapshots:
-  /// نجيب Stream من Supabase ونحوّلها إلى length
-  Stream<int> _countStream(String tableName) {
-    return _supabase
-        .from(tableName)
-        .stream(primaryKey: ['id']).map((rows) => rows.length);
+  Future<int> _countRows(String tableName) async {
+    final rows = await _supabase.from(tableName).select('id');
+    return (rows as List).length;
   }
 
   // (اختياري) إذا تبين Admitad لاحقًا
@@ -88,28 +87,28 @@ class _AdminScreenState extends State<AdminScreen> {
                   children: [
                     _buildStatCard(
                       'المتاجر',
-                      _countStream('stores'),
+                      _countRows('stores'),
                       Colors.blue,
                       Icons.storefront_rounded,
                       cardWidth,
                     ),
                     _buildStatCard(
                       'الكوبونات',
-                      _countStream('coupons'),
+                      _countRows('coupons'),
                       Colors.deepPurple,
                       Icons.confirmation_number_rounded,
                       cardWidth,
                     ),
                     _buildStatCard(
                       'العروض',
-                      _countStream('offers'),
+                      _countRows('offers'),
                       Colors.orange,
                       Icons.local_offer_rounded,
                       cardWidth,
                     ),
                     _buildStatCard(
                       'البنرات',
-                      _countStream('carousel'),
+                      _countRows('carousel'),
                       Colors.teal,
                       Icons.photo_library_rounded,
                       cardWidth,
@@ -155,6 +154,24 @@ class _AdminScreenState extends State<AdminScreen> {
                     const SizedBox(height: 12),
                     _buildAdminButton(
                       context,
+                      title: 'كوبونات بانتظار الموافقة',
+                      subtitle: 'مراجعة كوبونات Omolaat قبل النشر',
+                      icon: Icons.pending_actions_rounded,
+                      color: Colors.amber,
+                      destination: const AdminPendingCouponsScreen(),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildAdminButton(
+                      context,
+                      title: 'إدارة الفئات',
+                      subtitle: 'إضافة، تعديل، أو حذف فئات المتاجر والعروض',
+                      icon: Icons.category_rounded,
+                      color: Colors.indigo,
+                      destination: const AdminCategoriesScreen(),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildAdminButton(
+                      context,
                       title: 'إدارة وإضافة العروض',
                       subtitle: 'نشر عرض أو خصم جديد للمستخدمين',
                       icon: Icons.local_offer_rounded,
@@ -193,7 +210,7 @@ class _AdminScreenState extends State<AdminScreen> {
   /// ✅ نفس ويدجت الكرت القديم بدون تغيير
   Widget _buildStatCard(
     String title,
-    Stream<int> stream,
+    Future<int> future,
     Color color,
     IconData icon,
     double width,
@@ -226,8 +243,8 @@ class _AdminScreenState extends State<AdminScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          StreamBuilder<int>(
-            stream: stream,
+          FutureBuilder<int>(
+            future: future,
             builder: (context, snapshot) {
               return Text(
                 '${snapshot.data ?? 0}',

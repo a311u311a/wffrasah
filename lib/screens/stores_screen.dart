@@ -2,7 +2,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
-import 'package:wffrasah/screens/store_coupons_screen.dart';
+import 'package:wffrhasah/screens/store_coupons_screen.dart';
 
 import '../constants.dart';
 import '../models/store.dart';
@@ -19,16 +19,47 @@ class StoresScreen extends StatefulWidget {
 class _StoresScreenState extends State<StoresScreen> {
   String searchQuery = '';
 
-  late final Stream<List<Map<String, dynamic>>> _storesStream;
+  late Future<List<Map<String, dynamic>>> _storesFuture;
 
   @override
   void initState() {
     super.initState();
-    final sb = Supabase.instance.client;
+    _storesFuture = _fetchStores();
+  }
 
-    _storesStream = sb.from('stores').stream(primaryKey: ['id']).order(
-        'created_at',
-        ascending: false); // أو order('name_ar')
+  Future<List<Map<String, dynamic>>> _fetchStores() async {
+    final supabase = Supabase.instance.client;
+    final results = await Future.wait([
+      supabase.from('stores').select().order('created_at', ascending: false),
+      supabase
+          .from('coupons')
+          .select('store_id,import_source,approval_status')
+          .neq('import_source', 'manual'),
+    ]);
+    final rows = (results[0] as List).cast<Map<String, dynamic>>();
+    final importedCoupons = results[1] as List;
+    final importedStoreIds = importedCoupons
+        .map((coupon) => (coupon['store_id'] ?? '').toString())
+        .where((storeId) => storeId.isNotEmpty)
+        .toSet();
+    final approvedImportedStoreIds = importedCoupons
+        .where((coupon) => coupon['approval_status'] == 'approved')
+        .map((coupon) => (coupon['store_id'] ?? '').toString())
+        .where((storeId) => storeId.isNotEmpty)
+        .toSet();
+
+    return rows.where((store) {
+      final storeImportSource = (store['import_source'] ?? 'manual').toString();
+      final storeApprovalStatus =
+          (store['approval_status'] ?? 'approved').toString();
+      if (storeImportSource != 'manual' && storeApprovalStatus != 'approved') {
+        return false;
+      }
+
+      final slug = (store['slug'] ?? '').toString();
+      return !importedStoreIds.contains(slug) ||
+          approvedImportedStoreIds.contains(slug);
+    }).toList();
   }
 
   @override
@@ -65,8 +96,8 @@ class _StoresScreenState extends State<StoresScreen> {
       ),
       body: Container(
         color: Colors.white,
-        child: StreamBuilder<List<Map<String, dynamic>>>(
-          stream: _storesStream,
+        child: FutureBuilder<List<Map<String, dynamic>>>(
+          future: _storesFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting &&
                 !snapshot.hasData) {
@@ -115,49 +146,57 @@ class _StoresScreenState extends State<StoresScreen> {
 
             final bool showTitle = searchQuery.isEmpty;
 
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 60),
-              child: Column(
-                children: [
-                  const SizedBox(height: 100),
-                  if (showTitle)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: Text(
-                          localizations?.translate('all_stores') ??
-                              'كل المتاجر',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Tajawal',
-                            color: Constants.primaryColor,
+            return RefreshIndicator(
+              onRefresh: () async {
+                setState(() {
+                  _storesFuture = _fetchStores();
+                });
+                await _storesFuture;
+              },
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 60),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 100),
+                    if (showTitle)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            localizations?.translate('all_stores') ??
+                                'كل المتاجر',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Tajawal',
+                              color: Constants.primaryColor,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  Expanded(
-                    child: GridView.builder(
-                      padding: const EdgeInsets.only(
-                        left: 12,
-                        right: 12,
-                        bottom: 20,
+                    Expanded(
+                      child: GridView.builder(
+                        padding: const EdgeInsets.only(
+                          left: 12,
+                          right: 12,
+                          bottom: 20,
+                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 15,
+                          childAspectRatio: 0.75,
+                        ),
+                        itemCount: filteredStores.length,
+                        itemBuilder: (context, index) =>
+                            _StoreCard(store: filteredStores[index]),
                       ),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 15,
-                        childAspectRatio: 0.75,
-                      ),
-                      itemCount: filteredStores.length,
-                      itemBuilder: (context, index) =>
-                          _StoreCard(store: filteredStores[index]),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           },

@@ -47,3 +47,15 @@ app.*.map.json
 .vercel
 .env
 .env.*
+*.jks
+key.properties
+**/key.properties
+.codex-remote-attachments/
+.linkaraby-browser/
+.linkaraby-runs/
+.omolaat-browser/
+.omolaat-runs/
+
+# Supabase config with keys (use supabase_config.example.dart as template)
+lib/config/supabase_config.dart
+supabase/.temp/

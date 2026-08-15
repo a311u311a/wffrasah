@@ -14,11 +14,13 @@ import '../providers/favorites_provider.dart';
 class WebCouponCard extends StatefulWidget {
   final Coupon coupon;
   final String? storeName; // موجود فقط للتوافق مع الاستدعاءات السابقة
+  final bool compact;
 
   const WebCouponCard({
     super.key,
     required this.coupon,
     this.storeName,
+    this.compact = false,
   });
 
   @override
@@ -76,37 +78,17 @@ class _WebCouponCardState extends State<WebCouponCard> {
               children: [
                 // ✅ الصورة: نفس الحجم (لا تكبر/تقص) + Padding من جميع الجهات
                 _buildCouponImageFixedHeight(isFavorite, favoriteProvider),
+                _buildSoftDivider(),
 
                 // ✅ المحتوى (بدون Badge المتجر)
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Column(
-                      children: [
-                        // منطقة النصوص القابلة للتمرير
-                        Expanded(
-                          child: SingleChildScrollView(
-                            physics: const BouncingScrollPhysics(),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildTitle(maxLines: 2),
-                                const SizedBox(height: 6),
-                                _buildDescription(
-                                    maxLines: null), // ✅ بدون حد لتمكين التمرير
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        // العناصر المثبتة في الأسفل
-                        const SizedBox(height: 8),
-                        if (widget.coupon.code.isNotEmpty) ...[
-                          _buildCouponCode(),
-                          const SizedBox(height: 8),
-                        ],
-                        _buildActions(isFavorite, favoriteProvider),
-                      ],
+                    padding: widget.compact
+                        ? const EdgeInsets.fromLTRB(10, 14, 10, 10)
+                        : const EdgeInsets.all(8),
+                    child: _buildContent(
+                      isFavorite: isFavorite,
+                      favoriteProvider: favoriteProvider,
                     ),
                   ),
                 ),
@@ -118,15 +100,76 @@ class _WebCouponCardState extends State<WebCouponCard> {
     );
   }
 
+  Widget _buildSoftDivider() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: widget.compact ? 22 : 28),
+      child: Container(
+        height: 1,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.transparent,
+              Constants.primaryColor.withValues(alpha: 0.28),
+              Colors.transparent,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent({
+    required bool isFavorite,
+    required FavoriteProvider favoriteProvider,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.max,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (widget.compact)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _buildTitle(maxLines: 1),
+              const SizedBox(height: 10),
+              _buildDescription(maxLines: 2),
+            ],
+          )
+        else
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildTitle(maxLines: 2),
+                  const SizedBox(height: 6),
+                  _buildDescription(maxLines: null),
+                ],
+              ),
+            ),
+          ),
+        if (widget.compact) const Spacer(),
+        SizedBox(height: widget.compact ? 16 : 8),
+        if (widget.coupon.code.isNotEmpty) ...[
+          _buildCouponCode(),
+          SizedBox(height: widget.compact ? 6 : 8),
+        ],
+        _buildActions(isFavorite, favoriteProvider),
+      ],
+    );
+  }
+
   /// ✅ صورة بارتفاع ثابت (لا تكبر/لا تُقص) + بدون ظل + بدون لون + Padding من جميع الجهات
   Widget _buildCouponImageFixedHeight(
       bool isFavorite, FavoriteProvider favoriteProvider) {
-    const double outerPadding = 8; // ✅ Padding حول الصورة من كل الجهات
-    const double imgHeight = 150;
+    final double outerPadding =
+        widget.compact ? 20 : 10; // ✅ Padding حول الصورة من كل الجهات
+    final double imgHeight = widget.compact ? 112 : 150;
     const double radius = 16;
 
     return Padding(
-      padding: const EdgeInsets.all(outerPadding),
+      padding: EdgeInsets.all(outerPadding),
       child: Stack(
         children: [
           ClipRRect(
@@ -138,7 +181,7 @@ class _WebCouponCardState extends State<WebCouponCard> {
                 imageUrl: widget.coupon.image,
 
                 // ✅ لا تكبر ولا تقص
-                fit: BoxFit.contain,
+                fit: BoxFit.fill,
 
                 // ✅ بدون لون خلف الصورة أثناء التحميل
                 placeholder: (context, url) => const Center(
@@ -163,8 +206,8 @@ class _WebCouponCardState extends State<WebCouponCard> {
 
           // Favorite icon (تنزيل/إضافة للمفضلة) ✅
           Positioned(
-            top: 10,
-            right: 10,
+            top: widget.compact ? 1 : 10,
+            right: widget.compact ? 1 : 10,
             child: Material(
               color: Colors.transparent,
               child: InkWell(
@@ -174,7 +217,7 @@ class _WebCouponCardState extends State<WebCouponCard> {
                 },
                 borderRadius: BorderRadius.circular(30),
                 child: Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: EdgeInsets.all(widget.compact ? 6 : 8),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.95),
                     shape: BoxShape.circle,
@@ -188,7 +231,7 @@ class _WebCouponCardState extends State<WebCouponCard> {
                   ),
                   child: Icon(
                     isFavorite ? Icons.favorite : Icons.favorite_border,
-                    size: 20,
+                    size: widget.compact ? 17 : 20,
                     color: isFavorite ? Colors.red : Colors.grey[600],
                   ),
                 ),
@@ -203,8 +246,8 @@ class _WebCouponCardState extends State<WebCouponCard> {
   Widget _buildTitle({int maxLines = 2}) {
     return Text(
       widget.storeName ?? widget.coupon.name,
-      style: const TextStyle(
-        fontSize: 15,
+      style: TextStyle(
+        fontSize: widget.compact ? 20 : 15,
         fontWeight: FontWeight.w700,
         color: Colors.black87,
         fontFamily: 'Tajawal',
@@ -212,6 +255,7 @@ class _WebCouponCardState extends State<WebCouponCard> {
       ),
       maxLines: maxLines,
       overflow: TextOverflow.ellipsis,
+      textAlign: widget.compact ? TextAlign.center : TextAlign.start,
     );
   }
 
@@ -219,13 +263,14 @@ class _WebCouponCardState extends State<WebCouponCard> {
     return Text(
       widget.coupon.description,
       style: TextStyle(
-        fontSize: 13,
+        fontSize: widget.compact ? 18 : 13,
         color: Colors.grey[700],
         height: 1.20,
         fontFamily: 'Tajawal',
       ),
       maxLines: maxLines,
       overflow: maxLines != null ? TextOverflow.ellipsis : null,
+      textAlign: widget.compact ? TextAlign.center : TextAlign.start,
     );
   }
 
@@ -248,7 +293,10 @@ class _WebCouponCardState extends State<WebCouponCard> {
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: EdgeInsets.symmetric(
+          horizontal: widget.compact ? 6 : 8,
+          vertical: widget.compact ? 3 : 4,
+        ),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
@@ -263,7 +311,10 @@ class _WebCouponCardState extends State<WebCouponCard> {
           children: [
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(
+                  horizontal: widget.compact ? 6 : 8,
+                  vertical: widget.compact ? 3 : 4,
+                ),
                 decoration: BoxDecoration(
                   color: (_showCode && _copied) ? Colors.green : Colors.white,
                   borderRadius: BorderRadius.circular(8),
@@ -283,7 +334,7 @@ class _WebCouponCardState extends State<WebCouponCard> {
                                 Text(
                                   'تم النسخ ✅',
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: widget.compact ? 10.5 : 12,
                                     fontWeight: FontWeight.w900,
                                     color: (_copied)
                                         ? Colors.white
@@ -300,7 +351,7 @@ class _WebCouponCardState extends State<WebCouponCard> {
                                   softWrap: false,
                                   overflow: TextOverflow.visible,
                                   style: TextStyle(
-                                    fontSize: 13,
+                                    fontSize: widget.compact ? 11.5 : 13,
                                     fontWeight: FontWeight.w900,
                                     color: (_copied)
                                         ? Colors.white
@@ -317,15 +368,16 @@ class _WebCouponCardState extends State<WebCouponCard> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.copy,
-                                  size: 16, color: Colors.grey[600]),
-                              const SizedBox(width: 6),
+                                  size: widget.compact ? 14 : 16,
+                                  color: Colors.grey[600]),
+                              SizedBox(width: widget.compact ? 4 : 6),
                               Flexible(
                                 child: Text(
                                   'اضغط لنسخ الكوبون',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: widget.compact ? 14 : 12,
                                     fontWeight: FontWeight.w600,
                                     color: Colors.grey[600],
                                     fontFamily: 'Tajawal',
@@ -346,20 +398,24 @@ class _WebCouponCardState extends State<WebCouponCard> {
 
   Widget _buildActions(bool isFavorite, FavoriteProvider favoriteProvider) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0, top: 12.0),
+      padding: EdgeInsets.only(
+        bottom: widget.compact ? 4 : 8,
+        top: widget.compact ? 6 : 12,
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Expanded(
             child: SizedBox(
-              height: 42,
+              height: widget.compact ? 36 : 42,
               child: ElevatedButton(
                 onPressed: _copyCode,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Constants.primaryColor,
                   foregroundColor: Colors.white,
                   elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: widget.compact ? 4 : 6),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -370,15 +426,16 @@ class _WebCouponCardState extends State<WebCouponCard> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.copy_all_rounded, size: 16),
-                      const SizedBox(width: 6),
+                      Icon(Icons.copy_all_rounded,
+                          size: widget.compact ? 14 : 16),
+                      SizedBox(width: widget.compact ? 4 : 6),
                       Text(
                         widget.coupon.code.isNotEmpty
                             ? 'نسخ واستخدام'
                             : 'استخدام العرض',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w700,
-                          fontSize: 12,
+                          fontSize: widget.compact ? 14 : 12,
                           fontFamily: 'Tajawal',
                         ),
                       ),
@@ -388,10 +445,10 @@ class _WebCouponCardState extends State<WebCouponCard> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: widget.compact ? 6 : 8),
           SizedBox(
-            width: 42,
-            height: 42,
+            width: widget.compact ? 36 : 42,
+            height: widget.compact ? 36 : 42,
             child: Material(
               color: Colors.grey[100],
               borderRadius: BorderRadius.circular(12),
@@ -400,7 +457,7 @@ class _WebCouponCardState extends State<WebCouponCard> {
                 borderRadius: BorderRadius.circular(12),
                 child: Icon(
                   Icons.share_rounded,
-                  size: 20,
+                  size: widget.compact ? 18 : 20,
                   color: Colors.grey[700],
                 ),
               ),

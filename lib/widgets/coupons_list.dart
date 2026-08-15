@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -23,6 +25,9 @@ class CouponsList extends StatefulWidget {
 
 class _CouponsListState extends State<CouponsList> {
   late Future<List<Map<String, dynamic>>> _future;
+
+  bool get _useMacGrid =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.macOS;
 
   @override
   void initState() {
@@ -97,13 +102,36 @@ class _CouponsListState extends State<CouponsList> {
             });
             await _future;
           },
-          child: ListView.builder(
-            padding: const EdgeInsets.only(bottom: 16),
-            itemCount: filtered.length,
-            itemBuilder: (context, index) {
-              return CouponCard(coupon: filtered[index]);
-            },
-          ),
+          child: _buildCouponsView(filtered),
+        );
+      },
+    );
+  }
+
+  Widget _buildCouponsView(List<Coupon> coupons) {
+    if (!_useMacGrid) {
+      return ListView.builder(
+        padding: const EdgeInsets.only(bottom: 16),
+        itemCount: coupons.length,
+        itemBuilder: (context, index) {
+          return CouponCard(coupon: coupons[index]);
+        },
+      );
+    }
+
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(24, 14, 24, 24),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 420,
+        mainAxisExtent: 255,
+        crossAxisSpacing: 18,
+        mainAxisSpacing: 18,
+      ),
+      itemCount: coupons.length,
+      itemBuilder: (context, index) {
+        return CouponCard(
+          coupon: coupons[index],
+          margin: EdgeInsets.zero,
         );
       },
     );
@@ -115,16 +143,21 @@ class _CouponsListState extends State<CouponsList> {
   Future<List<Map<String, dynamic>>> _fetchCoupons() async {
     final supabase = Supabase.instance.client;
 
-    dynamic res;
+    final res = await supabase
+        .from('coupons')
+        .select('*')
+        .eq('approval_status', 'approved');
+    final rows = (res as List).cast<Map<String, dynamic>>();
 
-    final storeId = widget.selectedStoreId;
-    if (storeId != null && storeId.isNotEmpty) {
-      res = await supabase.from('coupons').select('*').eq('store_id', storeId);
-    } else {
-      res = await supabase.from('coupons').select('*');
+    final storeId = widget.selectedStoreId?.trim();
+    if (storeId == null || storeId.isEmpty) {
+      return rows;
     }
 
-    return (res as List).cast<Map<String, dynamic>>();
+    return rows.where((row) {
+      final rowStoreId = (row['store_id'] ?? row['storeId'])?.toString().trim();
+      return rowStoreId == storeId;
+    }).toList();
   }
 
   // ---------------------------

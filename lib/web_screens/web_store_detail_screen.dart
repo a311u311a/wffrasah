@@ -43,6 +43,9 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -82,6 +85,7 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
           .from('coupons')
           .stream(primaryKey: ['id'])
           .inFilter('store_id', searchKeys)
+          .eq('approval_status', 'approved')
           .order('created_at', ascending: false)
           .listen((data) {
             if (!mounted) return;
@@ -369,12 +373,14 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
     return Container(
       margin: ResponsivePadding.page(context).copyWith(top: 30),
       constraints: const BoxConstraints(minHeight: 300),
-      child: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildCouponsGrid(),
-          _buildOffersGrid(),
-        ],
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        child: KeyedSubtree(
+          key: ValueKey(_tabController.index),
+          child: _tabController.index == 0
+              ? _buildCouponsGrid()
+              : _buildOffersGrid(),
+        ),
       ),
     );
   }

@@ -1,0 +1,27 @@
+services:
+  n8n:
+    build:
+      context: .
+      dockerfile: n8n/Dockerfile
+    container_name: wffrhasah-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-change-this-long-random-key}
+      - CHROME_EXECUTABLE_PATH=/usr/bin/chromium
+      - PLAYWRIGHT_MODULE_PATH=/usr/local/lib/node_modules/playwright
+      - OMOLAAT_PROFILE_DIR=/home/node/.n8n/omolaat-browser
+      - LINKARABY_PROFILE_DIR=/home/node/.n8n/linkaraby-browser
+      - NODE_FUNCTION_ALLOW_BUILTIN=child_process
+      - NODE_OPTIONS=--dns-result-order=ipv4first
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./:/workspace
+    working_dir: /workspace
+
+volumes:
+  n8n_data:

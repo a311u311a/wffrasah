@@ -6,6 +6,8 @@ import 'web_admin_coupons_screen.dart';
 import 'web_admin_offers_screen.dart';
 import 'web_admin_carousel_screen.dart';
 import 'web_admin_notifications_screen.dart';
+import '../screens/admin/admin_categories_screen.dart';
+import '../screens/admin/admin_pending_coupons_screen.dart';
 
 class WebAdminScreen extends StatefulWidget {
   static const routeName = '/admin';
@@ -22,6 +24,8 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
   final List<String> _titles = [
     'إدارة المتاجر',
     'إدارة الكوبونات',
+    'بانتظار الموافقة',
+    'إدارة الفئات',
     'إدارة العروض',
     'بنر الصور',
     'الإشعارات',
@@ -30,6 +34,8 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
   final List<IconData> _icons = [
     Icons.storefront_rounded,
     Icons.confirmation_number_rounded,
+    Icons.pending_actions_rounded,
+    Icons.category_rounded,
     Icons.local_offer_rounded,
     Icons.view_carousel_rounded,
     Icons.notifications_active_rounded,
@@ -40,6 +46,8 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
     final List<Widget> pages = [
       const WebAdminStoresScreen(isEmbedded: true),
       const WebAdminCouponsScreen(isEmbedded: true),
+      const AdminPendingCouponsScreen(isEmbedded: true),
+      const AdminCategoriesScreen(isEmbedded: true),
       const WebAdminOffersScreen(isEmbedded: true),
       const WebAdminCarouselScreen(isEmbedded: true),
       const WebAdminNotificationsScreen(isEmbedded: true),

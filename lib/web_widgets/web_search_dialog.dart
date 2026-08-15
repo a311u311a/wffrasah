@@ -102,6 +102,12 @@ class _WebSearchDialogState extends State<WebSearchDialog> {
           .limit(20);
 
       final results = (storesData as List)
+          .where((s) {
+            final importSource = (s['import_source'] ?? 'manual').toString();
+            final approvalStatus =
+                (s['approval_status'] ?? 'approved').toString();
+            return importSource == 'manual' || approvalStatus == 'approved';
+          })
           .map((s) => Store.fromSupabase(s, langCode))
           .toList();
 
@@ -148,6 +154,7 @@ class _WebSearchDialogState extends State<WebSearchDialog> {
             .from('coupons')
             .select()
             .eq('store_id', key)
+            .eq('approval_status', 'approved')
             .order('created_at', ascending: false)
             .limit(30),
         supabase

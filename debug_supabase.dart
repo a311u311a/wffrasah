@@ -2,11 +2,14 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 const supabaseUrl = 'https://ilfbqykxkjructxunuxm.supabase.co';
-const supabaseAnonKey =
+const supabasePublishableKey =
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlsZmJxeWt4a2pydWN0eHVudXhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MTkyODMsImV4cCI6MjA4MzI5NTI4M30.b3_5GkLGUlQCQI_B8XOhLUoK4YboPNn-FyhQCInZpxo';
 
 void main() async {
-  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+  await Supabase.initialize(
+    url: supabaseUrl,
+    publishableKey: supabasePublishableKey,
+  );
 
   final client = Supabase.instance.client;
 

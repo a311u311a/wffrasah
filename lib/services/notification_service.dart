@@ -1,19 +1,21 @@
 import 'dart:async';
-import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:googleapis_auth/auth_io.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:provider/provider.dart';
 import '../providers/notification_provider.dart';
 import '../constants.dart';
+import '../firebase_options.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   debugPrint("Handling a background message: ${message.messageId}");
 }
 
@@ -21,18 +23,35 @@ class NotificationService {
   static final SupabaseClient _supabase = Supabase.instance.client;
   static FirebaseMessaging? _firebaseMessaging;
   static StreamSubscription? _subscription;
+  static StreamSubscription<String>? _tokenRefreshSubscription;
+  static bool _isFirebaseInitialized = false;
   static String? _lastShownId;
+  static const String _webVapidKey =
+      String.fromEnvironment('FIREBASE_WEB_VAPID_KEY');
+  static const Set<TargetPlatform> _apnsPlatforms = {
+    TargetPlatform.iOS,
+    TargetPlatform.macOS,
+  };
 
   /// Initialize Firebase Core and Messaging (System/Background)
   static Future<void> initFirebase() async {
     try {
+      if (_isFirebaseInitialized) return;
+
       // 0. Initialize Firebase Core
-      await Firebase.initializeApp();
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
+      }
+      _isFirebaseInitialized = true;
       debugPrint('✅ Firebase Initialized');
 
       // 1. Initialize FCM
-      FirebaseMessaging.onBackgroundMessage(
-          _firebaseMessagingBackgroundHandler);
+      if (!kIsWeb) {
+        FirebaseMessaging.onBackgroundMessage(
+            _firebaseMessagingBackgroundHandler);
+      }
       await _initFCM();
     } catch (e) {
       debugPrint('❌ Firebase Init Error: $e');
@@ -44,9 +63,18 @@ class NotificationService {
     try {
       _firebaseMessaging ??= FirebaseMessaging.instance;
       if (isEnabled) {
+        if (kIsWeb) {
+          await _registerWebToken();
+          return;
+        }
+        if (!await _isNativeMessagingReady()) return;
         await _firebaseMessaging!.subscribeToTopic('all');
         debugPrint('✅ Subscribed to topic "all" (User Enabled)');
       } else {
+        if (kIsWeb) {
+          await _deleteWebToken();
+          return;
+        }
         await _firebaseMessaging!.unsubscribeFromTopic('all');
         debugPrint('🔕 Unsubscribed from topic "all" (User Disabled)');
       }
@@ -83,6 +111,9 @@ class NotificationService {
             if (data.isNotEmpty) {
               _handleSupabaseNotification(context, data.first);
             }
+          }, onError: (Object error, StackTrace stackTrace) {
+            // Realtime errors must not escape into Flutter's error handler.
+            debugPrint('⚠️ Supabase realtime notification error: $error');
           });
     } catch (e) {
       debugPrint('❌ Error initializing Supabase realtime: $e');
@@ -111,7 +142,15 @@ class NotificationService {
         final isEnabled = prefs.getBool('notifications_enabled') ?? true;
 
         if (isEnabled) {
-          await _firebaseMessaging!.subscribeToTopic('all');
+          if (kIsWeb) {
+            await _registerWebToken();
+            _tokenRefreshSubscription?.cancel();
+            _tokenRefreshSubscription =
+                _firebaseMessaging!.onTokenRefresh.listen(_saveWebToken);
+          } else {
+            if (!await _isNativeMessagingReady()) return;
+            await _firebaseMessaging!.subscribeToTopic('all');
+          }
           debugPrint('✅ Subscribed to topic "all"');
         } else {
           debugPrint('🔕 Notifications disabled, skipping subscription');
@@ -131,6 +170,71 @@ class NotificationService {
     } catch (e) {
       debugPrint('❌ Error initializing FCM: $e');
     }
+  }
+
+  static Future<bool> _isNativeMessagingReady() async {
+    if (kIsWeb || !_apnsPlatforms.contains(defaultTargetPlatform)) {
+      return true;
+    }
+
+    for (var attempt = 0; attempt < 5; attempt++) {
+      try {
+        final token = await _firebaseMessaging!.getAPNSToken();
+        if (token != null && token.isNotEmpty) return true;
+      } on FirebaseException catch (e) {
+        if (e.code != 'apns-token-not-set') rethrow;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+    }
+
+    debugPrint(
+      '⚠️ APNS token is not ready yet; skipping FCM topic subscription for now.',
+    );
+    return false;
+  }
+
+  static Future<void> _registerWebToken() async {
+    if (!kIsWeb) return;
+    if (_webVapidKey.isEmpty) {
+      debugPrint(
+        'Web push is missing FIREBASE_WEB_VAPID_KEY. '
+        'Run with --dart-define=FIREBASE_WEB_VAPID_KEY=YOUR_KEY',
+      );
+      return;
+    }
+
+    final token = await _firebaseMessaging!.getToken(vapidKey: _webVapidKey);
+    if (token == null || token.isEmpty) {
+      debugPrint('FCM web token is empty');
+      return;
+    }
+
+    await _saveWebToken(token);
+  }
+
+  static Future<void> _saveWebToken(String token) async {
+    await _supabase.from('fcm_tokens').upsert(
+      {
+        'token': token,
+        'user_id': _supabase.auth.currentUser?.id,
+        'platform': 'web',
+        'is_enabled': true,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      },
+      onConflict: 'token',
+    );
+    debugPrint('Web FCM token registered');
+  }
+
+  static Future<void> _deleteWebToken() async {
+    if (!kIsWeb || _webVapidKey.isEmpty) return;
+
+    final token = await _firebaseMessaging!.getToken(vapidKey: _webVapidKey);
+    if (token != null && token.isNotEmpty) {
+      await _supabase.from('fcm_tokens').delete().eq('token', token);
+    }
+    await _firebaseMessaging!.deleteToken();
+    debugPrint('Web FCM token deleted');
   }
 
   static void _handleSupabaseNotification(
@@ -174,70 +278,85 @@ class NotificationService {
     }
   }
 
-  /// Send Push Notification using FCM HTTP v1 API
+  static Future<PushNotificationResult> sendPushNotificationDetailed({
+    required String title,
+    required String body,
+    String? imageUrl,
+  }) async {
+    try {
+      final response = await _supabase.functions.invoke(
+        'send-push-notification',
+        body: {
+          'title': title,
+          'body': body,
+          if (imageUrl != null && imageUrl.isNotEmpty) 'imageUrl': imageUrl,
+        },
+      );
+
+      final data = response.data;
+      if (response.status >= 200 &&
+          response.status < 300 &&
+          data is Map &&
+          data['success'] == true) {
+        return PushNotificationResult(
+          success: true,
+          message: data.toString(),
+        );
+      }
+
+      return PushNotificationResult(
+        success: false,
+        message: 'Status ${response.status}: ${_formatFunctionError(data)}',
+      );
+    } catch (e) {
+      return PushNotificationResult(success: false, message: e.toString());
+    }
+  }
+
+  static String _formatFunctionError(dynamic data) {
+    if (data is Map) {
+      final error = data['error'];
+      if (error is Map) {
+        final message = error['message'];
+        if (message != null) return message.toString();
+      }
+      if (error != null) return error.toString();
+      final message = data['message'];
+      if (message != null) return message.toString();
+    }
+    if (data != null) return data.toString();
+    return 'Unknown push notification error';
+  }
+
+  /// Send Push Notification via Supabase Edge Function
+  /// The Firebase Service Account key is stored securely on the server side
   static Future<bool> sendPushNotification({
     required String title,
     required String body,
     String? imageUrl,
   }) async {
     try {
-      final client = await clientViaServiceAccount(
-        ServiceAccountCredentials.fromJson(Constants.fcmServiceAccountJson),
-        ['https://www.googleapis.com/auth/firebase.messaging'],
-      );
-
-      final projectId = Constants.fcmServiceAccountJson['project_id'];
-      final response = await client.post(
-        Uri.parse(
-            'https://fcm.googleapis.com/v1/projects/$projectId/messages:send'),
-        headers: {
-          'Content-Type': 'application/json',
+      final response = await _supabase.functions.invoke(
+        'send-push-notification',
+        body: {
+          'title': title,
+          'body': body,
+          if (imageUrl != null && imageUrl.isNotEmpty) 'imageUrl': imageUrl,
         },
-        body: jsonEncode({
-          'message': {
-            'topic': 'all',
-            'notification': {
-              'title': title,
-              'body': body,
-              if (imageUrl != null && imageUrl.isNotEmpty) 'image': imageUrl,
-            },
-            'data': {
-              'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-              if (imageUrl != null && imageUrl.isNotEmpty)
-                'image_url': imageUrl,
-            },
-            'android': {
-              'priority': 'HIGH',
-              'notification': {
-                'sound': 'default',
-                'channel_id': 'high_importance_channel',
-              }
-            },
-            'apns': {
-              'headers': {
-                'apns-priority': '10',
-              },
-              'payload': {
-                'aps': {
-                  'sound': 'default',
-                }
-              }
-            }
-          }
-        }),
       );
 
-      client.close();
-
-      if (response.statusCode == 200) {
-        debugPrint('✅ Push notification sent successfully (v1)');
-        return true;
-      } else {
-        debugPrint('❌ Failed to send push (v1): ${response.body}');
-        return false;
+      if (response.status == 200) {
+        final data = response.data;
+        if (data != null && data['success'] == true) {
+          debugPrint('✅ Push notification sent successfully via Edge Function');
+          return true;
+        }
       }
+
+      debugPrint('❌ Failed to send push via Edge Function: ${response.data}');
+      return false;
     } catch (e) {
-      debugPrint('❌ Error sending push (v1): $e');
+      debugPrint('❌ Error sending push via Edge Function: $e');
       return false;
     }
   }
@@ -314,4 +433,14 @@ class NotificationService {
       ),
     );
   }
+}
+
+class PushNotificationResult {
+  const PushNotificationResult({
+    required this.success,
+    this.message,
+  });
+
+  final bool success;
+  final String? message;
 }

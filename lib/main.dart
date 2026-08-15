@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -13,7 +15,9 @@ import 'providers/theme_provider.dart';
 import 'providers/user_provider.dart';
 import 'screens/change_password_screen.dart';
 import 'screens/splash_screen.dart';
+import 'services/notification_service.dart';
 import 'web_app.dart';
+import 'config/supabase_config.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -25,19 +29,25 @@ Future<void> main() async {
       usePathUrlStrategy();
     }
 
-    const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
-    const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+    const envSupabaseUrl = String.fromEnvironment('SUPABASE_URL');
+    const envSupabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
-    if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
+    final String supabaseUrl =
+        envSupabaseUrl.isNotEmpty ? envSupabaseUrl : SupabaseConfig.url;
+    final String supabasePublishableKey = envSupabaseAnonKey.isNotEmpty
+        ? envSupabaseAnonKey
+        : SupabaseConfig.publishableKey;
+
+    if (supabaseUrl.isEmpty || supabasePublishableKey.isEmpty) {
       throw Exception(
         'Missing SUPABASE_URL or SUPABASE_ANON_KEY. '
-        'Set them in Vercel Project Settings -> Environment Variables.',
+        'Set them in Vercel Project Settings -> Environment Variables or config/supabase_config.dart.',
       );
     }
 
     await Supabase.initialize(
       url: supabaseUrl,
-      anonKey: supabaseAnonKey,
+      publishableKey: supabasePublishableKey,
     );
 
     runApp(
@@ -52,6 +62,12 @@ Future<void> main() async {
         child: const MyApp(),
       ),
     );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future<void>.delayed(const Duration(seconds: 3), () {
+        unawaited(NotificationService.initFirebase());
+      });
+    });
   } catch (e, st) {
     debugPrint('App bootstrap failed: $e\n$st');
     runApp(BootstrapErrorApp(message: e.toString()));
