@@ -17,6 +17,18 @@ class AdminCarouselScreen extends StatefulWidget {
 class _AdminCarouselScreenState extends State<AdminCarouselScreen> {
   final _supabase = Supabase.instance.client;
   final ImagePicker _picker = ImagePicker();
+  int _refreshTick = 0;
+
+  Future<List<Map<String, dynamic>>> _loadCarousel() async {
+    final data = await _supabase.from('carousel').select();
+    return List<Map<String, dynamic>>.from(data as List);
+  }
+
+  void _refreshCarousel() {
+    if (mounted) {
+      setState(() => _refreshTick++);
+    }
+  }
 
   Future<String?> _uploadFile(XFile file) async {
     try {
@@ -44,6 +56,7 @@ class _AdminCarouselScreenState extends State<AdminCarouselScreen> {
       await _supabase.from('carousel').delete().eq('id', id);
       if (mounted) {
         showSnackBar(context, 'تم حذف البنر بنجاح');
+        _refreshCarousel();
       }
     } catch (e) {
       if (mounted) {
@@ -155,7 +168,10 @@ class _AdminCarouselScreenState extends State<AdminCarouselScreen> {
                                     'image': url,
                                     'web': webCtrl.text.trim(),
                                   });
-                                  if (mounted) Navigator.pop(context);
+                                  if (mounted) {
+                                    Navigator.pop(context);
+                                    _refreshCarousel();
+                                  }
                                 } catch (e) {
                                   setStateSheet(() => isSaving = false);
                                   if (mounted) {
@@ -279,7 +295,10 @@ class _AdminCarouselScreenState extends State<AdminCarouselScreen> {
                                   'web': webCtrl.text.trim(),
                                   'image': finalUrl,
                                 }).eq('id', data['id']);
-                                if (mounted) Navigator.pop(context);
+                                if (mounted) {
+                                  Navigator.pop(context);
+                                  _refreshCarousel();
+                                }
                               } catch (e) {
                                 setStateSheet(() => isSaving = false);
                                 if (mounted) {
@@ -405,9 +424,9 @@ class _AdminCarouselScreenState extends State<AdminCarouselScreen> {
           ),
         ),
         Expanded(
-          // ✅ استخدام Supabase Stream
-          child: StreamBuilder<List<Map<String, dynamic>>>(
-            stream: _supabase.from('carousel').stream(primaryKey: ['id']),
+          child: FutureBuilder<List<Map<String, dynamic>>>(
+            key: ValueKey(_refreshTick),
+            future: _loadCarousel(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());

@@ -28,6 +28,7 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
   // Search UI
   final TextEditingController _searchCtrl = TextEditingController();
   String _search = '';
+  int _refreshTick = 0;
 
   @override
   void dispose() {
@@ -38,6 +39,17 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
   // =========================
   // Storage helpers
   // =========================
+
+  Future<List<Map<String, dynamic>>> _loadCarousel() async {
+    final data = await _sb.from('carousel').select();
+    return List<Map<String, dynamic>>.from(data as List);
+  }
+
+  void _refreshCarousel() {
+    if (mounted) {
+      setState(() => _refreshTick++);
+    }
+  }
 
   Future<String?> _uploadFile(XFile file) async {
     try {
@@ -90,6 +102,7 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
         await _sb.from('carousel').delete().eq('id', id);
         if (mounted) {
           showSnackBar(context, 'تم حذف البنر بنجاح');
+          _refreshCarousel();
         }
       } catch (e) {
         if (mounted) {
@@ -314,6 +327,7 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
                             if (mounted) {
                               Navigator.pop(context);
                               showSnackBar(context, 'تمت الإضافة بنجاح ✅');
+                              _refreshCarousel();
                             }
                           } else {
                             await _sb
@@ -323,6 +337,7 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
                             if (mounted) {
                               Navigator.pop(context);
                               showSnackBar(context, 'تم التحديث بنجاح ✅');
+                              _refreshCarousel();
                             }
                           }
                         } catch (e) {
@@ -510,8 +525,9 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
         children: [
           _searchAndAddRow(),
           const SizedBox(height: 18),
-          StreamBuilder<List<Map<String, dynamic>>>(
-            stream: _sb.from('carousel').stream(primaryKey: ['id']),
+          FutureBuilder<List<Map<String, dynamic>>>(
+            key: ValueKey(_refreshTick),
+            future: _loadCarousel(),
             builder: (context, snapshot) {
               if (snapshot.hasError) {
                 return Center(
