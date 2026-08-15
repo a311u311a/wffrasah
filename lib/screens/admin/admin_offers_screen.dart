@@ -18,8 +18,23 @@ class AdminOfferScreen extends StatefulWidget {
 
 class _AdminOfferScreenState extends State<AdminOfferScreen> {
   final _supabase = Supabase.instance.client;
+  int _refreshTick = 0;
 
   bool get isAdmin => true;
+
+  Future<List<Map<String, dynamic>>> _loadOffers() async {
+    final data = await _supabase
+        .from('offers')
+        .select()
+        .order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(data as List);
+  }
+
+  void _refreshOffers() {
+    if (mounted) {
+      setState(() => _refreshTick++);
+    }
+  }
 
   Future<void> _deleteOffer(String id) async {
     final bool? confirm = await showDialog<bool>(
@@ -46,15 +61,18 @@ class _AdminOfferScreenState extends State<AdminOfferScreen> {
     if (confirm == true) {
       try {
         await _supabase.from('offers').delete().eq('id', id);
-        if (mounted) showSnackBar(context, 'تم حذف العرض بنجاح');
+        if (mounted) {
+          showSnackBar(context, 'تم حذف العرض بنجاح');
+          _refreshOffers();
+        }
       } catch (e) {
         if (mounted) showSnackBar(context, 'خطأ في الحذف: $e', isError: true);
       }
     }
   }
 
-  void _showOfferForm(BuildContext context, {Offer? offer}) {
-    showModalBottomSheet(
+  Future<void> _showOfferForm(BuildContext context, {Offer? offer}) async {
+    await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -63,6 +81,7 @@ class _AdminOfferScreenState extends State<AdminOfferScreen> {
         child: _OfferFormSheet(offer: offer),
       ),
     );
+    _refreshOffers();
   }
 
   @override
@@ -142,12 +161,24 @@ class _AdminOfferScreenState extends State<AdminOfferScreen> {
           ),
         ),
 
-        // ✅ عرض كل العروض مباشرة
         Expanded(
-          child: StreamBuilder<List<Map<String, dynamic>>>(
-            stream: _supabase.from('offers').stream(
-                primaryKey: ['id']).order('created_at', ascending: false),
+          child: FutureBuilder<List<Map<String, dynamic>>>(
+            key: ValueKey(_refreshTick),
+            future: _loadOffers(),
             builder: (context, offerSnapshot) {
+              if (offerSnapshot.hasError) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      'حدث خطأ في تحميل العروض: ${offerSnapshot.error}',
+                      style: const TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                );
+              }
+
               if (!offerSnapshot.hasData) {
                 return const Center(child: CircularProgressIndicator());
               }

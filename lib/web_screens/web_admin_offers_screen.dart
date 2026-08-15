@@ -28,6 +28,7 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
   // UI search
   final TextEditingController _searchCtrl = TextEditingController();
   String _search = '';
+  int _refreshTick = 0;
 
   @override
   void initState() {
@@ -65,6 +66,20 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
   // Actions
   // =========================
 
+  Future<List<Map<String, dynamic>>> _loadOffers() async {
+    final data = await _sb
+        .from('offers')
+        .select()
+        .order('created_at', ascending: false);
+    return List<Map<String, dynamic>>.from(data as List);
+  }
+
+  void _refreshOffers() {
+    if (mounted) {
+      setState(() => _refreshTick++);
+    }
+  }
+
   Future<void> _deleteOffer(String id) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -93,7 +108,10 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
     if (confirm == true) {
       try {
         await _sb.from('offers').delete().eq('id', id);
-        if (mounted) showSnackBar(context, 'تم حذف العرض');
+        if (mounted) {
+          showSnackBar(context, 'تم حذف العرض');
+          _refreshOffers();
+        }
       } catch (e) {
         if (mounted) showSnackBar(context, 'خطأ في الحذف: $e', isError: true);
       }
@@ -158,6 +176,8 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
         ),
       ),
     );
+
+    _refreshOffers();
   }
 
   // =========================
@@ -256,12 +276,23 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
         children: [
           _searchAndAddRow(),
           const SizedBox(height: 18),
-          StreamBuilder<List<Map<String, dynamic>>>(
-            stream: _sb.from('offers').stream(primaryKey: ['id']).order(
-              'created_at',
-              ascending: false,
-            ),
+          FutureBuilder<List<Map<String, dynamic>>>(
+            key: ValueKey(_refreshTick),
+            future: _loadOffers(),
             builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(40),
+                    child: Text(
+                      'حدث خطأ في تحميل العروض: ${snapshot.error}',
+                      style: const TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                );
+              }
+
               if (!snapshot.hasData) {
                 return const Center(
                   child: Padding(
