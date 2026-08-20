@@ -226,6 +226,12 @@ class WebFooter extends StatelessWidget {
         width: 20,
         height: 20,
       );
+    } else if (svgPathOrIcon == 'tiktok') {
+      iconWidget = SvgPicture.string(
+        '<svg viewBox="0 0 24 24" fill="#$colorHex"><path d="M19.589 6.686a4.793 4.793 0 01-3.77-3.77A4.793 4.793 0 0115.656 2h-3.15v13.667a2.89 2.89 0 11-2.89-2.89c.178 0 .352.016.521.047v-3.2a6.1 6.1 0 00-.521-.023A6.07 6.07 0 1015.687 15V8.05a7.953 7.953 0 004.654 1.505V6.4a4.81 4.81 0 01-.752.059z"/></svg>',
+        width: 20,
+        height: 20,
+      );
     } else {
       iconWidget = Icon(
         svgPathOrIcon is IconData ? svgPathOrIcon : Icons.link,
@@ -328,7 +334,7 @@ class WebFooter extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        _buildContactItem(Icons.email_rounded, 'support@rbhan.co'),
+        _buildContactItem(Icons.email_rounded, 'support@wffrhasah.com'),
         const SizedBox(height: 8),
         // _buildContactItem(Icons.phone_rounded, '+966 XX XXX XXXX'),
         const SizedBox(height: 8),
@@ -337,17 +343,22 @@ class WebFooter extends StatelessWidget {
           children: [
             _buildSocialIcon(
               svgPathOrIcon: 'x',
-              url: 'https://x.com/rbhanco',
+              url: 'https://x.com/wffrhasah',
             ),
             const SizedBox(width: 12),
             _buildSocialIcon(
               svgPathOrIcon: 'instagram',
-              url: 'https://instagram.com/rbhan.co',
+              url: 'https://instagram.com/wffrhasah',
             ),
             const SizedBox(width: 12),
             _buildSocialIcon(
               svgPathOrIcon: 'pinterest',
-              url: 'https://pinterest.com/rbhanco',
+              url: 'https://pinterest.com/wffrhasah',
+            ),
+            const SizedBox(width: 12),
+            _buildSocialIcon(
+              svgPathOrIcon: 'tiktok',
+              url: 'https://www.tiktok.com/@wffrhasah',
             ),
           ],
         ),

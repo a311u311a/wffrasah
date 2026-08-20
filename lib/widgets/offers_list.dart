@@ -9,11 +9,15 @@ import 'error_message.dart';
 class OffersList extends StatelessWidget {
   final String? selectedCategoryId; // قد تكون id أو slug حسب CategoriesList
   final String searchQuery;
+  final bool shrinkWrap;
+  final ScrollPhysics? physics;
 
   const OffersList({
     super.key,
     this.selectedCategoryId,
     required this.searchQuery,
+    this.shrinkWrap = false,
+    this.physics,
   });
 
   @override
@@ -41,9 +45,10 @@ class OffersList extends StatelessWidget {
           final q = searchQuery.toLowerCase();
 
           final inName = o.name.toLowerCase().contains(q);
+          final inDescription = o.description.toLowerCase().contains(q);
           final inTags = o.tags.any((t) => t.toLowerCase().contains(q));
 
-          return inName || inTags;
+          return inName || inDescription || inTags;
         }).toList();
 
         if (filtered.isEmpty) {
@@ -60,6 +65,8 @@ class OffersList extends StatelessWidget {
           },
           child: ListView.builder(
             padding: const EdgeInsets.only(bottom: 16),
+            shrinkWrap: shrinkWrap,
+            physics: physics,
             itemCount: filtered.length,
             itemBuilder: (context, index) {
               return OffersCard(offer: filtered[index]);

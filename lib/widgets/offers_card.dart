@@ -219,6 +219,21 @@ class _OffersCardState extends State<OffersCard> {
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.start,
                   ),
+                  if (widget.offer.description.trim().isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.offer.description,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[700],
+                        height: 1.5,
+                        fontFamily: 'Tajawal',
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.start,
+                    ),
+                  ],
                   const SizedBox(height: 16),
 
                   // زر النسخ والذهاب للمتجر

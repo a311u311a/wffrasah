@@ -46,10 +46,14 @@ class Offer {
   factory Offer.fromSupabase(Map<String, dynamic> data, String langCode) {
     final isAr = langCode.toLowerCase() == 'ar';
 
-    final nAr = _asString(data['name_ar'] ?? data['name']);
-    final nEn = _asString(data['name_en'] ?? data['name']);
-    final dAr = _asString(data['description_ar'] ?? data['description']);
-    final dEn = _asString(data['description_en'] ?? data['description']);
+    final nAr = _asString(_firstNonEmpty(data, ['name_ar', 'nameAr', 'name']));
+    final nEn = _asString(_firstNonEmpty(data, ['name_en', 'nameEn', 'name']));
+    final dAr = _asString(
+      _firstNonEmpty(data, ['description_ar', 'descriptionAr', 'description']),
+    );
+    final dEn = _asString(
+      _firstNonEmpty(data, ['description_en', 'descriptionEn', 'description']),
+    );
 
     return Offer(
       id: _asString(data['id']),
@@ -110,6 +114,18 @@ class Offer {
   static String _asString(dynamic v) {
     if (v == null) return '';
     return v.toString().trim();
+  }
+
+  static dynamic _firstNonEmpty(Map<String, dynamic> data, List<String> keys) {
+    for (final key in keys) {
+      final value = data[key];
+      if (value == null) continue;
+
+      final text = value.toString().trim();
+      if (text.isNotEmpty) return value;
+    }
+
+    return '';
   }
 
   static List<String> _parseTags(dynamic value) {

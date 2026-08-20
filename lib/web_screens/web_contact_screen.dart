@@ -36,7 +36,7 @@ class _WebContactScreenState extends State<WebContactScreen> {
 
     final Uri emailLaunchUri = Uri(
       scheme: 'mailto',
-      path: 'help@rbhan.co',
+      path: 'support@wffrhasah.com',
       queryParameters: {
         'subject': 'اتصل بنا - $name',
         'body': message,

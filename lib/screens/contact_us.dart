@@ -33,7 +33,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
 
     final Uri emailLaunchUri = Uri(
       scheme: 'mailto',
-      path: 'help@rbhan.co',
+      path: 'support@wffrhasah.com',
       queryParameters: {
         'subject': '${localizations?.translate('contact_us')} - $name',
         'body': message,
