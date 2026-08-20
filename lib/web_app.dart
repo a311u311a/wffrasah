@@ -42,7 +42,7 @@ class WebApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'ربحان - أفضل العروض والخصومات',
+      title: 'وفرها صح - كوبونات وعروض',
       theme: themeProvider.getTheme.copyWith(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Constants.primaryColor,
