@@ -6,6 +6,7 @@ import '../models/coupon.dart';
 import '../models/offers.dart';
 import '../providers/favorites_provider.dart';
 import '../widgets/bottom_navigation_bar.dart';
+import '../widgets/app_responsive.dart';
 import '../widgets/coupon_card.dart';
 import '../widgets/offers_card.dart';
 import '../constants.dart';
@@ -47,72 +48,81 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       resizeToAvoidBottomInset:
           false, // لمنع اهتزاز المحتوى عند ظهور لوحة المفاتيح
       appBar: appBarItem(localizations),
-      body: Padding(
-        padding: const EdgeInsets.only(
-            bottom: 60, top: 10), // هامش سفلي لكامل الصفحة
-        child: Container(
-          color: Colors.white,
-          child: favoriteProvider.favoriteItems.isEmpty
-              ? _buildEmptyState(context, localizations)
-              : (filteredItems.isEmpty && searchQuery.isNotEmpty)
-                  ? _buildNoSearchResults(context, localizations)
-                  : ListView.builder(
-                      // تعديل البادينج لتعويض AppBar الشفاف
-                      padding: const EdgeInsets.only(top: 100, bottom: 20),
-                      itemCount: filteredItems.length,
-                      itemBuilder: (context, index) {
-                        final item = filteredItems[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 5),
-                          child: Dismissible(
-                            key: Key(item.id),
-                            direction: DismissDirection.endToStart,
-                            background: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.redAccent.withValues(alpha: 0.9),
-                                borderRadius: BorderRadius.circular(16),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: AppResponsive.contentMaxWidth(context),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.only(
+                bottom: 60, top: 10), // هامش سفلي لكامل الصفحة
+            child: Container(
+              color: Colors.white,
+              child: favoriteProvider.favoriteItems.isEmpty
+                  ? _buildEmptyState(context, localizations)
+                  : (filteredItems.isEmpty && searchQuery.isNotEmpty)
+                      ? _buildNoSearchResults(context, localizations)
+                      : ListView.builder(
+                          // تعديل البادينج لتعويض AppBar الشفاف
+                          padding: const EdgeInsets.only(top: 100, bottom: 20),
+                          itemCount: filteredItems.length,
+                          itemBuilder: (context, index) {
+                            final item = filteredItems[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 5),
+                              child: Dismissible(
+                                key: Key(item.id),
+                                direction: DismissDirection.endToStart,
+                                background: Container(
+                                  decoration: BoxDecoration(
+                                    color:
+                                        Colors.redAccent.withValues(alpha: 0.9),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 24),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(Icons.delete_sweep_rounded,
+                                          color: Colors.white, size: 28),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        localizations?.translate('delete') ??
+                                            'Delete',
+                                        style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 11),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                                onDismissed: (direction) {
+                                  favoriteProvider.toggleFavorite(
+                                      item, context);
+                                  showSnackBar(
+                                    context,
+                                    localizations?.translate(
+                                            'removed_from_favorites') ??
+                                        'Removed from favorites',
+                                  );
+                                },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: item is Coupon
+                                      ? CouponCard(coupon: item)
+                                      : OffersCard(offer: item),
+                                ),
                               ),
-                              alignment: Alignment.centerRight,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 24),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(Icons.delete_sweep_rounded,
-                                      color: Colors.white, size: 28),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    localizations?.translate('delete') ??
-                                        'Delete',
-                                    style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 11),
-                                  )
-                                ],
-                              ),
-                            ),
-                            onDismissed: (direction) {
-                              favoriteProvider.toggleFavorite(item, context);
-                              showSnackBar(
-                                context,
-                                localizations
-                                        ?.translate('removed_from_favorites') ??
-                                    'Removed from favorites',
-                              );
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: item is Coupon
-                                  ? CouponCard(coupon: item)
-                                  : OffersCard(offer: item),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                            );
+                          },
+                        ),
+            ),
+          ),
         ),
       ),
     );

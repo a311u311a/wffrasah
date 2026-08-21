@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart'
 import '../constants.dart';
 import '../localization/app_localizations.dart';
 import '../widgets/coupons_list.dart';
+import '../widgets/app_responsive.dart';
 import '../widgets/stores_list.dart';
 import '../widgets/search_widget.dart';
 
@@ -38,7 +39,7 @@ class _CouponScreenState extends State<CouponScreen> {
           child: Column(
             children: [
               SizedBox(
-                height: 100,
+                height: AppResponsive.isTablet(context) ? 112 : 100,
                 child: StoresList(
                   selectedStoreId: selectedStoreId,
                   onStoreSelected: (storeId) {

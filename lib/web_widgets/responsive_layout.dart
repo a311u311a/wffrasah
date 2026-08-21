@@ -15,7 +15,7 @@ class ResponsiveLayout extends StatelessWidget {
 
   /// نقاط القطع للشاشات
   static const double mobileMaxWidth = 600;
-  static const double tabletMaxWidth = 1024;
+  static const double tabletMaxWidth = 1366;
 
   /// تحديد ما إذا كانت الشاشة موبايل
   static bool isMobile(BuildContext context) =>
@@ -75,19 +75,33 @@ class ResponsiveGrid {
     if (ResponsiveLayout.isDesktop(context)) {
       return max;
     } else if (ResponsiveLayout.isTablet(context)) {
-      return max > 2 ? 3 : 2;
+      return max > 4 ? 4 : (max > 2 ? 3 : 2);
     } else {
       return 2;
     }
+  }
+
+  static int columnsForWidth(double width, {int max = 4}) {
+    if (width >= 1366) return max;
+    if (width >= 1024) return max > 4 ? 4 : (max > 3 ? 3 : max);
+    if (width >= 768) return max > 3 ? 3 : max;
+    if (width >= ResponsiveLayout.mobileMaxWidth) return max > 2 ? 2 : max;
+    return max > 2 ? 2 : max;
   }
 
   static double spacing(BuildContext context) {
     if (ResponsiveLayout.isDesktop(context)) {
       return 24;
     } else if (ResponsiveLayout.isTablet(context)) {
-      return 16;
+      return 18;
     } else {
       return 12;
     }
+  }
+
+  static double spacingForWidth(double width) {
+    if (width >= 1366) return 24;
+    if (width >= ResponsiveLayout.mobileMaxWidth) return 18;
+    return 12;
   }
 }

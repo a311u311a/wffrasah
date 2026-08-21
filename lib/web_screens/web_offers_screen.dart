@@ -377,23 +377,31 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
             ),
           ),
         ),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: ResponsiveLayout.isDesktop(context) ? 4 : 2,
-            crossAxisSpacing: ResponsiveGrid.spacing(context),
-            mainAxisSpacing: ResponsiveGrid.spacing(context),
-            childAspectRatio: ResponsiveLayout.isDesktop(context) ? 0.8 : 0.72,
-          ),
-          itemCount: displayOffers.length,
-          itemBuilder: (context, index) {
-            final offer = displayOffers[index];
-            final store = storesMap[offer.storeId.toLowerCase().trim()];
-            return WebOfferCard(
-              offer: offer,
-              storeName: store?.name ?? 'متجر',
-              storeImage: store?.image,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final columns = ResponsiveGrid.columnsForWidth(width, max: 4);
+            final spacing = ResponsiveGrid.spacingForWidth(width);
+
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: columns,
+                crossAxisSpacing: spacing,
+                mainAxisSpacing: spacing,
+                childAspectRatio: width >= 1024 ? 0.8 : 0.72,
+              ),
+              itemCount: displayOffers.length,
+              itemBuilder: (context, index) {
+                final offer = displayOffers[index];
+                final store = storesMap[offer.storeId.toLowerCase().trim()];
+                return WebOfferCard(
+                  offer: offer,
+                  storeName: store?.name ?? 'متجر',
+                  storeImage: store?.image,
+                );
+              },
             );
           },
         ),

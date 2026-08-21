@@ -16,6 +16,7 @@ import 'providers/user_provider.dart';
 import 'screens/change_password_screen.dart';
 import 'screens/splash_screen.dart';
 import 'services/notification_service.dart';
+import 'widgets/bottom_navigation_bar.dart';
 import 'web_app.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -102,6 +103,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  bool _handledSignedInRedirect = false;
+
   @override
   void initState() {
     super.initState();
@@ -112,6 +115,19 @@ class _MyAppState extends State<MyApp> {
       if (event == AuthChangeEvent.passwordRecovery) {
         navigatorKey.currentState?.pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
+          (route) => false,
+        );
+        return;
+      }
+
+      if (!kIsWeb &&
+          data.session != null &&
+          (event == AuthChangeEvent.signedIn ||
+              event == AuthChangeEvent.initialSession) &&
+          !_handledSignedInRedirect) {
+        _handledSignedInRedirect = true;
+        navigatorKey.currentState?.pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const BottomNavBar()),
           (route) => false,
         );
       }

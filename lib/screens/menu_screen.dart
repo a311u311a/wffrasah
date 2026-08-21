@@ -42,6 +42,12 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
   static final Uri _iosStoreUrl = Uri.parse(
     'https://apps.apple.com/us/app/rbhan/id6444086616',
   );
+  static final Uri _androidRateUrl = Uri.parse(
+    'market://details?id=com.rbhan.app',
+  );
+  static final Uri _iosRateUrl = Uri.parse(
+    'itms-apps://itunes.apple.com/app/id6444086616?action=write-review',
+  );
 
   bool _isCheckingPermission = false;
 
@@ -53,6 +59,16 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
       return _androidStoreUrl;
     }
     return _androidStoreUrl;
+  }
+
+  Uri get _rateUrl {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      return _iosRateUrl;
+    }
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return _androidRateUrl;
+    }
+    return _storeUrl;
   }
 
   @override
@@ -104,6 +120,19 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
       debugPrint('❌ Error checking notification permission: $e');
     } finally {
       _isCheckingPermission = false;
+    }
+  }
+
+  Future<void> _rateApp() async {
+    final rateUrl = _rateUrl;
+    final fallbackUrl = _storeUrl;
+
+    if (await launchUrl(rateUrl, mode: LaunchMode.externalApplication)) {
+      return;
+    }
+
+    if (!await launchUrl(fallbackUrl, mode: LaunchMode.externalApplication)) {
+      debugPrint('Could not launch $rateUrl or $fallbackUrl');
     }
   }
 
@@ -232,12 +261,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                                   icon: Icons.star_rounded,
                                   title: localizations?.translate('rate_app') ??
                                       'Rate App',
-                                  onTap: () async {
-                                    if (!await launchUrl(_storeUrl,
-                                        mode: LaunchMode.externalApplication)) {
-                                      debugPrint('Could not launch $_storeUrl');
-                                    }
-                                  },
+                                  onTap: _rateApp,
                                 ),
                                 _buildDivider(),
                                 _buildMenuTile(
@@ -320,7 +344,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
       future: Supabase.instance.client
           .from('users')
           .select()
-          .eq('uid', user.id)
+          .or('id.eq.${user.id},uid.eq.${user.id}')
           .maybeSingle(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -331,8 +355,12 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
         }
 
         final userData = snapshot.data;
-        final userName =
-            userData?['name'] ?? user.userMetadata?['full_name'] ?? 'User';
+        final userName = (userData?['name'] ??
+                user.userMetadata?['full_name'] ??
+                user.userMetadata?['name'] ??
+                user.userMetadata?['display_name'] ??
+                'User')
+            .toString();
 
         return Container(
           padding: const EdgeInsets.all(20),

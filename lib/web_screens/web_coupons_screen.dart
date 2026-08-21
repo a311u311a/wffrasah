@@ -392,24 +392,34 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
             ),
           ),
         ),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: ResponsiveLayout.isDesktop(context) ? 4 : 2,
-            crossAxisSpacing: ResponsiveGrid.spacing(context),
-            mainAxisSpacing: ResponsiveGrid.spacing(context),
-            childAspectRatio: ResponsiveLayout.isDesktop(context) ? 0.76 : 0.68,
-          ),
-          itemCount: displayCoupons.length,
-          itemBuilder: (context, index) {
-            final coupon = displayCoupons[index];
-            final store = storesMap[coupon.storeId.toLowerCase().trim()];
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final columns = width >= 1024
+                ? 4
+                : ResponsiveGrid.columnsForWidth(width, max: 4);
+            final spacing = ResponsiveGrid.spacingForWidth(width);
 
-            return WebCouponCard(
-              coupon: coupon,
-              storeName: store?.name ?? 'متجر',
-              compact: true,
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: columns,
+                crossAxisSpacing: spacing,
+                mainAxisSpacing: spacing,
+                childAspectRatio: width >= 1024 ? 0.76 : 0.68,
+              ),
+              itemCount: displayCoupons.length,
+              itemBuilder: (context, index) {
+                final coupon = displayCoupons[index];
+                final store = storesMap[coupon.storeId.toLowerCase().trim()];
+
+                return WebCouponCard(
+                  coupon: coupon,
+                  storeName: store?.name ?? 'متجر',
+                  compact: true,
+                );
+              },
             );
           },
         ),

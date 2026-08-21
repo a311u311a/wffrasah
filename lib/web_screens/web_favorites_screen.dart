@@ -359,24 +359,31 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: ResponsiveLayout.isDesktop(context) ? 4 : 2,
-              crossAxisSpacing: ResponsiveGrid.spacing(context),
-              mainAxisSpacing: ResponsiveGrid.spacing(context),
-              childAspectRatio:
-                  ResponsiveLayout.isDesktop(context) ? 0.8 : 0.72,
-            ),
-            itemCount: favoriteOffers.length,
-            itemBuilder: (context, index) {
-              final offer = favoriteOffers[index];
-              final store = storesMap[offer.storeId.toLowerCase().trim()];
-              return WebOfferCard(
-                offer: offer,
-                storeName: store?.name,
-                storeImage: store?.image,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final width = constraints.maxWidth;
+              final columns = ResponsiveGrid.columnsForWidth(width, max: 4);
+              final spacing = ResponsiveGrid.spacingForWidth(width);
+
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: columns,
+                  crossAxisSpacing: spacing,
+                  mainAxisSpacing: spacing,
+                  childAspectRatio: width >= 1024 ? 0.8 : 0.72,
+                ),
+                itemCount: favoriteOffers.length,
+                itemBuilder: (context, index) {
+                  final offer = favoriteOffers[index];
+                  final store = storesMap[offer.storeId.toLowerCase().trim()];
+                  return WebOfferCard(
+                    offer: offer,
+                    storeName: store?.name,
+                    storeImage: store?.image,
+                  );
+                },
               );
             },
           ),
@@ -400,24 +407,31 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: ResponsiveLayout.isDesktop(context) ? 4 : 2,
-              crossAxisSpacing: ResponsiveGrid.spacing(context),
-              mainAxisSpacing: ResponsiveGrid.spacing(context),
-              childAspectRatio:
-                  ResponsiveLayout.isDesktop(context) ? 0.76 : 0.68,
-            ),
-            itemCount: favoriteCoupons.length,
-            itemBuilder: (context, index) {
-              final coupon = favoriteCoupons[index];
-              final store = storesMap[coupon.storeId.toLowerCase().trim()];
-              return WebCouponCard(
-                coupon: coupon,
-                storeName: store?.name,
-                compact: true,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final width = constraints.maxWidth;
+              final columns = ResponsiveGrid.columnsForWidth(width, max: 4);
+              final spacing = ResponsiveGrid.spacingForWidth(width);
+
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: columns,
+                  crossAxisSpacing: spacing,
+                  mainAxisSpacing: spacing,
+                  childAspectRatio: width >= 1024 ? 0.76 : 0.68,
+                ),
+                itemCount: favoriteCoupons.length,
+                itemBuilder: (context, index) {
+                  final coupon = favoriteCoupons[index];
+                  final store = storesMap[coupon.storeId.toLowerCase().trim()];
+                  return WebCouponCard(
+                    coupon: coupon,
+                    storeName: store?.name,
+                    compact: true,
+                  );
+                },
               );
             },
           ),

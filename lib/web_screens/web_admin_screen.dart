@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../constants.dart';
@@ -24,6 +26,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
   final SupabaseClient _sb = Supabase.instance.client;
 
   final List<String> _titles = [
+    'نظرة عامة',
     'إدارة المتاجر',
     'إدارة الكوبونات',
     'بانتظار الموافقة',
@@ -34,6 +37,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
   ];
 
   final List<IconData> _icons = [
+    Icons.dashboard_rounded,
     Icons.storefront_rounded,
     Icons.confirmation_number_rounded,
     Icons.pending_actions_rounded,
@@ -44,6 +48,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
   ];
 
   final List<String> _countSources = [
+    'stores',
     'stores',
     'coupons',
     'admin_pending_coupons',
@@ -65,6 +70,10 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
   @override
   Widget build(BuildContext context) {
     final List<Widget> pages = [
+      _AdminOverview(
+        countRows: _countRows,
+        onOpenSection: (index) => setState(() => _selectedIndex = index),
+      ),
       const WebAdminStoresScreen(isEmbedded: true),
       const WebAdminCouponsScreen(isEmbedded: true),
       const AdminPendingCouponsScreen(isEmbedded: true),
@@ -280,5 +289,778 @@ class _AdminCountBadge extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+class _AdminOverview extends StatelessWidget {
+  final Future<int> Function(String source) countRows;
+  final ValueChanged<int> onOpenSection;
+
+  const _AdminOverview({
+    required this.countRows,
+    required this.onOpenSection,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<int>>(
+      future: Future.wait([
+        countRows('stores'),
+        countRows('coupons'),
+        countRows('admin_pending_coupons'),
+        countRows('categories'),
+        countRows('offers'),
+        countRows('carousel'),
+        countRows('notifications'),
+      ]),
+      builder: (context, snapshot) {
+        final counts = snapshot.data ?? const [0, 0, 0, 0, 0, 0, 0];
+        final loading = snapshot.connectionState == ConnectionState.waiting;
+        final stores = counts[0];
+        final coupons = counts[1];
+        final pending = counts[2];
+        final categories = counts[3];
+        final offers = counts[4];
+        final carousel = counts[5];
+        final notifications = counts[6];
+        final totalContent = coupons + offers;
+        final approvalRate = coupons + pending == 0
+            ? 1.0
+            : coupons / (coupons + pending).clamp(1, 999999);
+
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(28, 36, 28, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _OverviewHeader(
+                  loading: loading,
+                  totalContent: totalContent,
+                  approvalRate: approvalRate,
+                ),
+                const SizedBox(height: 18),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final compact = constraints.maxWidth < 1050;
+                    return GridView.count(
+                      crossAxisCount: compact ? 3 : 6,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: compact ? 1.75 : 1.45,
+                      children: [
+                        _MetricTile(
+                          title: 'المتاجر',
+                          value: stores,
+                          subtitle: 'نشطة في المنصة',
+                          icon: Icons.storefront_rounded,
+                          color: const Color(0xFF0EA5A4),
+                          onTap: () => onOpenSection(1),
+                        ),
+                        _MetricTile(
+                          title: 'الكوبونات',
+                          value: coupons,
+                          subtitle: 'كوبونات معتمدة',
+                          icon: Icons.confirmation_number_rounded,
+                          color: Constants.primaryColor,
+                          onTap: () => onOpenSection(2),
+                        ),
+                        _MetricTile(
+                          title: 'بانتظار الموافقة',
+                          value: pending,
+                          subtitle: 'تحتاج مراجعة',
+                          icon: Icons.pending_actions_rounded,
+                          color: const Color(0xFFE11D48),
+                          onTap: () => onOpenSection(3),
+                        ),
+                        _MetricTile(
+                          title: 'الفئات',
+                          value: categories,
+                          subtitle: 'تصنيف ظاهر',
+                          icon: Icons.category_rounded,
+                          color: const Color(0xFFF59E0B),
+                          onTap: () => onOpenSection(4),
+                        ),
+                        _MetricTile(
+                          title: 'العروض',
+                          value: offers,
+                          subtitle: 'عروض منشورة',
+                          icon: Icons.local_offer_rounded,
+                          color: const Color(0xFF0284C7),
+                          onTap: () => onOpenSection(5),
+                        ),
+                        _MetricTile(
+                          title: 'الإشعارات',
+                          value: notifications,
+                          subtitle: 'رسائل مرسلة',
+                          icon: Icons.notifications_active_rounded,
+                          color: const Color(0xFF7C3AED),
+                          onTap: () => onOpenSection(7),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final wide = constraints.maxWidth >= 1180;
+                    final mainCharts = [
+                      Expanded(
+                        flex: 3,
+                        child: _ChartPanel(
+                          title: 'ملخص المحتوى حسب القسم',
+                          child: _LineChart(
+                            values: [
+                              stores.toDouble(),
+                              categories.toDouble(),
+                              coupons.toDouble(),
+                              offers.toDouble(),
+                              notifications.toDouble(),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        flex: 1,
+                        child: _ChartPanel(
+                          title: 'نسبة الاعتماد',
+                          child: _GaugeChart(value: approvalRate),
+                        ),
+                      ),
+                    ];
+
+                    if (!wide) {
+                      return Column(
+                        children: [
+                          SizedBox(height: 260, child: mainCharts.first),
+                          const SizedBox(height: 10),
+                          SizedBox(height: 260, child: mainCharts.last),
+                        ],
+                      );
+                    }
+
+                    return SizedBox(
+                      height: 270,
+                      child: Row(children: mainCharts),
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final compact = constraints.maxWidth < 1050;
+                    final panels = [
+                      _ChartPanel(
+                        title: 'توزيع الإدارة',
+                        child: _BarChart(
+                          labels: const ['متاجر', 'كوبونات', 'عروض', 'بنرات'],
+                          values: [
+                            stores.toDouble(),
+                            coupons.toDouble(),
+                            offers.toDouble(),
+                            carousel.toDouble(),
+                          ],
+                          color: const Color(0xFF0EA5A4),
+                        ),
+                      ),
+                      _ChartPanel(
+                        title: 'حالة المراجعة',
+                        child: _BarChart(
+                          labels: const ['معتمد', 'معلق'],
+                          values: [coupons.toDouble(), pending.toDouble()],
+                          color: Constants.primaryColor,
+                        ),
+                      ),
+                      _QuickActions(onOpenSection: onOpenSection),
+                    ];
+
+                    if (compact) {
+                      return Column(
+                        children: panels
+                            .map((panel) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: SizedBox(height: 320, child: panel),
+                                ))
+                            .toList(),
+                      );
+                    }
+
+                    return SizedBox(
+                      height: 340,
+                      child: Row(
+                        children: [
+                          Expanded(child: panels[0]),
+                          const SizedBox(width: 10),
+                          Expanded(child: panels[1]),
+                          const SizedBox(width: 10),
+                          Expanded(child: panels[2]),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _OverviewHeader extends StatelessWidget {
+  final bool loading;
+  final int totalContent;
+  final double approvalRate;
+
+  const _OverviewHeader({
+    required this.loading,
+    required this.totalContent,
+    required this.approvalRate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: Constants.primaryColor.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(Icons.analytics_rounded, color: Constants.primaryColor),
+          ),
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'لوحة تحكم أداء المحتوى',
+                  style: TextStyle(
+                    fontSize: 22,
+                    height: 1.35,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: 'Tajawal',
+                    color: Color(0xFF111827),
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'نظرة تشغيلية على المتاجر، الكوبونات، العروض، والمراجعات الحالية.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.5,
+                    fontFamily: 'Tajawal',
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (loading)
+            SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Constants.primaryColor,
+              ),
+            )
+          else
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '$totalContent',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: 'Tajawal',
+                    color: Color(0xFF111827),
+                  ),
+                ),
+                Text(
+                  'عنصر منشور | اعتماد ${(approvalRate * 100).round()}%',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontFamily: 'Tajawal',
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetricTile extends StatelessWidget {
+  final String title;
+  final int value;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _MetricTile({
+    required this.title,
+    required this.value,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.10),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: color.withValues(alpha: 0.22)),
+                    ),
+                    child: Icon(icon, size: 18, color: color),
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        fontFamily: 'Tajawal',
+                        color: Color(0xFF111827),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                '$value',
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w900,
+                  fontFamily: 'Tajawal',
+                  color: Color(0xFF111827),
+                ),
+              ),
+              Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontFamily: 'Tajawal',
+                  color: Color(0xFF6B7280),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChartPanel extends StatelessWidget {
+  final String title;
+  final Widget child;
+
+  const _ChartPanel({required this.title, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: Constants.primaryColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: 'Tajawal',
+                    color: Color(0xFF111827),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Expanded(child: child),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickActions extends StatelessWidget {
+  final ValueChanged<int> onOpenSection;
+
+  const _QuickActions({required this.onOpenSection});
+
+  @override
+  Widget build(BuildContext context) {
+    final actions = [
+      (title: 'مراجعة المعلّق', icon: Icons.pending_actions_rounded, index: 3),
+      (
+        title: 'إدارة الكوبونات',
+        icon: Icons.confirmation_number_rounded,
+        index: 2
+      ),
+      (title: 'إدارة العروض', icon: Icons.local_offer_rounded, index: 5),
+      (
+        title: 'إرسال إشعار',
+        icon: Icons.notifications_active_rounded,
+        index: 7
+      ),
+    ];
+
+    return _ChartPanel(
+      title: 'اختصارات الإدارة',
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: actions
+            .map(
+              (action) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Material(
+                  color: const Color(0xFFF9FAFB),
+                  borderRadius: BorderRadius.circular(8),
+                  child: InkWell(
+                    onTap: () => onOpenSection(action.index),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(action.icon,
+                              color: Constants.primaryColor, size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              action.title,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                fontFamily: 'Tajawal',
+                                color: Color(0xFF111827),
+                              ),
+                            ),
+                          ),
+                          const Icon(Icons.chevron_left_rounded,
+                              color: Color(0xFF9CA3AF), size: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+}
+
+class _LineChart extends StatelessWidget {
+  final List<double> values;
+
+  const _LineChart({required this.values});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _LineChartPainter(values),
+      child: const SizedBox.expand(),
+    );
+  }
+}
+
+class _BarChart extends StatelessWidget {
+  final List<String> labels;
+  final List<double> values;
+  final Color color;
+
+  const _BarChart({
+    required this.labels,
+    required this.values,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _BarChartPainter(labels: labels, values: values, color: color),
+      child: const SizedBox.expand(),
+    );
+  }
+}
+
+class _GaugeChart extends StatelessWidget {
+  final double value;
+
+  const _GaugeChart({required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _GaugePainter(value.clamp(0.0, 1.0)),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.only(top: 56),
+          child: Text(
+            '${(value * 100).round()}%',
+            style: const TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w900,
+              fontFamily: 'Tajawal',
+              color: Color(0xFF111827),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LineChartPainter extends CustomPainter {
+  final List<double> values;
+
+  _LineChartPainter(this.values);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const axisColor = Color(0xFFE5E7EB);
+    final gridPaint = Paint()
+      ..color = axisColor
+      ..strokeWidth = 1;
+    final linePaint = Paint()
+      ..color = Constants.primaryColor
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke;
+    final pointPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+    final pointStroke = Paint()
+      ..color = Constants.primaryColor
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    final chart = Rect.fromLTWH(38, 12, size.width - 54, size.height - 42);
+    for (var i = 0; i <= 4; i++) {
+      final y = chart.top + (chart.height / 4) * i;
+      canvas.drawLine(Offset(chart.left, y), Offset(chart.right, y), gridPaint);
+    }
+
+    if (values.isEmpty) return;
+    final maxValue = values.reduce((a, b) => a > b ? a : b).clamp(1, 999999);
+    final points = <Offset>[];
+    for (var i = 0; i < values.length; i++) {
+      final x = values.length == 1
+          ? chart.center.dx
+          : chart.left + (chart.width / (values.length - 1)) * i;
+      final y = chart.bottom - (values[i] / maxValue) * chart.height;
+      points.add(Offset(x, y));
+    }
+
+    final path = Path()..moveTo(points.first.dx, points.first.dy);
+    for (final point in points.skip(1)) {
+      path.lineTo(point.dx, point.dy);
+    }
+    canvas.drawPath(path, linePaint);
+
+    for (final point in points) {
+      canvas.drawCircle(point, 4, pointPaint);
+      canvas.drawCircle(point, 4, pointStroke);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _LineChartPainter oldDelegate) {
+    return oldDelegate.values != values;
+  }
+}
+
+class _BarChartPainter extends CustomPainter {
+  final List<String> labels;
+  final List<double> values;
+  final Color color;
+
+  _BarChartPainter({
+    required this.labels,
+    required this.values,
+    required this.color,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final textPainter = TextPainter(
+      textDirection: TextDirection.rtl,
+      textAlign: TextAlign.center,
+    );
+    final chart = Rect.fromLTWH(18, 8, size.width - 36, size.height - 42);
+    final maxValue = values.isEmpty
+        ? 1.0
+        : values.reduce((a, b) => a > b ? a : b).clamp(1, 999999).toDouble();
+    final barWidth = chart.width / (values.length * 2.2);
+    final gap =
+        (chart.width - (barWidth * values.length)) / (values.length + 1);
+    final axisPaint = Paint()
+      ..color = const Color(0xFFE5E7EB)
+      ..strokeWidth = 1;
+    final barPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    canvas.drawLine(
+      Offset(chart.left, chart.bottom),
+      Offset(chart.right, chart.bottom),
+      axisPaint,
+    );
+
+    for (var i = 0; i < values.length; i++) {
+      final left = chart.left + gap + i * (barWidth + gap);
+      final height = (values[i] / maxValue) * chart.height;
+      final rect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(left, chart.bottom - height, barWidth, height),
+        const Radius.circular(3),
+      );
+      canvas.drawRRect(rect, barPaint);
+
+      textPainter.text = TextSpan(
+        text: labels[i],
+        style: const TextStyle(
+          fontSize: 10,
+          color: Color(0xFF6B7280),
+          fontFamily: 'Tajawal',
+        ),
+      );
+      textPainter.layout(maxWidth: barWidth + gap);
+      textPainter.paint(
+        canvas,
+        Offset(left - gap / 2, chart.bottom + 8),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _BarChartPainter oldDelegate) {
+    return oldDelegate.values != values ||
+        oldDelegate.labels != labels ||
+        oldDelegate.color != color;
+  }
+}
+
+class _GaugePainter extends CustomPainter {
+  final double value;
+
+  _GaugePainter(this.value);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height * 0.68);
+    final radius = size.shortestSide * 0.36;
+    final baseRect = Rect.fromCircle(center: center, radius: radius);
+    final basePaint = Paint()
+      ..color = const Color(0xFFE5E7EB)
+      ..strokeWidth = 16
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.butt;
+    final valuePaint = Paint()
+      ..shader = SweepGradient(
+        startAngle: 3.14159,
+        endAngle: 6.28318,
+        colors: const [
+          Color(0xFFE11D48),
+          Color(0xFFF59E0B),
+          Color(0xFF10B981),
+        ],
+      ).createShader(baseRect)
+      ..strokeWidth = 16
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.butt;
+
+    canvas.drawArc(baseRect, 3.14159, 3.14159, false, basePaint);
+    canvas.drawArc(baseRect, 3.14159, 3.14159 * value, false, valuePaint);
+
+    final needleAngle = 3.14159 + 3.14159 * value;
+    final needleEnd = Offset(
+      center.dx + radius * 0.78 * math.cos(needleAngle),
+      center.dy + radius * 0.78 * math.sin(needleAngle),
+    );
+    final needlePaint = Paint()
+      ..color = const Color(0xFF111827)
+      ..strokeWidth = 2;
+    canvas.drawLine(center, needleEnd, needlePaint);
+    canvas.drawCircle(center, 5, Paint()..color = const Color(0xFF111827));
+  }
+
+  @override
+  bool shouldRepaint(covariant _GaugePainter oldDelegate) {
+    return oldDelegate.value != value;
   }
 }

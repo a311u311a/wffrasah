@@ -10,6 +10,7 @@ import '../screens/favorites_screen.dart';
 import '../screens/menu_screen.dart';
 
 import '../services/notification_service.dart';
+import 'app_responsive.dart';
 
 class BottomNavBar extends StatefulWidget {
   final int initialIndex;
@@ -96,76 +97,87 @@ class _BottomNavBarState extends State<BottomNavBar>
       resizeToAvoidBottomInset: false, // لمنع رفع شريط التنقل عند ظهور الكيبورد
       body: _pages[_selectedIndex],
       bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.only(bottom: 8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Container(
-            height: 60, // ارتفاع مناسب لجميع الشاشات
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Constants.primaryColor,
-                  Constants.primaryColor.withValues(alpha: 0.9),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(32),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 18,
-                  offset: const Offset(0, 6),
-                ),
-              ],
+        minimum:
+            EdgeInsets.only(bottom: AppResponsive.isTablet(context) ? 14 : 8),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          heightFactor: 1,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: AppResponsive.isTablet(context) ? 520 : double.infinity,
             ),
-            child: CustomNavigationBar(
-              elevation: 0,
-              backgroundColor: Colors.transparent,
-              strokeColor: Colors.transparent,
-              borderRadius: const Radius.circular(32),
-              selectedColor: Colors.white,
-              unSelectedColor: Colors.white70,
-              currentIndex: _selectedIndex,
-              items: List.generate(
-                _icons.length,
-                (index) => CustomNavigationBarItem(
-                  icon: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Flexible(
-                        child: SvgPicture.asset(
-                          _selectedIndex == index
-                              ? _icons[index]['active']!
-                              : _icons[index]['inactive']!,
-                          height: 22,
-                          width: 22,
-                          colorFilter: const ColorFilter.mode(
-                            Colors.white,
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 2), // تقليل المسافة لتجنب Overflow
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        height: 3,
-                        width: _selectedIndex == index ? 14 : 0,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                height: 60, // ارتفاع مناسب لجميع الشاشات
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Constants.primaryColor,
+                      Constants.primaryColor.withValues(alpha: 0.9),
                     ],
                   ),
+                  borderRadius: BorderRadius.circular(32),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: CustomNavigationBar(
+                  elevation: 0,
+                  backgroundColor: Colors.transparent,
+                  strokeColor: Colors.transparent,
+                  borderRadius: const Radius.circular(32),
+                  selectedColor: Colors.white,
+                  unSelectedColor: Colors.white70,
+                  currentIndex: _selectedIndex,
+                  items: List.generate(
+                    _icons.length,
+                    (index) => CustomNavigationBarItem(
+                      icon: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Flexible(
+                            child: SvgPicture.asset(
+                              _selectedIndex == index
+                                  ? _icons[index]['active']!
+                                  : _icons[index]['inactive']!,
+                              height: 22,
+                              width: 22,
+                              colorFilter: const ColorFilter.mode(
+                                Colors.white,
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(
+                              height: 2), // تقليل المسافة لتجنب Overflow
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            height: 3,
+                            width: _selectedIndex == index ? 14 : 0,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  onTap: (index) {
+                    setState(() {
+                      _selectedIndex = index;
+                    });
+                  },
                 ),
               ),
-              onTap: (index) {
-                setState(() {
-                  _selectedIndex = index;
-                });
-              },
             ),
           ),
         ),

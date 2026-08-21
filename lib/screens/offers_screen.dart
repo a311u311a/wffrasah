@@ -6,19 +6,13 @@ import 'package:url_launcher/url_launcher.dart';
 import '../constants.dart';
 import '../localization/app_localizations.dart';
 import '../models/store.dart';
+import '../widgets/app_responsive.dart';
 import '../widgets/carouse.dart';
 import '../widgets/category_list.dart';
 import '../widgets/search_widget.dart';
 import 'store_coupons_screen.dart';
 
 class OffersScreen extends StatefulWidget {
-  static const List<String> featuredStoreSlugs = [
-    'aliexpress',
-    'temu',
-    'shein',
-    'amazon',
-  ];
-
   const OffersScreen({super.key});
 
   @override
@@ -29,31 +23,39 @@ class _OffersScreenState extends State<OffersScreen> {
   String? selectedCategoryId;
   String searchQuery = '';
 
-  late Future<List<Store>> _featuredStoresFuture;
+  late Future<List<Store>> _offerStoresFuture;
   late Future<List<Map<String, dynamic>>> _offersFuture;
 
   @override
   void initState() {
     super.initState();
-    _featuredStoresFuture = _fetchFeaturedStores();
+    _offerStoresFuture = _fetchOfferStores();
     _offersFuture = _fetchOffers();
   }
 
   // ============================================================
-  // جلب المتاجر المميزة
+  // جلب المتاجر التي تحتوي على عروض
   // ============================================================
 
-  Future<List<Store>> _fetchFeaturedStores() async {
+  Future<List<Store>> _fetchOfferStores() async {
     final sb = Supabase.instance.client;
 
-    final rows = await sb
-        .from('stores')
-        .select()
-        .inFilter('slug', OffersScreen.featuredStoreSlugs)
-        .order('created_at', ascending: false)
-        .limit(OffersScreen.featuredStoreSlugs.length);
+    final results = await Future.wait([
+      sb
+          .from('offers')
+          .select('store_id')
+          .order('created_at', ascending: false),
+      sb.from('stores').select().order('created_at', ascending: false),
+    ]);
 
-    final stores = (rows as List)
+    final offerStoreIds = (results[0] as List)
+        .map((offer) => (offer['store_id'] ?? '').toString().trim())
+        .where((storeId) => storeId.isNotEmpty)
+        .toSet();
+
+    if (offerStoreIds.isEmpty) return [];
+
+    final stores = (results[1] as List)
         .cast<Map<String, dynamic>>()
         .map((row) => Store.fromSupabase(row, 'ar'))
         .toList();
@@ -61,15 +63,16 @@ class _OffersScreenState extends State<OffersScreen> {
     final seen = <String>{};
     final ordered = <Store>[];
 
-    for (final slug in OffersScreen.featuredStoreSlugs) {
-      final matches = stores.where(
-        (store) => store.slug.toLowerCase() == slug.toLowerCase(),
-      );
+    for (final store in stores) {
+      final storeKeys = {
+        store.id,
+        store.slug,
+        store.name,
+        store.nameAr,
+        store.nameEn,
+      }.map((value) => value.trim()).where((value) => value.isNotEmpty).toSet();
 
-      if (matches.isEmpty) continue;
-
-      final store = matches.first;
-
+      if (!storeKeys.any(offerStoreIds.contains)) continue;
       if (seen.contains(store.key)) continue;
 
       seen.add(store.key);
@@ -87,9 +90,7 @@ class _OffersScreenState extends State<OffersScreen> {
     final sb = Supabase.instance.client;
 
     try {
-      final rows = await sb
-          .from('offers')
-          .select('''
+      final rows = await sb.from('offers').select('''
             id,
             category_id,
             created_at,
@@ -103,9 +104,7 @@ class _OffersScreenState extends State<OffersScreen> {
             web,
             store_id,
             expiry_date
-            ''')
-          .order('created_at', ascending: false)
-          .limit(100);
+            ''').order('created_at', ascending: false).limit(100);
 
       return (rows as List).cast<Map<String, dynamic>>();
     } catch (e) {
@@ -120,12 +119,12 @@ class _OffersScreenState extends State<OffersScreen> {
 
   Future<void> _refreshData() async {
     setState(() {
-      _featuredStoresFuture = _fetchFeaturedStores();
+      _offerStoresFuture = _fetchOfferStores();
       _offersFuture = _fetchOffers();
     });
 
     await Future.wait([
-      _featuredStoresFuture,
+      _offerStoresFuture,
       _offersFuture,
     ]);
   }
@@ -191,9 +190,11 @@ class _OffersScreenState extends State<OffersScreen> {
   // ============================================================
 
   String _offerDescription(Map<String, dynamic> offer) {
-    final descriptionAr = _firstNonEmpty(offer, ['description_ar', 'descriptionAr']);
+    final descriptionAr =
+        _firstNonEmpty(offer, ['description_ar', 'descriptionAr']);
     final description = _firstNonEmpty(offer, ['description', 'desc']);
-    final descriptionEn = _firstNonEmpty(offer, ['description_en', 'descriptionEn']);
+    final descriptionEn =
+        _firstNonEmpty(offer, ['description_en', 'descriptionEn']);
 
     if (descriptionAr.isNotEmpty) return descriptionAr;
     if (description.isNotEmpty) return description;
@@ -222,6 +223,25 @@ class _OffersScreenState extends State<OffersScreen> {
 
       return name.contains(query) || description.contains(query);
     }).toList();
+  }
+
+  List<Map<String, dynamic>> _latestOfferPerStore(
+    List<Map<String, dynamic>> offers,
+  ) {
+    final seenStoreIds = <String>{};
+    final latestOffers = <Map<String, dynamic>>[];
+
+    for (final offer in offers) {
+      final storeId = (offer['store_id'] ?? '').toString().trim();
+      final key = storeId.isNotEmpty ? storeId : (offer['id'] ?? '').toString();
+
+      if (seenStoreIds.contains(key)) continue;
+
+      seenStoreIds.add(key);
+      latestOffers.add(offer);
+    }
+
+    return latestOffers;
   }
 
   // ============================================================
@@ -274,9 +294,9 @@ class _OffersScreenState extends State<OffersScreen> {
 
                 const SliverToBoxAdapter(child: SizedBox(height: 8)),
 
-                // المتاجر المميزة
+                // المتاجر التي تحتوي على عروض
                 SliverToBoxAdapter(
-                  child: _buildFeaturedStoresSection(),
+                  child: _buildOfferStoresSection(),
                 ),
 
                 const SliverToBoxAdapter(child: SizedBox(height: 20)),
@@ -315,12 +335,12 @@ class _OffersScreenState extends State<OffersScreen> {
   }
 
   // ============================================================
-  // المتاجر المميزة
+  // المتاجر التي تحتوي على عروض
   // ============================================================
 
-  Widget _buildFeaturedStoresSection() {
+  Widget _buildOfferStoresSection() {
     return FutureBuilder<List<Store>>(
-      future: _featuredStoresFuture,
+      future: _offerStoresFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Padding(
@@ -343,7 +363,7 @@ class _OffersScreenState extends State<OffersScreen> {
               child: Align(
                 alignment: Alignment.centerRight,
                 child: Text(
-                  'المتاجر المميزة',
+                  'المتاجر',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -354,89 +374,97 @@ class _OffersScreenState extends State<OffersScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            GridView.builder(
-              padding: EdgeInsets.zero,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: stores.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.6,
-              ),
-              itemBuilder: (context, index) {
-                final store = stores[index];
-                final displayName =
-                    store.name.trim().isNotEmpty ? store.name : store.nameAr;
+            SizedBox(
+              height: AppResponsive.isTablet(context) ? 240 : 210,
+              child: GridView.builder(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppResponsive.isTablet(context) ? 28 : 16,
+                ),
+                scrollDirection: Axis.horizontal,
+                itemCount: stores.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: AppResponsive.isTablet(context) ? 16 : 12,
+                  mainAxisSpacing: AppResponsive.isTablet(context) ? 16 : 12,
+                  childAspectRatio:
+                      AppResponsive.isTablet(context) ? 0.85 : 0.78,
+                ),
+                itemBuilder: (context, index) {
+                  final store = stores[index];
+                  final displayName =
+                      store.name.trim().isNotEmpty ? store.name : store.nameAr;
 
-                return InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => StoreCouponsScreen(store: store),
-                      ),
-                    );
-                  },
-                  borderRadius: BorderRadius.circular(18),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.grey.shade200),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
+                  return InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => StoreCouponsScreen(store: store),
                         ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (store.image.trim().isNotEmpty)
-                          ClipOval(
-                            child: CachedNetworkImage(
-                              imageUrl: store.image,
-                              width: 100,
-                              height: 80,
-                              fit: BoxFit.fill,
-                              placeholder: (context, url) => const Center(
-                                child: SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(18),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.grey.shade200),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (store.image.trim().isNotEmpty)
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: CachedNetworkImage(
+                                imageUrl: store.image,
+                                width: 76,
+                                height: 54,
+                                fit: BoxFit.contain,
+                                placeholder: (context, url) => const Center(
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
                                 ),
+                                errorWidget: (context, url, error) =>
+                                    _fallbackBrandIcon(store.slug),
                               ),
-                              errorWidget: (context, url, error) =>
-                                  _fallbackBrandIcon(store.slug),
-                            ),
-                          )
-                        else
-                          _fallbackBrandIcon(store.slug),
-                        const SizedBox(height: 4),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Text(
-                            displayName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: 'Tajawal',
-                              color: Color(0xFF1E2946),
+                            )
+                          else
+                            _fallbackBrandIcon(store.slug),
+                          const SizedBox(height: 4),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: Text(
+                              displayName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                fontFamily: 'Tajawal',
+                                color: Color(0xFF1E2946),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ],
         );
@@ -502,7 +530,7 @@ class _OffersScreenState extends State<OffersScreen> {
           return const SliverToBoxAdapter(child: SizedBox.shrink());
         }
 
-        final offers = _filterOffers(snapshot.data!);
+        final offers = _latestOfferPerStore(_filterOffers(snapshot.data!));
 
         if (offers.isEmpty) {
           return const SliverToBoxAdapter(
@@ -522,17 +550,35 @@ class _OffersScreenState extends State<OffersScreen> {
           );
         }
 
+        if (!AppResponsive.isTablet(context)) {
+          return SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final offer = offers[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _buildOfferCard(offer),
+                  );
+                },
+                childCount: offers.length,
+              ),
+            ),
+          );
+        }
+
         return SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          sliver: SliverList(
+          padding: const EdgeInsets.symmetric(horizontal: 28),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 460,
+              mainAxisExtent: 160,
+              crossAxisSpacing: 18,
+              mainAxisSpacing: 18,
+            ),
             delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final offer = offers[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _buildOfferCard(offer),
-                );
-              },
+              (context, index) => _buildOfferCard(offers[index]),
               childCount: offers.length,
             ),
           ),
@@ -791,7 +837,8 @@ class _OffersScreenState extends State<OffersScreen> {
       centerTitle: true,
       automaticallyImplyLeading: false,
       title: SearchWidget(
-        hintText: localizations?.translate('search_offer_hint') ?? 'البحث عن عرض',
+        hintText:
+            localizations?.translate('search_offer_hint') ?? 'البحث عن عرض',
         onSearch: (value) {
           setState(() {
             searchQuery = value;

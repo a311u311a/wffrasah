@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../localization/app_localizations.dart';
 import '../models/coupon.dart';
+import 'app_responsive.dart';
 import 'coupon_card.dart';
 import 'error_message.dart';
 
@@ -109,7 +110,7 @@ class _CouponsListState extends State<CouponsList> {
   }
 
   Widget _buildCouponsView(List<Coupon> coupons) {
-    if (!_useMacGrid) {
+    if (!_useMacGrid && !AppResponsive.isTablet(context)) {
       return ListView.builder(
         padding: const EdgeInsets.only(bottom: 16),
         itemCount: coupons.length,
@@ -120,10 +121,15 @@ class _CouponsListState extends State<CouponsList> {
     }
 
     return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(24, 14, 24, 24),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 420,
-        mainAxisExtent: 255,
+      padding: EdgeInsets.fromLTRB(
+        AppResponsive.isTablet(context) ? 28 : 24,
+        14,
+        AppResponsive.isTablet(context) ? 28 : 24,
+        24,
+      ),
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: AppResponsive.isTablet(context) ? 380 : 420,
+        mainAxisExtent: AppResponsive.isTablet(context) ? 285 : 255,
         crossAxisSpacing: 18,
         mainAxisSpacing: 18,
       ),

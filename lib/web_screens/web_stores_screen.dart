@@ -401,25 +401,33 @@ class _WebStoresScreenState extends State<WebStoresScreen> {
             ),
           ),
         ),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: ResponsiveLayout.isDesktop(context) ? 4 : 2,
-            crossAxisSpacing: ResponsiveGrid.spacing(context),
-            mainAxisSpacing: ResponsiveGrid.spacing(context),
-            childAspectRatio: 0.75,
-          ),
-          itemCount: filteredStores.length,
-          itemBuilder: (context, index) {
-            return WebStoreCard(
-              store: filteredStores[index],
-              onTap: () {
-                final store = filteredStores[index];
-                Navigator.pushNamed(
-                  context,
-                  '/store/${store.slug}',
-                  arguments: store,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final columns = ResponsiveGrid.columnsForWidth(width, max: 4);
+            final spacing = ResponsiveGrid.spacingForWidth(width);
+
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: columns,
+                crossAxisSpacing: spacing,
+                mainAxisSpacing: spacing,
+                childAspectRatio: width >= 768 ? 0.82 : 0.75,
+              ),
+              itemCount: filteredStores.length,
+              itemBuilder: (context, index) {
+                return WebStoreCard(
+                  store: filteredStores[index],
+                  onTap: () {
+                    final store = filteredStores[index];
+                    Navigator.pushNamed(
+                      context,
+                      '/store/${store.slug}',
+                      arguments: store,
+                    );
+                  },
                 );
               },
             );

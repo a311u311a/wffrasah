@@ -5,6 +5,7 @@ import 'package:flutter_svg/svg.dart';
 import '../constants.dart';
 import '../localization/app_localizations.dart';
 import '../models/store.dart';
+import 'app_responsive.dart';
 import 'error_message.dart';
 import 'loading_indicator.dart';
 
@@ -151,13 +152,16 @@ class _StoresListState extends State<StoresList> {
     bool isSelected,
     String storeKey,
   ) {
+    final isTablet = AppResponsive.isTablet(context);
+    final itemSize = isTablet ? 88.0 : 75.0;
+
     return GestureDetector(
       onTap: () => widget.onStoreSelected(storeKey),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 100),
-        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 9),
-        width: 75,
-        height: 75,
+        margin: EdgeInsets.symmetric(horizontal: isTablet ? 6 : 4, vertical: 9),
+        width: itemSize,
+        height: itemSize,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -197,14 +201,16 @@ class _StoresListState extends State<StoresList> {
 
   Widget _buildShowAllItem(BuildContext context, bool isSelected) {
     final localizations = AppLocalizations.of(context);
+    final isTablet = AppResponsive.isTablet(context);
+    final itemSize = isTablet ? 88.0 : 75.0;
 
     return GestureDetector(
       onTap: () => widget.onStoreSelected(null),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 100),
-        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 9),
-        width: 75,
-        height: 75,
+        margin: EdgeInsets.symmetric(horizontal: isTablet ? 6 : 4, vertical: 9),
+        width: itemSize,
+        height: itemSize,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),

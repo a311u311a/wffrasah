@@ -251,11 +251,13 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
           final width = constraints.maxWidth;
           final columns = width >= 1180
               ? 6
-              : width >= 900
+              : width >= 1024
                   ? 5
-                  : width >= 680
+                  : width >= 768
                       ? 4
-                      : 2;
+                      : width >= 600
+                          ? 3
+                          : 2;
           final visibleStores = stores.take(columns * 2).toList();
 
           return Column(
@@ -299,7 +301,11 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                   crossAxisCount: columns,
                   crossAxisSpacing: 14,
                   mainAxisSpacing: 14,
-                  childAspectRatio: width < 680 ? 1.05 : 1.12,
+                  childAspectRatio: width < 600
+                      ? 1.05
+                      : width < 1024
+                          ? 1.18
+                          : 1.12,
                 ),
                 itemBuilder: (context, index) {
                   return _storeTile(visibleStores[index]);
@@ -383,9 +389,11 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final columns = ResponsiveGrid.columns(context, max: 6);
+          final width = constraints.maxWidth;
+          final columns = ResponsiveGrid.columnsForWidth(width, max: 6);
           final visibleCoupons = coupons.take(columns * 2).toList();
           final storesMap = _storesMap;
+          final spacing = ResponsiveGrid.spacingForWidth(width);
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -426,9 +434,9 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                 itemCount: visibleCoupons.length,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: columns,
-                  crossAxisSpacing: ResponsiveGrid.spacing(context),
-                  mainAxisSpacing: ResponsiveGrid.spacing(context),
-                  childAspectRatio: 0.52,
+                  crossAxisSpacing: spacing,
+                  mainAxisSpacing: spacing,
+                  childAspectRatio: width >= 1024 ? 0.58 : 0.62,
                 ),
                 itemBuilder: (context, index) {
                   final coupon = visibleCoupons[index];
@@ -460,9 +468,11 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final columns = ResponsiveGrid.columns(context, max: 4);
+          final width = constraints.maxWidth;
+          final columns = ResponsiveGrid.columnsForWidth(width, max: 4);
           final visibleOffers = offers.take(columns).toList();
           final storesMap = _storesMap;
+          final spacing = ResponsiveGrid.spacingForWidth(width);
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -503,9 +513,9 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                 itemCount: visibleOffers.length,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: columns,
-                  crossAxisSpacing: ResponsiveGrid.spacing(context),
-                  mainAxisSpacing: ResponsiveGrid.spacing(context),
-                  childAspectRatio: 0.8,
+                  crossAxisSpacing: spacing,
+                  mainAxisSpacing: spacing,
+                  childAspectRatio: width >= 1024 ? 0.86 : 0.78,
                 ),
                 itemBuilder: (context, index) {
                   final offer = visibleOffers[index];

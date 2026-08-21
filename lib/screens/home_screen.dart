@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart'
 import '../constants.dart';
 import '../localization/app_localizations.dart';
 import '../widgets/coupons_list.dart';
+import '../widgets/app_responsive.dart';
 import '../widgets/stores_list.dart';
 import '../widgets/carouse.dart';
 import '../widgets/category_list.dart';
@@ -66,8 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 8),
               SizedBox(
-                height:
-                    100, // زيادة الارتفاع قليلاً لتناسب الحجم الجديد للمتاجر وظلالها
+                height: AppResponsive.isTablet(context) ? 112 : 100,
                 child: StoresList(
                   selectedStoreId: selectedStoreId,
                   onStoreSelected: (storeId) {

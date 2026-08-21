@@ -7,6 +7,7 @@ import 'package:wffrhasah/screens/store_coupons_screen.dart';
 import '../constants.dart';
 import '../models/store.dart';
 import '../localization/app_localizations.dart';
+import '../widgets/app_responsive.dart';
 import '../widgets/search_widget.dart';
 
 class StoresScreen extends StatefulWidget {
@@ -178,17 +179,23 @@ class _StoresScreenState extends State<StoresScreen> {
                       ),
                     Expanded(
                       child: GridView.builder(
-                        padding: const EdgeInsets.only(
-                          left: 12,
-                          right: 12,
+                        padding: EdgeInsets.only(
+                          left: AppResponsive.isTablet(context) ? 28 : 12,
+                          right: AppResponsive.isTablet(context) ? 28 : 12,
                           bottom: 20,
                         ),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 15,
-                          childAspectRatio: 0.75,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: AppResponsive.gridColumns(
+                            context,
+                            phone: 3,
+                            tablet: 5,
+                          ),
+                          crossAxisSpacing:
+                              AppResponsive.isTablet(context) ? 18 : 10,
+                          mainAxisSpacing:
+                              AppResponsive.isTablet(context) ? 22 : 15,
+                          childAspectRatio:
+                              AppResponsive.isTablet(context) ? 0.9 : 0.75,
                         ),
                         itemCount: filteredStores.length,
                         itemBuilder: (context, index) =>

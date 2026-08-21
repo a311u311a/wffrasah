@@ -44,7 +44,11 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
       ),
       child: Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: ResponsiveLayout.isDesktop(context) ? 80 : 20,
+          horizontal: ResponsiveLayout.isDesktop(context)
+              ? 80
+              : ResponsiveLayout.isTablet(context)
+                  ? 32
+                  : 20,
         ),
         child: Row(
           children: [
@@ -384,8 +388,12 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
               child: Material(
                 color: Colors.transparent,
                 child: Container(
-                  width: MediaQuery.of(context).size.width * 0.85,
-                  constraints: const BoxConstraints(maxWidth: 350),
+                  width: MediaQuery.of(context).size.width *
+                      (ResponsiveLayout.isTablet(context) ? 0.45 : 0.85),
+                  constraints: BoxConstraints(
+                    minWidth: ResponsiveLayout.isTablet(context) ? 380 : 0,
+                    maxWidth: ResponsiveLayout.isTablet(context) ? 460 : 350,
+                  ),
                   height: double.infinity,
                   decoration: BoxDecoration(
                     color: Colors.white,

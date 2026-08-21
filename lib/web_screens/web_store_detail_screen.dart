@@ -390,20 +390,28 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
       return _buildEmptyState('لا توجد كوبونات متاحة حالياً');
     }
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: ResponsiveGrid.columns(context, max: 6),
-        crossAxisSpacing: ResponsiveGrid.spacing(context),
-        mainAxisSpacing: ResponsiveGrid.spacing(context),
-        childAspectRatio: 0.48, // ✅ زيادة الارتفاع
-      ),
-      itemCount: _coupons.length,
-      itemBuilder: (context, index) {
-        return WebCouponCard(
-          coupon: _coupons[index],
-          storeName: widget.store.name,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final columns = ResponsiveGrid.columnsForWidth(width, max: 6);
+        final spacing = ResponsiveGrid.spacingForWidth(width);
+
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: spacing,
+            mainAxisSpacing: spacing,
+            childAspectRatio: width >= 1024 ? 0.52 : 0.58,
+          ),
+          itemCount: _coupons.length,
+          itemBuilder: (context, index) {
+            return WebCouponCard(
+              coupon: _coupons[index],
+              storeName: widget.store.name,
+            );
+          },
         );
       },
     );
@@ -414,21 +422,29 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
       return _buildEmptyState('لا توجد عروض متاحة حالياً');
     }
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: ResponsiveGrid.columns(context, max: 4),
-        crossAxisSpacing: ResponsiveGrid.spacing(context),
-        mainAxisSpacing: ResponsiveGrid.spacing(context),
-        childAspectRatio: 0.75,
-      ),
-      itemCount: _offers.length,
-      itemBuilder: (context, index) {
-        return WebOfferCard(
-          offer: _offers[index],
-          storeName: widget.store.name,
-          storeImage: widget.store.image, // ✅ إضافة شعار المتجر
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final columns = ResponsiveGrid.columnsForWidth(width, max: 4);
+        final spacing = ResponsiveGrid.spacingForWidth(width);
+
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: spacing,
+            mainAxisSpacing: spacing,
+            childAspectRatio: width >= 1024 ? 0.8 : 0.72,
+          ),
+          itemCount: _offers.length,
+          itemBuilder: (context, index) {
+            return WebOfferCard(
+              offer: _offers[index],
+              storeName: widget.store.name,
+              storeImage: widget.store.image, // ✅ إضافة شعار المتجر
+            );
+          },
         );
       },
     );
