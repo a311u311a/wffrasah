@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import '../constants.dart';
+import '../localization/app_localizations.dart';
 import '../providers/locale_provider.dart';
 import '../providers/user_provider.dart';
 import '../web_widgets/responsive_layout.dart';
@@ -15,25 +16,32 @@ class WebMenuScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = Supabase.instance.client.auth.currentUser;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FD),
-      appBar: const WebNavigationBar(),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildHeader(context),
-            if (user != null) _buildUserSection(context, user),
-            if (user == null) _buildGuestSection(context),
-            _buildMenuSections(context, user),
-            const SizedBox(height: 60),
-            const WebFooter(),
-          ],
+    return Directionality(
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8F9FD),
+        appBar: const WebNavigationBar(),
+        body: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeader(context),
+              if (user != null) _buildUserSection(context, user),
+              if (user == null) _buildGuestSection(context),
+              _buildMenuSections(context, user),
+              const SizedBox(height: 60),
+              const WebFooter(),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  String _t(BuildContext context, String key) =>
+      AppLocalizations.of(context)?.translate(key) ?? key;
 
   Widget _buildHeader(BuildContext context) {
     return Container(
@@ -54,7 +62,7 @@ class WebMenuScreen extends StatelessWidget {
         children: [
           const SizedBox(height: 40),
           Text(
-            'حسابي',
+            _t(context, 'my_account'),
             style: TextStyle(
               fontSize: ResponsiveLayout.isDesktop(context) ? 42 : 32,
               fontWeight: FontWeight.w900,
@@ -64,7 +72,7 @@ class WebMenuScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'إدارة حسابك والإعدادات',
+            _t(context, 'manage_account_settings'),
             style: TextStyle(
               fontSize: 18,
               color: Colors.grey[700],
@@ -98,8 +106,9 @@ class WebMenuScreen extends StatelessWidget {
           }
 
           final userData = snapshot.data;
-          final userName =
-              userData?['name'] ?? user.userMetadata?['full_name'] ?? 'مستخدم';
+          final userName = userData?['name'] ??
+              user.userMetadata?['full_name'] ??
+              _t(context, 'user');
           final userEmail = user.email ?? '';
 
           return Container(
@@ -190,7 +199,7 @@ class WebMenuScreen extends StatelessWidget {
                     _buildActionButton(
                       context,
                       icon: Icons.edit_rounded,
-                      label: 'تعديل الملف الشخصي',
+                      label: _t(context, 'edit_profile'),
                       onPressed: () =>
                           Navigator.pushNamed(context, '/edit-profile'),
                       isPrimary: true,
@@ -198,7 +207,7 @@ class WebMenuScreen extends StatelessWidget {
                     _buildActionButton(
                       context,
                       icon: Icons.lock_rounded,
-                      label: 'تغيير كلمة المرور',
+                      label: _t(context, 'change_password'),
                       onPressed: () =>
                           Navigator.pushNamed(context, '/change-password'),
                       isPrimary: false,
@@ -206,7 +215,7 @@ class WebMenuScreen extends StatelessWidget {
                     _buildActionButton(
                       context,
                       icon: Icons.logout_rounded,
-                      label: 'تسجيل الخروج',
+                      label: _t(context, 'logout'),
                       onPressed: () async {
                         await Supabase.instance.client.auth.signOut();
                         if (context.mounted) {
@@ -294,9 +303,9 @@ class WebMenuScreen extends StatelessWidget {
             color: Colors.white,
           ),
           const SizedBox(height: 20),
-          const Text(
-            'مرحباً بك!',
-            style: TextStyle(
+          Text(
+            _t(context, 'welcome'),
+            style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w900,
               color: Colors.white,
@@ -305,7 +314,7 @@ class WebMenuScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'سجل الدخول للحصول على تجربة شخصية',
+            _t(context, 'signin_for_personal_experience'),
             style: TextStyle(
               fontSize: 16,
               color: Colors.white.withValues(alpha: 0.9),
@@ -320,9 +329,9 @@ class WebMenuScreen extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: () => Navigator.pushNamed(context, '/signin'),
                 icon: const Icon(Icons.login_rounded),
-                label: const Text(
-                  'تسجيل الدخول',
-                  style: TextStyle(
+                label: Text(
+                  _t(context, 'sign_in'),
+                  style: const TextStyle(
                     fontFamily: 'Tajawal',
                     fontWeight: FontWeight.w700,
                     fontSize: 16,
@@ -341,9 +350,9 @@ class WebMenuScreen extends StatelessWidget {
               const SizedBox(width: 12),
               TextButton(
                 onPressed: () => Navigator.pushNamed(context, '/signup'),
-                child: const Text(
-                  'إنشاء حساب',
-                  style: TextStyle(
+                child: Text(
+                  _t(context, 'create_account'),
+                  style: const TextStyle(
                     color: Colors.white,
                     fontFamily: 'Tajawal',
                     fontWeight: FontWeight.w700,
@@ -370,16 +379,16 @@ class WebMenuScreen extends StatelessWidget {
           if (user != null) ...[
             _buildMenuSection(
               context,
-              title: 'الحساب',
+              title: _t(context, 'account'),
               items: [
                 _MenuItem(
                   icon: Icons.notifications_rounded,
-                  title: 'الإشعارات',
+                  title: _t(context, 'notifications'),
                   onTap: () => Navigator.pushNamed(context, '/notifications'),
                 ),
                 _MenuItem(
                   icon: Icons.delete_forever_rounded,
-                  title: 'حذف الحساب',
+                  title: _t(context, 'delete_account'),
                   onTap: () => Navigator.pushNamed(context, '/delete-account'),
                 ),
               ],
@@ -392,11 +401,11 @@ class WebMenuScreen extends StatelessWidget {
                     children: [
                       _buildMenuSection(
                         context,
-                        title: 'الإدارة',
+                        title: _t(context, 'admin'),
                         items: [
                           _MenuItem(
                             icon: Icons.admin_panel_settings_rounded,
-                            title: 'لوحة التحكم',
+                            title: _t(context, 'admin_panel'),
                             onTap: () => Navigator.pushNamed(context, '/admin'),
                           ),
                         ],
@@ -411,16 +420,16 @@ class WebMenuScreen extends StatelessWidget {
           ],
           _buildMenuSection(
             context,
-            title: 'المساعدة والدعم',
+            title: _t(context, 'help_support'),
             items: [
               _MenuItem(
                 icon: Icons.email_rounded,
-                title: 'اتصل بنا',
+                title: _t(context, 'contact_us'),
                 onTap: () => Navigator.pushNamed(context, '/contact'),
               ),
               _MenuItem(
                 icon: Icons.quiz_rounded,
-                title: 'الأسئلة الشائعة',
+                title: _t(context, 'faq'),
                 onTap: () => Navigator.pushNamed(context, '/faq'),
               ),
             ],
@@ -428,21 +437,21 @@ class WebMenuScreen extends StatelessWidget {
           const SizedBox(height: 20),
           _buildMenuSection(
             context,
-            title: 'حول التطبيق',
+            title: _t(context, 'about_app'),
             items: [
               _MenuItem(
                 icon: Icons.description_rounded,
-                title: 'الشروط والأحكام',
+                title: _t(context, 'terms_conditions'),
                 onTap: () => Navigator.pushNamed(context, '/terms'),
               ),
               _MenuItem(
                 icon: Icons.privacy_tip_rounded,
-                title: 'سياسة الخصوصية',
+                title: _t(context, 'privacy_policy'),
                 onTap: () => Navigator.pushNamed(context, '/privacy'),
               ),
               _MenuItem(
                 icon: Icons.info_rounded,
-                title: 'عن التطبيق',
+                title: _t(context, 'about_app_link'),
                 onTap: () => Navigator.pushNamed(context, '/about'),
               ),
             ],
