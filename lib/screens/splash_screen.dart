@@ -63,109 +63,151 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final logoSize = (size.shortestSide * 0.44).clamp(150.0, 220.0);
+    final animationSize = (size.shortestSide * 0.36).clamp(130.0, 190.0);
+
     return Scaffold(
       body: Container(
         width: double.infinity,
+        height: double.infinity,
         // إضافة تدرج لوني ناعم يعطي فخامة للخلفية
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
+              Constants.primaryColor.withValues(alpha: 0.08),
               Colors.white,
               Constants.primaryColor.withValues(alpha: 0.05),
             ],
+            stops: const [0.0, 0.42, 1.0],
           ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Spacer(flex: 2),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Column(
+              children: [
+                SizedBox(height: size.height * 0.2),
 
-            // حاوية الأنيميشن مع ظل ناعم خلف الـ Lottie
-            Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Constants.primaryColor.withValues(alpha: 0.1),
-                    blurRadius: 50,
-                    spreadRadius: 5,
-                  ),
-                ],
-              ),
-              child: SizedBox(
-                width: 250,
-                height: 250,
-                child: Lottie.asset(
-                  'assets/animations/coupon_animation.json',
-                  controller: _controller,
-                  fit: BoxFit.contain,
-                  onLoaded: (composition) {
-                    _controller
-                      ..duration = composition.duration
-                      ..forward();
-                  },
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            // نص العنوان بأنيميشن ظهور تدريجي واستخدام خط Tajawal
-            AnimatedOpacity(
-              duration: const Duration(seconds: 1),
-              opacity: _opacity,
-              child: Column(
-                children: [
-                  Text(
-                    'وفرها صح',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w900,
-                      color: Constants.primaryColor,
-                      fontFamily: 'Tajawal',
-                      letterSpacing: 1.2,
+                AnimatedOpacity(
+                  duration: const Duration(milliseconds: 900),
+                  opacity: _opacity,
+                  child: Container(
+                    width: logoSize,
+                    height: logoSize,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Constants.primaryColor.withValues(alpha: 0.18),
+                          blurRadius: 36,
+                          offset: const Offset(0, 18),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'كوبونات وعروض',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.grey[600],
-                      fontFamily: 'Tajawal',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const Spacer(flex: 2),
-
-            // مؤشر تحميل بسيط وأنيق في الأسفل
-            AnimatedOpacity(
-              duration: const Duration(seconds: 1),
-              opacity: _opacity,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 50),
-                child: SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Constants.primaryColor.withValues(alpha: 0.5),
+                    clipBehavior: Clip.antiAlias,
+                    child: Image.asset(
+                      'assets/image/wffrhasah.png',
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),
-              ),
+
+                const SizedBox(height: 32),
+
+                // نص العنوان بأنيميشن ظهور تدريجي واستخدام خط Tajawal
+                AnimatedOpacity(
+                  duration: const Duration(seconds: 1),
+                  opacity: _opacity,
+                  child: Column(
+                    children: [
+                      Text(
+                        'وفرها صح',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: AppSplashResponsive.titleSize(context),
+                          fontWeight: FontWeight.w900,
+                          color: Constants.primaryColor,
+                          fontFamily: 'Tajawal',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'كوبونات وعروض ',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: AppSplashResponsive.subtitleSize(context),
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey[700],
+                          fontFamily: 'Tajawal',
+                        ),
+                      ),
+                      const SizedBox(height: 100),
+                      SizedBox(
+                        width: animationSize,
+                        height: animationSize,
+                        child: Lottie.asset(
+                          'assets/animations/coupon_animation.json',
+                          controller: _controller,
+                          fit: BoxFit.contain,
+                          onLoaded: (composition) {
+                            _controller
+                              ..duration = composition.duration
+                              ..repeat();
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                // مؤشر تحميل بسيط وأنيق في الأسفل
+                AnimatedOpacity(
+                  duration: const Duration(seconds: 1),
+                  opacity: _opacity,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 34),
+                    child: Column(
+                      children: [
+                        
+                        const SizedBox(height: 14),
+                        Text(
+                          'جاري التحميل...',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[500],
+                            fontFamily: 'Tajawal',
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
+  }
+}
+
+class AppSplashResponsive {
+  static double titleSize(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    if (width >= 700) return 40;
+    return 34;
+  }
+
+  static double subtitleSize(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    if (width >= 700) return 20;
+    return 17;
   }
 }
 

@@ -84,6 +84,7 @@
   "store": "المتجر",
   "coupon_description": "تفاصيل الكوبون",
   "share_coupon": "مشاركة الكوبون",
+  "share_failed": "تعذرت المشاركة، حاول مرة أخرى",
   "copied_success": "تم النسخ بنجاح",
   "stores": "المتاجر",
   "noon": "نون",

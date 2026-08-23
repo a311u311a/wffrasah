@@ -12,11 +12,13 @@ import 'loading_indicator.dart';
 class StoresList extends StatefulWidget {
   final Function(String?) onStoreSelected;
   final String? selectedStoreId; // slug غالباً
+  final bool onlyStoresWithCoupons;
 
   const StoresList({
     super.key,
     required this.onStoreSelected,
     this.selectedStoreId,
+    this.onlyStoresWithCoupons = false,
   });
 
   @override
@@ -42,15 +44,20 @@ class _StoresListState extends State<StoresList> {
 
     final results = await Future.wait([
       supabase.from('stores').select(),
-      supabase
-          .from('coupons')
-          .select('store_id,import_source,approval_status')
-          .neq('import_source', 'manual'),
+      supabase.from('coupons').select('store_id,import_source,approval_status'),
     ]);
     final storeRows = results[0];
-    final importedCoupons = results[1] as List;
+    final couponRows = results[1] as List;
+    final importedCoupons = couponRows.where((coupon) {
+      return (coupon['import_source'] ?? '').toString() != 'manual';
+    });
     final importedStoreIds = importedCoupons
         .map((coupon) => (coupon['store_id'] ?? '').toString())
+        .where((storeId) => storeId.isNotEmpty)
+        .toSet();
+    final approvedStoreIds = couponRows
+        .where((coupon) => coupon['approval_status'] == 'approved')
+        .map((coupon) => (coupon['store_id'] ?? '').toString().trim())
         .where((storeId) => storeId.isNotEmpty)
         .toSet();
     final approvedImportedStoreIds = importedCoupons
@@ -71,7 +78,14 @@ class _StoresListState extends State<StoresList> {
             return false;
           }
 
-          final slug = (data['slug'] ?? '').toString();
+          final id = (data['id'] ?? '').toString().trim();
+          final slug = (data['slug'] ?? '').toString().trim();
+          if (widget.onlyStoresWithCoupons &&
+              !approvedStoreIds.contains(slug) &&
+              !approvedStoreIds.contains(id)) {
+            return false;
+          }
+
           return !importedStoreIds.contains(slug) ||
               approvedImportedStoreIds.contains(slug);
         })
@@ -93,9 +107,10 @@ class _StoresListState extends State<StoresList> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
+    final scale = AppResponsive.tabletScale(context);
 
     return SizedBox(
-      height: 75,
+      height: 75 * scale,
       child: FutureBuilder<List<Store>>(
         future: _storesFuture,
         builder: (context, snapshot) {
@@ -154,6 +169,7 @@ class _StoresListState extends State<StoresList> {
   ) {
     final isTablet = AppResponsive.isTablet(context);
     final itemSize = isTablet ? 88.0 : 75.0;
+    final iconSize = 40.0 * AppResponsive.tabletScale(context);
 
     return GestureDetector(
       onTap: () => widget.onStoreSelected(storeKey),
@@ -191,7 +207,7 @@ class _StoresListState extends State<StoresList> {
               store.image,
               fit: BoxFit.contain,
               errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.store, size: 40, color: Colors.grey),
+                  Icon(Icons.store, size: iconSize, color: Colors.grey),
             ),
           ),
         ),
@@ -202,6 +218,7 @@ class _StoresListState extends State<StoresList> {
   Widget _buildShowAllItem(BuildContext context, bool isSelected) {
     final localizations = AppLocalizations.of(context);
     final isTablet = AppResponsive.isTablet(context);
+    final scale = AppResponsive.tabletScale(context);
     final itemSize = isTablet ? 88.0 : 75.0;
 
     return GestureDetector(
@@ -237,8 +254,8 @@ class _StoresListState extends State<StoresList> {
           children: [
             SvgPicture.asset(
               'assets/icon/grid.svg',
-              height: 30,
-              width: 30,
+              height: 30 * scale,
+              width: 30 * scale,
               colorFilter: ColorFilter.mode(
                 isSelected ? Constants.primaryColor : Colors.grey,
                 BlendMode.srcIn,
@@ -251,7 +268,7 @@ class _StoresListState extends State<StoresList> {
               style: TextStyle(
                 color: isSelected ? Constants.primaryColor : Colors.black87,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                fontSize: 12,
+                fontSize: 12 * scale,
               ),
             ),
           ],

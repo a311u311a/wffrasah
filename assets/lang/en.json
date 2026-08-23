@@ -88,6 +88,7 @@
   "store": "Store",
   "coupon_description": "Coupon Details",
   "share_coupon": "Share Coupon",
+  "share_failed": "Sharing failed, please try again",
   "copied_success": "Copied Successfully",
   "noon": "noon",
   "contact_us_title": "We are here to help!",

@@ -831,6 +831,20 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
 
   bool get _isEdit => widget.offer != null;
 
+  String get _selectedStoreName {
+    if (_selectedStoreId == null || _selectedStoreId!.isEmpty) return '';
+    final selectedStore = _stores.cast<Map<String, dynamic>?>().firstWhere(
+          (store) => (store?['slug'] ?? '').toString() == _selectedStoreId,
+          orElse: () => null,
+        );
+    return (selectedStore?['name_ar'] ??
+            selectedStore?['name'] ??
+            selectedStore?['name_en'] ??
+            '')
+        .toString()
+        .trim();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -969,6 +983,7 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
         'tags': tags,
         'category_id': _selectedCategoryId,
         'store_id': _selectedStoreId,
+        'store_name': _selectedStoreName,
         'expiry_date': _expiryDate?.toIso8601String(),
       };
 
@@ -976,7 +991,10 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
         await _sb.from('offers').update(data).eq('id', widget.offer!.id);
         if (mounted) showSnackBar(context, 'تم تحديث العرض بنجاح');
       } else {
-        await _sb.from('offers').insert(data);
+        await _sb.from('offers').insert({
+          ...data,
+          'created_at': DateTime.now().toIso8601String(),
+        });
         if (mounted) showSnackBar(context, 'تم إضافة العرض بنجاح');
       }
 

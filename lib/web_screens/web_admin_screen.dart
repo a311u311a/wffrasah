@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../constants.dart';
 import '../web_widgets/web_navigation_bar.dart';
@@ -23,16 +24,17 @@ class WebAdminScreen extends StatefulWidget {
 
 class _WebAdminScreenState extends State<WebAdminScreen> {
   int _selectedIndex = 0;
+  String _version = '';
   final SupabaseClient _sb = Supabase.instance.client;
 
   final List<String> _titles = [
     'نظرة عامة',
     'إدارة المتاجر',
     'إدارة الكوبونات',
-    'بانتظار الموافقة',
-    'إدارة الفئات',
     'إدارة العروض',
+    'إدارة الفئات',
     'بنر الصور',
+    'بانتظار الموافقة',
     'الإشعارات',
   ];
 
@@ -40,10 +42,10 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
     Icons.dashboard_rounded,
     Icons.storefront_rounded,
     Icons.confirmation_number_rounded,
-    Icons.pending_actions_rounded,
-    Icons.category_rounded,
     Icons.local_offer_rounded,
+    Icons.category_rounded,
     Icons.view_carousel_rounded,
+    Icons.pending_actions_rounded,
     Icons.notifications_active_rounded,
   ];
 
@@ -51,12 +53,26 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
     'stores',
     'stores',
     'coupons',
-    'admin_pending_coupons',
-    'categories',
     'offers',
+    'categories',
     'carousel',
+    'admin_pending_coupons',
     'notifications',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _initPackageInfo();
+  }
+
+  Future<void> _initPackageInfo() async {
+    final info = await PackageInfo.fromPlatform();
+    if (!mounted) return;
+    setState(() {
+      _version = info.version;
+    });
+  }
 
   Future<int> _countRows(String source) async {
     try {
@@ -76,10 +92,10 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
       ),
       const WebAdminStoresScreen(isEmbedded: true),
       const WebAdminCouponsScreen(isEmbedded: true),
-      const AdminPendingCouponsScreen(isEmbedded: true),
-      const AdminCategoriesScreen(isEmbedded: true),
       const WebAdminOffersScreen(isEmbedded: true),
+      const AdminCategoriesScreen(isEmbedded: true),
       const WebAdminCarouselScreen(isEmbedded: true),
+      const AdminPendingCouponsScreen(isEmbedded: true),
       const WebAdminNotificationsScreen(isEmbedded: true),
     ];
 
@@ -208,7 +224,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
                 Padding(
                   padding: const EdgeInsets.all(20),
                   child: Text(
-                    'الإصدار 1.0.0',
+                    _version.isEmpty ? '' : 'الإصدار $_version',
                     style: TextStyle(color: Colors.grey[400], fontSize: 12),
                   ),
                 ),
@@ -307,10 +323,10 @@ class _AdminOverview extends StatelessWidget {
       future: Future.wait([
         countRows('stores'),
         countRows('coupons'),
-        countRows('admin_pending_coupons'),
-        countRows('categories'),
         countRows('offers'),
+        countRows('categories'),
         countRows('carousel'),
+        countRows('admin_pending_coupons'),
         countRows('notifications'),
       ]),
       builder: (context, snapshot) {
@@ -318,10 +334,10 @@ class _AdminOverview extends StatelessWidget {
         final loading = snapshot.connectionState == ConnectionState.waiting;
         final stores = counts[0];
         final coupons = counts[1];
-        final pending = counts[2];
+        final offers = counts[2];
         final categories = counts[3];
-        final offers = counts[4];
-        final carousel = counts[5];
+        final carousel = counts[4];
+        final pending = counts[5];
         final notifications = counts[6];
         final totalContent = coupons + offers;
         final approvalRate = coupons + pending == 0
@@ -369,11 +385,11 @@ class _AdminOverview extends StatelessWidget {
                           onTap: () => onOpenSection(2),
                         ),
                         _MetricTile(
-                          title: 'بانتظار الموافقة',
-                          value: pending,
-                          subtitle: 'تحتاج مراجعة',
-                          icon: Icons.pending_actions_rounded,
-                          color: const Color(0xFFE11D48),
+                          title: 'العروض',
+                          value: offers,
+                          subtitle: 'عروض منشورة',
+                          icon: Icons.local_offer_rounded,
+                          color: const Color(0xFF0284C7),
                           onTap: () => onOpenSection(3),
                         ),
                         _MetricTile(
@@ -385,12 +401,20 @@ class _AdminOverview extends StatelessWidget {
                           onTap: () => onOpenSection(4),
                         ),
                         _MetricTile(
-                          title: 'العروض',
-                          value: offers,
-                          subtitle: 'عروض منشورة',
-                          icon: Icons.local_offer_rounded,
-                          color: const Color(0xFF0284C7),
+                          title: 'بنر الصور',
+                          value: carousel,
+                          subtitle: 'صور في الشريط',
+                          icon: Icons.view_carousel_rounded,
+                          color: const Color(0xFF0EA5A4),
                           onTap: () => onOpenSection(5),
+                        ),
+                        _MetricTile(
+                          title: 'بانتظار الموافقة',
+                          value: pending,
+                          subtitle: 'تحتاج مراجعة',
+                          icon: Icons.pending_actions_rounded,
+                          color: const Color(0xFFE11D48),
+                          onTap: () => onOpenSection(6),
                         ),
                         _MetricTile(
                           title: 'الإشعارات',
@@ -416,9 +440,11 @@ class _AdminOverview extends StatelessWidget {
                           child: _LineChart(
                             values: [
                               stores.toDouble(),
-                              categories.toDouble(),
                               coupons.toDouble(),
                               offers.toDouble(),
+                              categories.toDouble(),
+                              carousel.toDouble(),
+                              pending.toDouble(),
                               notifications.toDouble(),
                             ],
                           ),
@@ -758,17 +784,17 @@ class _QuickActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final actions = [
-      (title: 'مراجعة المعلّق', icon: Icons.pending_actions_rounded, index: 3),
+      (title: 'إدارة المتاجر', icon: Icons.storefront_rounded, index: 1),
       (
         title: 'إدارة الكوبونات',
         icon: Icons.confirmation_number_rounded,
         index: 2
       ),
-      (title: 'إدارة العروض', icon: Icons.local_offer_rounded, index: 5),
+      (title: 'إدارة العروض', icon: Icons.local_offer_rounded, index: 3),
       (
-        title: 'إرسال إشعار',
-        icon: Icons.notifications_active_rounded,
-        index: 7
+        title: 'مراجعة المعلّق',
+        icon: Icons.pending_actions_rounded,
+        index: 6
       ),
     ];
 

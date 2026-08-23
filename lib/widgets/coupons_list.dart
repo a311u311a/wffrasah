@@ -129,7 +129,7 @@ class _CouponsListState extends State<CouponsList> {
       ),
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: AppResponsive.isTablet(context) ? 380 : 420,
-        mainAxisExtent: AppResponsive.isTablet(context) ? 285 : 255,
+        mainAxisExtent: AppResponsive.isTablet(context) ? 245 : 255,
         crossAxisSpacing: 18,
         mainAxisSpacing: 18,
       ),

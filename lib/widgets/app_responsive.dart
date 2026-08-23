@@ -8,6 +8,14 @@ class AppResponsive {
     return MediaQuery.sizeOf(context).shortestSide >= tabletMinWidth;
   }
 
+  static double tabletScale(BuildContext context) {
+    return isTablet(context) ? 1.12 : 1.0;
+  }
+
+  static double scaled(BuildContext context, double value) {
+    return value * tabletScale(context);
+  }
+
   static double contentMaxWidth(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
     if (width >= largeTabletMinWidth) return 980;

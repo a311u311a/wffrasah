@@ -9,6 +9,7 @@ import '../constants.dart';
 import '../models/coupon.dart';
 import '../providers/favorites_provider.dart';
 import '../localization/app_localizations.dart';
+import 'app_responsive.dart';
 
 class CouponCard extends StatefulWidget {
   final Coupon coupon;
@@ -42,13 +43,29 @@ class _CouponCardState extends State<CouponCard> {
 
   Future<void> _shareCoupon(BuildContext context) async {
     final localizations = AppLocalizations.of(context)!;
-    await SharePlus.instance.share(
-      ShareParams(
-        text:
-            '${localizations.translate('coupon_code')}: ${widget.coupon.code}\n'
-            '${localizations.translate('store')}: ${widget.coupon.name}',
-      ),
-    );
+    final box = context.findRenderObject() as RenderBox?;
+    final sharePositionOrigin =
+        box == null ? null : box.localToGlobal(Offset.zero) & box.size;
+
+    try {
+      await SharePlus.instance.share(
+        ShareParams(
+          text:
+              '${localizations.translate('coupon_code')}: ${widget.coupon.code}\n'
+              '${localizations.translate('store')}: ${widget.coupon.name}',
+          sharePositionOrigin: sharePositionOrigin,
+        ),
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            localizations.translate('share_failed'),
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _visitStore() async {
@@ -68,6 +85,131 @@ class _CouponCardState extends State<CouponCard> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context)!;
+    final isTablet = AppResponsive.isTablet(context);
+    final scale = isTablet ? 1.05 : 1.0;
+    final imageHeight = isTablet ? 120.0 : 125.0;
+    final iconSize = 18.0 * scale;
+    final actionGap = isTablet ? 8.0 : 12.0;
+    final contentVerticalPadding = isTablet ? 6.0 : 8.0;
+    final contentBottomPadding = isTablet ? 12.0 : contentVerticalPadding;
+    final descriptionButtonGap = isTablet ? 10.0 : 16.0;
+    final buttonHeight = isTablet ? 40.0 : 40.0 * scale;
+    final fontSize = globalFontSize * scale;
+    final descriptionMaxLines = isTablet ? 2 : 4;
+    final buttonsRow =
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+      /// COPY BUTTON (Expanded flex: 2)
+      Expanded(
+        flex: 3, // يأخذ ثلثي المساحة
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SizedBox(
+              height: buttonHeight,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      label: Text(
+                        '  ${widget.coupon.code}',
+                        overflow: TextOverflow.ellipsis, // لضمان عدم خروج النص
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Constants.primaryColor,
+                        padding: EdgeInsets.zero, // إزالة الهوامش الكبيرة
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(
+                              color: Constants.primaryColor, width: 2),
+                        ),
+                      ),
+                      onPressed: () {
+                        _copyCodeToClipboard(widget.coupon.code);
+                      },
+                    ),
+                  ),
+                  Positioned.fill(
+                    right: null,
+                    left: 0,
+                    child: GestureDetector(
+                      onTap: () {
+                        _copyCodeToClipboard(widget.coupon.code);
+                      },
+                      child: AnimatedContainer(
+                        width:
+                            isCopied ? 100 : constraints.maxWidth, // عرض متغير
+                        height: buttonHeight,
+                        duration: const Duration(milliseconds: 300),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          gradient: LinearGradient(
+                            colors: [
+                              Constants.primaryColor,
+                              Colors.transparent
+                            ],
+                            stops: const [0.5, 0.5],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ),
+                        ),
+                        child: Center(
+                          child: isCopied
+                              ? Padding(
+                                  padding: const EdgeInsets.only(right: 50),
+                                  child: Icon(Icons.check,
+                                      color: Colors.white, size: 24 * scale),
+                                )
+                              : Padding(
+                                  padding: EdgeInsets.only(
+                                      right: constraints.maxWidth *
+                                          0.45), // ضبط مكان النص
+                                  child: Text(
+                                    localizations.translate('copy_code'),
+                                    style: TextStyle(
+                                      fontSize: fontSize,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+
+      const SizedBox(width: 8),
+
+      /// VISIT STORE BUTTON (Flexible flex: 1)
+      Expanded(
+        flex: 2, // يأخذ ثلث المساحة
+        child: SizedBox(
+          height: buttonHeight,
+          child: ElevatedButton(
+            onPressed: _visitStore,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Constants.primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: Text(
+              localizations.translate('visit_store'),
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: fontSize),
+            ),
+          ),
+        ),
+      ),
+    ]);
 
     return Card(
       margin: widget.margin ??
@@ -85,246 +227,142 @@ class _CouponCardState extends State<CouponCard> {
             )
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            /// ================= IMAGE =================
-            Padding(
-              padding: const EdgeInsets.all(5),
-              child: Row(
-                children: [
-                  /// IMAGE
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(15),
-                      child: Image.network(
-                        widget.coupon.image,
-                        height: 125,
-                        width: double.infinity,
-                        fit: BoxFit.fill,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            height: 125,
-                            color: Colors.grey[200],
-                            child: const Center(
-                                child: CircularProgressIndicator()),
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            height: 125,
-                            color: Colors.grey[400],
-                            child:
-                                const Icon(Icons.image_not_supported, size: 50),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(width: 12),
-
-                  /// SHARE + FAVORITE (Beside Image)
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Share
-                      _IconActionPill(
-                        onTap: () => _shareCoupon(context),
-                        child: SvgPicture.asset(
-                          'assets/icon/share.svg',
-                          height: 18,
-                          width: 18,
-                          colorFilter: const ColorFilter.mode(
-                              Colors.white, BlendMode.srcIn),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-
-                      // Favorite
-                      Consumer<FavoriteProvider>(
-                        builder: (context, favoriteProvider, _) {
-                          final isFavorite =
-                              favoriteProvider.isFavorite(widget.coupon.id);
-                          return _IconActionPill(
-                            onTap: () => favoriteProvider.toggleFavorite(
-                                widget.coupon, context),
-                            child: AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 260),
-                              transitionBuilder: (child, anim) =>
-                                  ScaleTransition(scale: anim, child: child),
-                              child: isFavorite
-                                  ? SvgPicture.asset(
-                                      'assets/icon/star_active.svg',
-                                      key: const ValueKey('fav_active'),
-                                      height: 18,
-                                      width: 18,
-                                      colorFilter: const ColorFilter.mode(
-                                          Color(0xFFFFD700), BlendMode.srcIn),
-                                    )
-                                  : SvgPicture.asset(
-                                      'assets/icon/star.svg',
-                                      key: const ValueKey('fav_inactive'),
-                                      height: 18,
-                                      width: 18,
-                                      colorFilter: const ColorFilter.mode(
-                                          Colors.white, BlendMode.srcIn),
-                                    ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 5),
-                ],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final pinButtonsToBottom = constraints.hasBoundedHeight;
+            final content = Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: 12,
+              ).copyWith(
+                top: contentVerticalPadding,
+                bottom: contentBottomPadding,
               ),
-            ),
-
-            /// ================= CONTENT =================
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Column(
+                mainAxisAlignment: pinButtonsToBottom
+                    ? MainAxisAlignment.spaceBetween
+                    : MainAxisAlignment.start,
                 children: [
                   Text(
                     widget.coupon.description,
                     textAlign: TextAlign.center,
+                    maxLines: descriptionMaxLines,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: globalFontSize - 1,
+                      fontSize: fontSize - 1,
                       color: Colors.black,
                     ),
                   ),
+                  if (!pinButtonsToBottom)
+                    SizedBox(height: descriptionButtonGap),
+                  buttonsRow,
+                ],
+              ),
+            );
 
-                  const SizedBox(height: 16),
-
-                  /// COPY CODE (FLEXIBLE SIZE) + VISIT STORE
-                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    /// COPY BUTTON (Expanded flex: 2)
-                    Expanded(
-                      flex: 3, // يأخذ ثلثي المساحة
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          return SizedBox(
-                            height: 40,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton.icon(
-                                    label: Text(
-                                      '  ${widget.coupon.code}',
-                                      overflow: TextOverflow
-                                          .ellipsis, // لضمان عدم خروج النص
-                                    ),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.white,
-                                      foregroundColor: Constants.primaryColor,
-                                      padding: EdgeInsets
-                                          .zero, // إزالة الهوامش الكبيرة
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        side: BorderSide(
-                                            color: Constants.primaryColor,
-                                            width: 2),
-                                      ),
-                                    ),
-                                    onPressed: () {
-                                      _copyCodeToClipboard(widget.coupon.code);
-                                    },
-                                  ),
-                                ),
-                                Positioned.fill(
-                                  right: null,
-                                  left: 0,
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      _copyCodeToClipboard(widget.coupon.code);
-                                    },
-                                    child: AnimatedContainer(
-                                      width: isCopied
-                                          ? 100
-                                          : constraints.maxWidth, // عرض متغير
-                                      height: 40,
-                                      duration:
-                                          const Duration(milliseconds: 300),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            Constants.primaryColor,
-                                            Colors.transparent
-                                          ],
-                                          stops: const [0.5, 0.5],
-                                          begin: Alignment.centerLeft,
-                                          end: Alignment.centerRight,
-                                        ),
-                                      ),
-                                      child: Center(
-                                        child: isCopied
-                                            ? const Padding(
-                                                padding:
-                                                    EdgeInsets.only(right: 50),
-                                                child: Icon(Icons.check,
-                                                    color: Colors.white,
-                                                    size: 24),
-                                              )
-                                            : Padding(
-                                                padding: EdgeInsets.only(
-                                                    right: constraints
-                                                            .maxWidth *
-                                                        0.45), // ضبط مكان النص
-                                                child: Text(
-                                                  localizations
-                                                      .translate('copy_code'),
-                                                  style: TextStyle(
-                                                    fontSize: globalFontSize,
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                              ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(width: 8),
-
-                    /// VISIT STORE BUTTON (Flexible flex: 1)
-                    Expanded(
-                      flex: 2, // يأخذ ثلث المساحة
-                      child: SizedBox(
-                        height: 40,
-                        child: ElevatedButton(
-                          onPressed: _visitStore,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Constants.primaryColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: Text(
-                            localizations.translate('visit_store'),
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: globalFontSize),
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                /// ================= IMAGE =================
+                Padding(
+                  padding: const EdgeInsets.all(5),
+                  child: Row(
+                    children: [
+                      /// IMAGE
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(15),
+                          child: Image.network(
+                            widget.coupon.image,
+                            height: imageHeight,
+                            width: double.infinity,
+                            fit: BoxFit.fill,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                height: imageHeight,
+                                color: Colors.grey[200],
+                                child: const Center(
+                                    child: CircularProgressIndicator()),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                height: imageHeight,
+                                color: Colors.grey[400],
+                                child: Icon(Icons.image_not_supported,
+                                    size: 50 * scale),
+                              );
+                            },
                           ),
                         ),
                       ),
-                    ),
-                  ]),
-                ],
-              ),
-            ),
-          ],
+
+                      SizedBox(width: actionGap),
+
+                      /// SHARE + FAVORITE (Beside Image)
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Share
+                          _IconActionPill(
+                            onTap: () => _shareCoupon(context),
+                            child: SvgPicture.asset(
+                              'assets/icon/share.svg',
+                              height: iconSize,
+                              width: iconSize,
+                              colorFilter: const ColorFilter.mode(
+                                  Colors.white, BlendMode.srcIn),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+
+                          // Favorite
+                          Consumer<FavoriteProvider>(
+                            builder: (context, favoriteProvider, _) {
+                              final isFavorite =
+                                  favoriteProvider.isFavorite(widget.coupon.id);
+                              return _IconActionPill(
+                                onTap: () => favoriteProvider.toggleFavorite(
+                                    widget.coupon, context),
+                                child: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 260),
+                                  transitionBuilder: (child, anim) =>
+                                      ScaleTransition(
+                                          scale: anim, child: child),
+                                  child: isFavorite
+                                      ? SvgPicture.asset(
+                                          'assets/icon/star_active.svg',
+                                          key: const ValueKey('fav_active'),
+                                          height: iconSize,
+                                          width: iconSize,
+                                          colorFilter: const ColorFilter.mode(
+                                              Color(0xFFFFD700),
+                                              BlendMode.srcIn),
+                                        )
+                                      : SvgPicture.asset(
+                                          'assets/icon/star.svg',
+                                          key: const ValueKey('fav_inactive'),
+                                          height: iconSize,
+                                          width: iconSize,
+                                          colorFilter: const ColorFilter.mode(
+                                              Colors.white, BlendMode.srcIn),
+                                        ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 5),
+                    ],
+                  ),
+                ),
+
+                /// ================= CONTENT =================
+                if (pinButtonsToBottom) Expanded(child: content) else content,
+              ],
+            );
+          },
         ),
       ),
     );
@@ -370,13 +408,14 @@ class _IconActionPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scale = AppResponsive.isTablet(context) ? 1.05 : 1.0;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(30),
         child: _Pill(
-          padding: const EdgeInsets.all(8),
+          padding: EdgeInsets.all(8 * scale),
           child: child,
         ),
       ),

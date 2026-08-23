@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../screens/login_signup/widgets/snackbar.dart';
 import '../constants.dart';
@@ -9,6 +10,7 @@ import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
 import '../localization/app_localizations.dart';
+import '../providers/locale_provider.dart';
 
 /// صفحة تسجيل الدخول للويب
 class WebSignInScreen extends StatefulWidget {
@@ -226,9 +228,11 @@ class _WebSignInScreenState extends State<WebSignInScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isArabic =
+        Provider.of<LocaleProvider>(context).locale.languageCode == 'ar';
 
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
       child: Theme(
         data: theme.copyWith(
           scaffoldBackgroundColor: bg,

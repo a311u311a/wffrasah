@@ -23,6 +23,7 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
 
   Future<void> _initPackageInfo() async {
     final info = await PackageInfo.fromPlatform();
+    if (!mounted) return;
     setState(() {
       _version = info.version;
     });

@@ -1061,6 +1061,7 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
       'web': _webCtrl.text.trim(),
       'category_id': _selectedCategoryId,
       'store_id': _selectedStoreId,
+      'store_name': _selectedStoreName ?? '',
       'tags': _codeCtrl.text.trim().isEmpty
           ? <String>[]
           : <String>[_codeCtrl.text.trim()],
@@ -1070,7 +1071,10 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
 
     try {
       if (widget.offer == null) {
-        await _supabase.from('offers').insert(data);
+        await _supabase.from('offers').insert({
+          ...data,
+          'created_at': DateTime.now().toIso8601String(),
+        });
       } else {
         data['id'] = widget.offer!.id;
         data.removeWhere((key, value) => value == null);

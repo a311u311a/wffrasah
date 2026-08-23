@@ -64,7 +64,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       ? _buildNoSearchResults(context, localizations)
                       : ListView.builder(
                           // تعديل البادينج لتعويض AppBar الشفاف
-                          padding: const EdgeInsets.only(top: 100, bottom: 20),
+                          padding: const EdgeInsets.only(top: 125, bottom: 20),
                           itemCount: filteredItems.length,
                           itemBuilder: (context, index) {
                             final item = filteredItems[index];

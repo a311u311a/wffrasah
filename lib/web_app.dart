@@ -63,13 +63,13 @@ class WebApp extends StatelessWidget {
         Locale('en'),
       ],
 
-      // ✨ فرض اللغة العربية كافتراضية
+      // Keep Arabic as the default, but allow the web language switcher to use English.
       localeResolutionCallback: (locale, supportedLocales) {
-        // إذا كانت لغة الجهاز عربية، استخدمها
-        if (locale?.languageCode == 'ar') {
-          return const Locale('ar');
+        for (final supportedLocale in supportedLocales) {
+          if (supportedLocale.languageCode == locale?.languageCode) {
+            return supportedLocale;
+          }
         }
-        // وإلا استخدم العربية كافتراضي
         return const Locale('ar');
       },
 

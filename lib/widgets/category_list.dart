@@ -4,6 +4,7 @@ import 'package:flutter_svg/svg.dart';
 import '../constants.dart';
 import '../localization/app_localizations.dart';
 import '../models/category.dart';
+import 'app_responsive.dart';
 import 'error_message.dart';
 import 'loading_indicator.dart';
 
@@ -16,6 +17,10 @@ class CategoryList extends StatefulWidget {
     required this.onCategorySelected,
     this.selectedCategoryId,
   });
+
+  static double preferredHeight(BuildContext context) {
+    return AppResponsive.isTablet(context) ? 128 : 100;
+  }
 
   @override
   State<CategoryList> createState() => _CategoryListState();
@@ -56,7 +61,7 @@ class _CategoryListState extends State<CategoryList> {
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
     return SizedBox(
-      height: 100,
+      height: CategoryList.preferredHeight(context),
       child: FutureBuilder<List<Category>>(
         future: _categoriesFuture,
         builder: (context, snapshot) {
@@ -92,15 +97,21 @@ class _CategoryListState extends State<CategoryList> {
   }
 
   Widget _buildCategoryItem(Category category, bool isSelected) {
+    final isTablet = AppResponsive.isTablet(context);
+    final iconSize = isTablet ? 48.0 : 35.0;
+    final itemWidth = isTablet ? 88.0 : 68.0;
+    final itemPadding = isTablet ? 13.0 : 12.0;
+    final textScale = AppResponsive.tabletScale(context);
     return GestureDetector(
       onTap: () => widget.onCategorySelected(category.id),
       child: SizedBox(
-        width: 68,
+        width: itemWidth,
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(itemPadding),
               decoration: BoxDecoration(
                 color: isSelected ? Constants.primaryColor : Colors.white,
                 borderRadius: BorderRadius.circular(12),
@@ -118,11 +129,11 @@ class _CategoryListState extends State<CategoryList> {
                       ),
                       child: Image.network(
                         category.image,
-                        width: 35,
-                        height: 35,
+                        width: iconSize,
+                        height: iconSize,
                         errorBuilder: (context, error, stackTrace) => Icon(
                           Icons.category_outlined,
-                          size: 35,
+                          size: iconSize,
                           color: isSelected
                               ? Colors.white
                               : Constants.primaryColor,
@@ -131,7 +142,7 @@ class _CategoryListState extends State<CategoryList> {
                     )
                   : Icon(
                       Icons.category_outlined,
-                      size: 35,
+                      size: iconSize,
                       color: isSelected ? Colors.white : Constants.primaryColor,
                     ),
             ),
@@ -142,7 +153,7 @@ class _CategoryListState extends State<CategoryList> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 11 * textScale,
                 color: isSelected ? Constants.primaryColor : Colors.black87,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
               ),
@@ -155,15 +166,21 @@ class _CategoryListState extends State<CategoryList> {
 
   Widget _buildShowAllItem(BuildContext context, bool isSelected) {
     final localizations = AppLocalizations.of(context);
+    final isTablet = AppResponsive.isTablet(context);
+    final iconSize = isTablet ? 48.0 : 35.0;
+    final itemWidth = isTablet ? 88.0 : 68.0;
+    final itemPadding = isTablet ? 13.0 : 12.0;
+    final textScale = AppResponsive.tabletScale(context);
     return GestureDetector(
       onTap: () => widget.onCategorySelected(null),
       child: SizedBox(
-        width: 68,
+        width: itemWidth,
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(itemPadding),
               decoration: BoxDecoration(
                 color: isSelected ? Constants.primaryColor : Colors.white,
                 borderRadius: BorderRadius.circular(12),
@@ -175,8 +192,8 @@ class _CategoryListState extends State<CategoryList> {
               ),
               child: SvgPicture.asset(
                 'assets/icon/apps.svg',
-                width: 35,
-                height: 35,
+                width: iconSize,
+                height: iconSize,
                 colorFilter: ColorFilter.mode(
                   isSelected ? Colors.white : Constants.primaryColor,
                   BlendMode.srcIn,
@@ -188,7 +205,7 @@ class _CategoryListState extends State<CategoryList> {
               localizations?.translate('all') ?? 'الكل',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 11 * textScale,
                 color: isSelected ? Constants.primaryColor : Colors.black87,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
               ),

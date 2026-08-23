@@ -116,13 +116,25 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
     final userProvider = Provider.of<UserProvider>(context);
 
     final allItems = [
-      {'label': 'الرئيسية', 'route': '/'},
-      {'label': 'المتاجر', 'route': '/stores'},
-      {'label': 'الكوبونات', 'route': '/coupons'},
-      {'label': 'العروض', 'route': '/offers'},
-      {'label': 'المفضلة', 'route': '/favorites'},
+      {'label': localizations?.translate('home') ?? 'الرئيسية', 'route': '/'},
       {
-        'label': 'لوحة التحكم',
+        'label': localizations?.translate('stores') ?? 'المتاجر',
+        'route': '/stores'
+      },
+      {
+        'label': localizations?.translate('coupons') ?? 'الكوبونات',
+        'route': '/coupons'
+      },
+      {
+        'label': localizations?.translate('offers') ?? 'العروض',
+        'route': '/offers'
+      },
+      {
+        'label': localizations?.translate('favorites') ?? 'المفضلة',
+        'route': '/favorites'
+      },
+      {
+        'label': localizations?.translate('admin_panel') ?? 'لوحة التحكم',
         'route': '/admin',
         'adminOnly': true,
       },
@@ -282,7 +294,9 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 100),
                   child: Text(
-                    user.userMetadata?['full_name'] ?? 'مستخدم',
+                    user.userMetadata?['full_name'] ??
+                        localizations?.translate('unknown_user') ??
+                        'مستخدم',
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 14,
@@ -302,8 +316,10 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
         ),
         itemBuilder: (context) => <PopupMenuEntry>[
           PopupMenuItem(
-            child:
-                _buildPopupItem(Icons.person_outline_rounded, 'الملف الشخصي'),
+            child: _buildPopupItem(
+              Icons.person_outline_rounded,
+              localizations?.translate('account') ?? 'الملف الشخصي',
+            ),
             onTap: () async {
               await Future.delayed(Duration.zero);
               if (context.mounted) {
@@ -312,7 +328,10 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
             },
           ),
           PopupMenuItem(
-            child: _buildPopupItem(Icons.edit_outlined, 'تعديل الملف الشخصي'),
+            child: _buildPopupItem(
+              Icons.edit_outlined,
+              localizations?.translate('edit_profile') ?? 'تعديل الملف الشخصي',
+            ),
             onTap: () async {
               await Future.delayed(Duration.zero);
               if (context.mounted) {
@@ -322,8 +341,11 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
           ),
           const PopupMenuDivider(),
           PopupMenuItem(
-            child: _buildPopupItem(Icons.logout_rounded, 'تسجيل الخروج',
-                isDestructive: true),
+            child: _buildPopupItem(
+              Icons.logout_rounded,
+              localizations?.translate('logout') ?? 'تسجيل الخروج',
+              isDestructive: true,
+            ),
             onTap: () async {
               await Supabase.instance.client.auth.signOut();
               if (context.mounted) {
@@ -344,9 +366,9 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
-        child: const Text(
-          'تسجيل الدخول',
-          style: TextStyle(
+        child: Text(
+          localizations?.translate('sign_in') ?? 'تسجيل الدخول',
+          style: const TextStyle(
             fontWeight: FontWeight.w700,
             fontFamily: 'Tajawal',
             fontSize: 15,
@@ -443,27 +465,43 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
     final user = userProvider.user;
 
     final allItems = [
-      {'label': 'الرئيسية', 'route': '/', 'icon': Icons.home_rounded},
-      {'label': 'المتاجر', 'route': '/stores', 'icon': Icons.store_rounded},
       {
-        'label': 'الكوبونات',
+        'label': localizations?.translate('home') ?? 'الرئيسية',
+        'route': '/',
+        'icon': Icons.home_rounded
+      },
+      {
+        'label': localizations?.translate('stores') ?? 'المتاجر',
+        'route': '/stores',
+        'icon': Icons.store_rounded
+      },
+      {
+        'label': localizations?.translate('coupons') ?? 'الكوبونات',
         'route': '/coupons',
         'icon': Icons.confirmation_number_rounded
       },
       {
-        'label': 'العروض',
+        'label': localizations?.translate('offers') ?? 'العروض',
         'route': '/offers',
         'icon': Icons.local_offer_rounded
       },
       {
-        'label': 'المفضلة',
+        'label': localizations?.translate('favorites') ?? 'المفضلة',
         'route': '/favorites',
         'icon': Icons.favorite_rounded
       },
-      {'label': 'من نحن', 'route': '/about', 'icon': Icons.info_rounded},
-      {'label': 'اتصل بنا', 'route': '/contact', 'icon': Icons.mail_rounded},
       {
-        'label': 'لوحة التحكم',
+        'label': localizations?.translate('about') ?? 'من نحن',
+        'route': '/about',
+        'icon': Icons.info_rounded
+      },
+      {
+        'label': localizations?.translate('contact_us') ?? 'اتصل بنا',
+        'route': '/contact',
+        'icon': Icons.mail_rounded
+      },
+      {
+        'label': localizations?.translate('admin_panel') ?? 'لوحة التحكم',
         'route': '/admin',
         'icon': Icons.admin_panel_settings_rounded,
         'adminOnly': true

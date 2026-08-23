@@ -155,14 +155,13 @@ class _StoresScreenState extends State<StoresScreen> {
                 await _storesFuture;
               },
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 60),
+                padding: const EdgeInsets.only(bottom: 50),
                 child: Column(
                   children: [
                     const SizedBox(height: 100),
                     if (showTitle)
                       Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.fromLTRB(16, 40, 16, 3),
                         child: Align(
                           alignment: Alignment.centerRight,
                           child: Text(

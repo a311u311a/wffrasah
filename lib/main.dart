@@ -7,6 +7,7 @@ import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'config/supabase_config.dart';
 import 'localization/app_localizations.dart';
 import 'providers/favorites_provider.dart';
 import 'providers/locale_provider.dart';
@@ -32,8 +33,12 @@ Future<void> main() async {
     const envSupabaseUrl = String.fromEnvironment('SUPABASE_URL');
     const envSupabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
-    const String supabaseUrl = envSupabaseUrl;
-    const String supabasePublishableKey = envSupabaseAnonKey;
+    final String supabaseUrl = envSupabaseUrl.isNotEmpty
+        ? envSupabaseUrl
+        : SupabaseConfig.url;
+    final String supabasePublishableKey = envSupabaseAnonKey.isNotEmpty
+        ? envSupabaseAnonKey
+        : SupabaseConfig.publishableKey;
 
     if (supabaseUrl.isEmpty || supabasePublishableKey.isEmpty) {
       throw Exception(

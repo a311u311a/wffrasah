@@ -76,8 +76,10 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
       storesMap = tempMap;
 
       // Load offers
-      final offersData =
-          await supabase.from('offers').select().order('id', ascending: false);
+      final offersData = await supabase
+          .from('offers')
+          .select()
+          .order('created_at', ascending: false);
 
       final loadedOffers = (offersData as List)
           .map((offer) => Offer.fromSupabase(offer, langCode))
@@ -110,12 +112,42 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
     }).toList();
   }
 
+  List<Offer> _latestOfferPerStore(List<Offer> source) {
+    final sortedOffers = [...source]..sort((a, b) {
+        final aCreatedAt = a.createdAt;
+        final bCreatedAt = b.createdAt;
+
+        if (aCreatedAt == null && bCreatedAt == null) return 0;
+        if (aCreatedAt == null) return 1;
+        if (bCreatedAt == null) return -1;
+
+        return bCreatedAt.compareTo(aCreatedAt);
+      });
+
+    final seenStoreIds = <String>{};
+    final latestOffers = <Offer>[];
+
+    for (final offer in sortedOffers) {
+      final storeId = offer.storeId.trim().toLowerCase();
+      final key = storeId.isNotEmpty ? storeId : offer.id.trim();
+
+      if (seenStoreIds.contains(key)) continue;
+
+      seenStoreIds.add(key);
+      latestOffers.add(offer);
+    }
+
+    return latestOffers;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isArabic =
+        Provider.of<LocaleProvider>(context).locale.languageCode == 'ar';
 
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
       child: Theme(
         data: theme.copyWith(
           scaffoldBackgroundColor: bg,
@@ -332,7 +364,7 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
       );
     }
 
-    final displayOffers = filteredOffers;
+    final displayOffers = _latestOfferPerStore(filteredOffers);
 
     if (displayOffers.isEmpty) {
       return Container(

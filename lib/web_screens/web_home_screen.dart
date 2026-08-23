@@ -125,8 +125,10 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isArabic =
+        Provider.of<LocaleProvider>(context).locale.languageCode == 'ar';
     return Directionality(
-      textDirection: TextDirection.rtl,
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
       child: Theme(
         data: theme.copyWith(
           scaffoldBackgroundColor: bg,

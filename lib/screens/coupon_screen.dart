@@ -34,7 +34,7 @@ class _CouponScreenState extends State<CouponScreen> {
           padding: EdgeInsets.only(
             bottom: 60,
             top: MediaQuery.of(context).padding.top +
-                (defaultTargetPlatform == TargetPlatform.iOS ? 85 : 101),
+                (defaultTargetPlatform == TargetPlatform.iOS ? 72 : 80),
           ),
           child: Column(
             children: [
@@ -42,6 +42,7 @@ class _CouponScreenState extends State<CouponScreen> {
                 height: AppResponsive.isTablet(context) ? 112 : 100,
                 child: StoresList(
                   selectedStoreId: selectedStoreId,
+                  onlyStoresWithCoupons: true,
                   onStoreSelected: (storeId) {
                     setState(() {
                       selectedStoreId = storeId;

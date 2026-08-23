@@ -1016,6 +1016,7 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                                     'image': imageUrl,
                                     'web': _webCtrl.text.trim(),
                                     'store_id': _selectedStoreId,
+                                    'store_name': _selectedStoreName ?? '',
                                     // Should be slug
                                     'category_id': _selectedCategoryId,
                                     'tags': tagsList,
@@ -1031,7 +1032,11 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                                     if (widget.offer == null) {
                                       await _supabase
                                           .from('offers')
-                                          .insert(offerData);
+                                          .insert({
+                                        ...offerData,
+                                        'created_at':
+                                            DateTime.now().toIso8601String(),
+                                      });
                                       if (context.mounted) {
                                         Navigator.pop(context);
                                         showSnackBar(

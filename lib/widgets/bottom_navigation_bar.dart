@@ -91,25 +91,26 @@ class _BottomNavBarState extends State<BottomNavBar>
 
   @override
   Widget build(BuildContext context) {
+    final scale = AppResponsive.tabletScale(context);
+    final isTablet = AppResponsive.isTablet(context);
     return Scaffold(
       extendBody: true,
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: false, // لمنع رفع شريط التنقل عند ظهور الكيبورد
       body: _pages[_selectedIndex],
       bottomNavigationBar: SafeArea(
-        minimum:
-            EdgeInsets.only(bottom: AppResponsive.isTablet(context) ? 14 : 8),
+        minimum: EdgeInsets.only(bottom: isTablet ? 14 : 8),
         child: Align(
           alignment: Alignment.bottomCenter,
           heightFactor: 1,
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxWidth: AppResponsive.isTablet(context) ? 520 : double.infinity,
+              maxWidth: isTablet ? 580 : double.infinity,
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
-                height: 60, // ارتفاع مناسب لجميع الشاشات
+                height: 60 * scale, // ارتفاع مناسب لجميع الشاشات
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
@@ -148,8 +149,8 @@ class _BottomNavBarState extends State<BottomNavBar>
                               _selectedIndex == index
                                   ? _icons[index]['active']!
                                   : _icons[index]['inactive']!,
-                              height: 22,
-                              width: 22,
+                              height: 22 * scale,
+                              width: 22 * scale,
                               colorFilter: const ColorFilter.mode(
                                 Colors.white,
                                 BlendMode.srcIn,

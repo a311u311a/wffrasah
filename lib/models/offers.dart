@@ -6,6 +6,7 @@ class Offer {
 
   // ✅ الجديد: ربط العرض بالمتجر (offers.store_id = stores.slug)
   final String storeId;
+  final String storeName;
 
   final String name;
   final String description;
@@ -20,6 +21,7 @@ class Offer {
   final String image;
 
   final List<String> tags;
+  final DateTime? createdAt;
   final DateTime? expiryDate;
 
   /// ✅ الكود يُخزّن كأول عنصر في tags (اختياري)
@@ -29,6 +31,7 @@ class Offer {
     required this.id,
     required this.categoryId,
     this.storeId = '', // ✅ لا يكسر الكود القديم
+    this.storeName = '',
 
     required this.name,
     required this.description,
@@ -39,6 +42,7 @@ class Offer {
     required this.web,
     required this.image,
     required this.tags,
+    this.createdAt,
     this.expiryDate,
   });
 
@@ -61,6 +65,7 @@ class Offer {
 
       // ✅ مهم جدًا: store_id (slug)
       storeId: _asString(data['store_id'] ?? data['storeId']),
+      storeName: _asString(data['store_name'] ?? data['storeName']),
 
       name: isAr ? (nAr.isNotEmpty ? nAr : nEn) : (nEn.isNotEmpty ? nEn : nAr),
       description:
@@ -72,6 +77,9 @@ class Offer {
       web: _asString(data['web']),
       image: _asString(data['image']),
       tags: _parseTags(data['tags']),
+      createdAt: data['created_at'] != null
+          ? DateTime.tryParse(data['created_at'].toString())
+          : null,
       expiryDate: data['expiry_date'] != null
           ? DateTime.tryParse(data['expiry_date'].toString())
           : null,
@@ -93,6 +101,8 @@ class Offer {
       // ✅ نخزنها علشان الفلترة بالمتجر تشتغل محليًا بعد
       'store_id': storeId,
       'storeId': storeId,
+      'store_name': storeName,
+      'storeName': storeName,
 
       'name': name,
       'description': description,
@@ -103,6 +113,7 @@ class Offer {
       'web': web,
       'image': image,
       'tags': tags,
+      'created_at': createdAt?.toIso8601String(),
       'expiryDate': expiryDate?.toIso8601String(), // For local consistency
       'expiry_date': expiryDate?.toIso8601String(), // For Supabase consistency
     };

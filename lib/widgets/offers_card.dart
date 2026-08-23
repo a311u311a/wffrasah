@@ -9,6 +9,7 @@ import '../constants.dart';
 import '../models/offers.dart';
 import '../providers/favorites_provider.dart';
 import '../localization/app_localizations.dart';
+import 'app_responsive.dart';
 
 class OffersCard extends StatefulWidget {
   final Offer offer;
@@ -34,6 +35,8 @@ class _OffersCardState extends State<OffersCard> {
     final bool hasCode = widget.offer.tags.isNotEmpty &&
         widget.offer.tags.first.trim().isNotEmpty;
     final String fullCode = hasCode ? widget.offer.tags.first.trim() : "";
+    final scale = AppResponsive.tabletScale(context);
+    final iconSize = 18.0 * scale;
 
     return Card(
       margin: const EdgeInsets.only(top: 5, left: 15, right: 15, bottom: 15),
@@ -123,18 +126,18 @@ class _OffersCardState extends State<OffersCard> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.confirmation_number_outlined,
-                                size: 14,
+                                size: 14 * scale,
                                 color: Colors.white,
                               ),
                               const SizedBox(width: 6),
                               Text(
                                 fullCode,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 12,
+                                  fontSize: 12 * scale,
                                   letterSpacing: 1.2,
                                   fontFamily: 'monospace',
                                 ),
@@ -156,8 +159,8 @@ class _OffersCardState extends State<OffersCard> {
                             onTap: () => _shareOffer(),
                             child: SvgPicture.asset(
                               'assets/icon/share.svg',
-                              height: 18,
-                              width: 18,
+                              height: iconSize,
+                              width: iconSize,
                               colorFilter: const ColorFilter.mode(
                                   Colors.white, BlendMode.srcIn),
                             ),
@@ -176,16 +179,16 @@ class _OffersCardState extends State<OffersCard> {
                                   ? SvgPicture.asset(
                                       'assets/icon/star_active.svg',
                                       key: const ValueKey('fav_active'),
-                                      height: 18,
-                                      width: 18,
+                                      height: iconSize,
+                                      width: iconSize,
                                       colorFilter: const ColorFilter.mode(
                                           Color(0xFFFFD700), BlendMode.srcIn),
                                     )
                                   : SvgPicture.asset(
                                       'assets/icon/star.svg',
                                       key: const ValueKey('fav_inactive'),
-                                      height: 18,
-                                      width: 18,
+                                      height: iconSize,
+                                      width: iconSize,
                                       colorFilter: const ColorFilter.mode(
                                           Colors.white, BlendMode.srcIn),
                                     ),
@@ -209,8 +212,8 @@ class _OffersCardState extends State<OffersCard> {
                 children: [
                   Text(
                     widget.offer.name,
-                    style: const TextStyle(
-                      fontSize: 15,
+                    style: TextStyle(
+                      fontSize: 15 * scale,
                       fontWeight: FontWeight.w600,
                       color: Constants.textColor,
                       height: 1.5,
@@ -224,7 +227,7 @@ class _OffersCardState extends State<OffersCard> {
                     Text(
                       widget.offer.description,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 12 * scale,
                         color: Colors.grey[700],
                         height: 1.5,
                         fontFamily: 'Tajawal',
@@ -238,7 +241,7 @@ class _OffersCardState extends State<OffersCard> {
 
                   // زر النسخ والذهاب للمتجر
                   SizedBox(
-                    height: 48,
+                    height: 48 * scale,
                     child: Material(
                       color: Constants.primaryColor,
                       borderRadius: BorderRadius.circular(12),
@@ -259,24 +262,25 @@ class _OffersCardState extends State<OffersCard> {
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(Icons.check_circle_rounded,
-                                          color: Colors.greenAccent, size: 20),
+                                      Icon(Icons.check_circle_rounded,
+                                          color: Colors.greenAccent,
+                                          size: 20 * scale),
                                       const SizedBox(width: 8),
                                       Text(
                                         localizations?.translate('copied') ??
                                             'تم النسخ',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           color: Colors.white,
-                                          fontSize: 14,
+                                          fontSize: 14 * scale,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                       const SizedBox(width: 8),
                                       Text(
                                         fullCode,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           color: Colors.white,
-                                          fontSize: 15,
+                                          fontSize: 15 * scale,
                                           fontWeight: FontWeight.w900,
                                           letterSpacing: 1.2,
                                         ),
@@ -307,7 +311,7 @@ class _OffersCardState extends State<OffersCard> {
                                             ? Icons.copy_all_rounded
                                             : Icons.launch_rounded,
                                         color: Colors.white,
-                                        size: 18,
+                                        size: 18 * scale,
                                       ),
                                     const SizedBox(width: 8),
                                     Text(
@@ -317,9 +321,9 @@ class _OffersCardState extends State<OffersCard> {
                                           (hasCode
                                               ? 'نسخ الكود والذهاب للمتجر'
                                               : 'اذهب للمتجر مباشرة'),
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         color: Colors.white,
-                                        fontSize: 14,
+                                        fontSize: 14 * scale,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -432,13 +436,14 @@ class _IconActionPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scale = AppResponsive.tabletScale(context);
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(30),
         child: _Pill(
-          padding: const EdgeInsets.all(8),
+          padding: EdgeInsets.all(8 * scale),
           child: child,
         ),
       ),

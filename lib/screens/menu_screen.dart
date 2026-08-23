@@ -71,6 +71,34 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
     return _storeUrl;
   }
 
+  Future<void> _shareApp(BuildContext context) async {
+    final localizations = AppLocalizations.of(context);
+    final appLink = _storeUrl.toString();
+    final box = context.findRenderObject() as RenderBox?;
+    final sharePositionOrigin =
+        box == null ? null : box.localToGlobal(Offset.zero) & box.size;
+
+    try {
+      await SharePlus.instance.share(
+        ShareParams(
+          text:
+              '${localizations?.translate('share_text') ?? "شارك واستفد مع تطبيق وفرها صح!"} $appLink',
+          sharePositionOrigin: sharePositionOrigin,
+        ),
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            localizations?.translate('share_failed') ??
+                'تعذرت المشاركة، حاول مرة أخرى',
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -124,6 +152,15 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _rateApp() async {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('التقييم على App Store سيكون متاحًا قريبًا'),
+        ),
+      );
+      return;
+    }
+
     final rateUrl = _rateUrl;
     final fallbackUrl = _storeUrl;
 
@@ -269,12 +306,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                                   title:
                                       localizations?.translate('share_app') ??
                                           'Share App',
-                                  onTap: () async {
-                                    final String appLink = _storeUrl.toString();
-                                    await SharePlus.instance.share(ShareParams(
-                                        text:
-                                            '${localizations?.translate('share_text') ?? "شارك واستفد مع تطبيق وفرها صح!"} $appLink'));
-                                  },
+                                  onTap: () => _shareApp(context),
                                 ),
                                 _buildDivider(),
                                 _buildMenuTile(

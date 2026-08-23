@@ -228,10 +228,25 @@ class _OffersScreenState extends State<OffersScreen> {
   List<Map<String, dynamic>> _latestOfferPerStore(
     List<Map<String, dynamic>> offers,
   ) {
+    final sortedOffers = [...offers]..sort((a, b) {
+        final aCreatedAt = DateTime.tryParse(
+          (a['created_at'] ?? '').toString(),
+        );
+        final bCreatedAt = DateTime.tryParse(
+          (b['created_at'] ?? '').toString(),
+        );
+
+        if (aCreatedAt == null && bCreatedAt == null) return 0;
+        if (aCreatedAt == null) return 1;
+        if (bCreatedAt == null) return -1;
+
+        return bCreatedAt.compareTo(aCreatedAt);
+      });
+
     final seenStoreIds = <String>{};
     final latestOffers = <Map<String, dynamic>>[];
 
-    for (final offer in offers) {
+    for (final offer in sortedOffers) {
       final storeId = (offer['store_id'] ?? '').toString().trim();
       final key = storeId.isNotEmpty ? storeId : (offer['id'] ?? '').toString();
 
@@ -280,7 +295,7 @@ class _OffersScreenState extends State<OffersScreen> {
                 // التصنيفات
                 SliverToBoxAdapter(
                   child: SizedBox(
-                    height: 95,
+                    height: CategoryList.preferredHeight(context),
                     child: CategoryList(
                       selectedCategoryId: selectedCategoryId,
                       onCategorySelected: (categoryId) {

@@ -55,7 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const CustomCarousel(),
               const SizedBox(height: 15),
               SizedBox(
-                height: 95,
+                height: CategoryList.preferredHeight(context),
                 child: CategoryList(
                   selectedCategoryId: selectedCategoryId,
                   onCategorySelected: (categoryId) {
