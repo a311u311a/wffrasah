@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../constants.dart';
 import '../models/store.dart';
+import 'web_i18n.dart';
 
 /// بطاقة متجر محسّنة للويب
 class WebStoreCard extends StatefulWidget {
@@ -140,7 +141,7 @@ class _WebStoreCardState extends State<WebStoreCard> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
-        'كوبون متاح', // يمكن تعديله ليعرض العدد الفعلي
+        webText(context, 'كوبون متاح', 'Coupon Available'),
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,

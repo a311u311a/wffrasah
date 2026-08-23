@@ -11,6 +11,7 @@ import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
 import '../localization/app_localizations.dart';
 import '../providers/locale_provider.dart';
+import '../web_widgets/web_i18n.dart';
 
 /// صفحة تسجيل الدخول للويب
 class WebSignInScreen extends StatefulWidget {
@@ -181,7 +182,9 @@ class _WebSignInScreenState extends State<WebSignInScreen> {
       if (!mounted) {
         return;
       }
-      showSnackBar(context, 'فشل تسجيل الدخول: $e', isError: true);
+      showSnackBar(context,
+          webText(context, 'فشل تسجيل الدخول: $e', 'Sign in failed: $e'),
+          isError: true);
     } finally {
       if (mounted) {
         setState(() => isLoading = false);
@@ -266,10 +269,13 @@ class _WebSignInScreenState extends State<WebSignInScreen> {
     final t = AppLocalizations.of(context);
     final isDesktop = ResponsiveLayout.isDesktop(context);
     final welcomePanel = _buildWelcomePanel(
-      badge: 'عودتك تهمنا',
-      title: 'سجل دخولك وتابع كوبوناتك',
-      subtitle:
+      badge: webText(context, 'عودتك تهمنا', 'Good to see you again'),
+      title: webText(context, 'سجل دخولك وتابع كوبوناتك',
+          'Sign in and keep your coupons close'),
+      subtitle: webText(
+          context,
           'ادخل إلى حسابك لحفظ المفضلة واستخدام الكوبونات والعروض بسرعة من كل أجهزتك.',
+          'Access your account to save favorites and use coupons and offers quickly from all your devices.'),
     );
     final formCard = _buildFormCard(t);
 
@@ -382,7 +388,7 @@ class _WebSignInScreenState extends State<WebSignInScreen> {
           children: [
             // العنوان
             Text(
-              'تسجيل الدخول',
+              t?.translate('sign_in') ?? 'Sign In',
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.w900,
@@ -426,7 +432,11 @@ class _WebSignInScreenState extends State<WebSignInScreen> {
               child: TextButton(
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('استعادة كلمة المرور قريباً')),
+                    SnackBar(
+                        content: Text(webText(
+                            context,
+                            'استعادة كلمة المرور قريباً',
+                            'Password recovery is coming soon'))),
                   );
                 },
                 child: Text(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
+import '../localization/app_localizations.dart';
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
@@ -9,103 +10,108 @@ class WebTermsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50], // F8F9FA
-      appBar: const WebNavigationBar(),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              padding: ResponsivePadding.page(context),
-              constraints: const BoxConstraints(maxWidth: 1000),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 40),
-                  _buildHeader(context),
-                  const SizedBox(height: 40),
-                  _buildSectionContainer(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'شروط الاستخدام',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Tajawal',
-                            color: Constants.primaryColor,
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+
+    return Directionality(
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+      child: Scaffold(
+        backgroundColor: Colors.grey[50], // F8F9FA
+        appBar: const WebNavigationBar(),
+        body: SingleChildScrollView(
+          child: Column(
+            children: [
+              Container(
+                padding: ResponsivePadding.page(context),
+                constraints: const BoxConstraints(maxWidth: 1000),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 40),
+                    _buildHeader(context),
+                    const SizedBox(height: 40),
+                    _buildSectionContainer(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _t(context, 'terms_title'),
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Tajawal',
+                              color: Constants.primaryColor,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 20),
-                        const Text(
-                          'باستخدامك لتطبيق (rbhan)، فإنك توافق على الالتزام بشروط الاستخدام التالية. إذا لم توافق على هذه الشروط، يرجى عدم استخدام التطبيق.',
-                          textAlign: TextAlign.justify,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontFamily: 'Tajawal',
-                            height: 1.6,
-                            color: Colors.black87,
+                          const SizedBox(height: 20),
+                          Text(
+                            _t(context, 'terms_intro'),
+                            textAlign: TextAlign.justify,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontFamily: 'Tajawal',
+                              height: 1.6,
+                              color: Colors.black87,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 30),
-                        _buildPolicyPoint(
-                          '1. وصف الخدمة',
-                          'يوفر التطبيق منصة لعرض الكوبونات والعروض الترويجية المقدمة من أطراف ثالثة، ولا يضمن توفر أو صلاحية جميع العروض في جميع الأوقات.',
-                        ),
-                        _buildPolicyPoint(
-                          '2. أهلية الاستخدام',
-                          '• يجب أن يكون عمرك 13 عامًا على الأقل (أو حسب القوانين المحلية المعمول بها).\n'
-                              '• أنت مسؤول عن صحة ودقة المعلومات التي تقدمها عند استخدام التطبيق.',
-                        ),
-                        _buildPolicyPoint(
-                          '3. استخدام الكوبونات والعروض',
-                          '• تخضع جميع الكوبونات والعروض لشروط وأحكام الجهة المقدمة لها.\n'
-                              '• لا يتحمل التطبيق أي مسؤولية عن إلغاء أو تعديل أو انتهاء صلاحية أي عرض.\n'
-                              '• يمنع استخدام الكوبونات بطرق غير قانونية أو مخالفة للأنظمة.',
-                        ),
-                        _buildPolicyPoint(
-                          '4. الملكية الفكرية',
-                          'جميع المحتويات داخل التطبيق، بما في ذلك النصوص والتصاميم والشعارات، مملوكة للتطبيق أو للجهات المرخصة له، ويمنع نسخها أو إعادة استخدامها دون إذن مسبق.',
-                        ),
-                        _buildPolicyPoint(
-                          '5. إيقاف أو إنهاء الحساب',
-                          'يحق لإدارة التطبيق تعليق أو إنهاء حساب المستخدم في حال مخالفة شروط الاستخدام أو إساءة استخدام التطبيق، دون إشعار مسبق.',
-                        ),
-                        _buildPolicyPoint(
-                          '6. إخلاء المسؤولية',
-                          'يتم تقديم التطبيق "كما هي" دون أي ضمانات صريحة أو ضمنية. ولا نتحمل أي مسؤولية عن أي خسائر مباشرة أو غير مباشرة ناتجة عن استخدام العروض أو الكوبونات.',
-                        ),
-                        _buildPolicyPoint(
-                          '7. التعديلات على الشروط',
-                          'نحتفظ بالحق في تعديل شروط الاستخدام في أي وقت، ويعد استمرارك في استخدام التطبيق بعد التعديلات موافقة عليها.',
-                        ),
-                        _buildPolicyPoint(
-                          '8. القانون الواجب التطبيق',
-                          'تخضع هذه الشروط وتفسر وفقًا لقوانين الدولة التي يتم تشغيل التطبيق منها، ويكون الاختصاص القضائي لمحاكمها.',
-                        ),
-                        _buildPolicyPoint(
-                          '9. التواصل معنا',
-                          'لأي استفسارات متعلقة بشروط الاستخدام، يرجى التواصل عبر قنوات الدعم المتاحة داخل التطبيق.',
-                        ),
-                      ],
+                          const SizedBox(height: 30),
+                          _buildPolicyPoint(
+                            _t(context, 'terms_point1_title'),
+                            _t(context, 'terms_point1_body'),
+                          ),
+                          _buildPolicyPoint(
+                            _t(context, 'terms_point2_title'),
+                            _t(context, 'terms_point2_body'),
+                          ),
+                          _buildPolicyPoint(
+                            _t(context, 'terms_point3_title'),
+                            _t(context, 'terms_point3_body'),
+                          ),
+                          _buildPolicyPoint(
+                            _t(context, 'terms_point4_title'),
+                            _t(context, 'terms_point4_body'),
+                          ),
+                          _buildPolicyPoint(
+                            _t(context, 'terms_point5_title'),
+                            _t(context, 'terms_point5_body'),
+                          ),
+                          _buildPolicyPoint(
+                            _t(context, 'terms_point6_title'),
+                            _t(context, 'terms_point6_body'),
+                          ),
+                          _buildPolicyPoint(
+                            _t(context, 'terms_point7_title'),
+                            _t(context, 'terms_point7_body'),
+                          ),
+                          _buildPolicyPoint(
+                            _t(context, 'terms_point8_title'),
+                            _t(context, 'terms_point8_body'),
+                          ),
+                          _buildPolicyPoint(
+                            _t(context, 'terms_point9_title'),
+                            _t(context, 'terms_point9_body'),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 40),
-                ],
+                    const SizedBox(height: 40),
+                  ],
+                ),
               ),
-            ),
-            const WebFooter(),
-          ],
+              const WebFooter(),
+            ],
+          ),
         ),
       ),
     );
   }
 
+  String _t(BuildContext context, String key) =>
+      AppLocalizations.of(context)?.translate(key) ?? key;
+
   Widget _buildHeader(BuildContext context) {
     return Center(
       child: Text(
-        'شروط الاستخدام',
+        _t(context, 'terms_title'),
         style: TextStyle(
           fontSize: ResponsiveLayout.isDesktop(context) ? 42 : 32,
           fontWeight: FontWeight.w900,

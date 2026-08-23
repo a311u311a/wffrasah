@@ -4,6 +4,7 @@ import '../constants.dart';
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
+import '../web_widgets/web_i18n.dart';
 
 /// صفحة اتصل بنا للويب - محدثة
 class WebContactScreen extends StatefulWidget {
@@ -25,9 +26,11 @@ class _WebContactScreenState extends State<WebContactScreen> {
 
     if (name.isEmpty || email.isEmpty || message.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('يرجى ملء جميع الحقول',
-              style: TextStyle(fontFamily: 'Tajawal')),
+        SnackBar(
+          content: Text(
+              webText(
+                  context, 'يرجى ملء جميع الحقول', 'Please fill in all fields'),
+              style: const TextStyle(fontFamily: 'Tajawal')),
           backgroundColor: Colors.red,
         ),
       );
@@ -38,7 +41,7 @@ class _WebContactScreenState extends State<WebContactScreen> {
       scheme: 'mailto',
       path: 'support@wffrhasah.com',
       queryParameters: {
-        'subject': 'اتصل بنا - $name',
+        'subject': webText(context, 'اتصل بنا - $name', 'Contact Us - $name'),
         'body': message,
       },
     );
@@ -53,7 +56,9 @@ class _WebContactScreenState extends State<WebContactScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('فشل في إرسال البريد الإلكتروني: $e',
+            content: Text(
+                webText(context, 'فشل في إرسال البريد الإلكتروني: $e',
+                    'Failed to send email: $e'),
                 style: const TextStyle(fontFamily: 'Tajawal')),
             backgroundColor: Colors.red,
           ),
@@ -99,9 +104,10 @@ class _WebContactScreenState extends State<WebContactScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const Text(
-                            'أرسل لنا رسالة',
-                            style: TextStyle(
+                          Text(
+                            webText(
+                                context, 'أرسل لنا رسالة', 'Send us a message'),
+                            style: const TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Tajawal',
@@ -111,20 +117,23 @@ class _WebContactScreenState extends State<WebContactScreen> {
                           const SizedBox(height: 30),
                           TextField(
                             controller: _nameController,
-                            decoration:
-                                _buildInputDecoration('الاسم', Icons.person),
+                            decoration: _buildInputDecoration(
+                                webText(context, 'الاسم', 'Name'),
+                                Icons.person),
                           ),
                           const SizedBox(height: 20),
                           TextField(
                             controller: _emailController,
                             decoration: _buildInputDecoration(
-                                'البريد الإلكتروني', Icons.email),
+                                webText(context, 'البريد الإلكتروني', 'Email'),
+                                Icons.email),
                           ),
                           const SizedBox(height: 20),
                           TextField(
                             controller: _messageController,
-                            decoration:
-                                _buildInputDecoration('الرسالة', Icons.message),
+                            decoration: _buildInputDecoration(
+                                webText(context, 'الرسالة', 'Message'),
+                                Icons.message),
                             maxLines: 5,
                           ),
                           const SizedBox(height: 30),
@@ -133,9 +142,9 @@ class _WebContactScreenState extends State<WebContactScreen> {
                             child: ElevatedButton.icon(
                               onPressed: _sendEmail,
                               icon: const Icon(Icons.send_rounded),
-                              label: const Text(
-                                'إرسال',
-                                style: TextStyle(
+                              label: Text(
+                                webText(context, 'إرسال', 'Send'),
+                                style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   fontFamily: 'Tajawal',
@@ -172,7 +181,7 @@ class _WebContactScreenState extends State<WebContactScreen> {
       child: Column(
         children: [
           Text(
-            'تواصل معنا',
+            webText(context, 'تواصل معنا', 'Contact Us'),
             style: TextStyle(
               fontSize: ResponsiveLayout.isDesktop(context) ? 42 : 32,
               fontWeight: FontWeight.w900,
@@ -182,7 +191,8 @@ class _WebContactScreenState extends State<WebContactScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            'نحن هنا لمساعدتك، لا تتردد في التواصل معنا',
+            webText(context, 'نحن هنا لمساعدتك، لا تتردد في التواصل معنا',
+                'We are here to help. Feel free to contact us.'),
             style: TextStyle(
               fontSize: 18,
               color: Colors.grey[700],

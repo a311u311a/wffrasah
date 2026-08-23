@@ -7,6 +7,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../constants.dart';
 import '../models/offers.dart';
 import '../providers/favorites_provider.dart';
+import 'web_i18n.dart';
 
 /// بطاقة عرض (Offer) للويب
 class WebOfferCard extends StatefulWidget {
@@ -262,7 +263,11 @@ class _WebOfferCardState extends State<WebOfferCard> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      'تم نسخ الكود: ${widget.offer.code}',
+                      webText(
+                        context,
+                        'تم نسخ الكود: ${widget.offer.code}',
+                        'Code copied: ${widget.offer.code}',
+                      ),
                       style: const TextStyle(fontFamily: 'Tajawal'),
                     ),
                     backgroundColor: Colors.green,
@@ -335,9 +340,9 @@ class _WebOfferCardState extends State<WebOfferCard> {
               child: ElevatedButton.icon(
                 onPressed: _launchOffer,
                 icon: const Icon(Icons.open_in_new_rounded, size: 16),
-                label: const Text(
-                  'مشاهدة العرض',
-                  style: TextStyle(
+                label: Text(
+                  webText(context, 'مشاهدة العرض', 'View Offer'),
+                  style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 13,
                     fontFamily: 'Tajawal',
@@ -359,7 +364,7 @@ class _WebOfferCardState extends State<WebOfferCard> {
             IconButton(
               onPressed: _share,
               icon: Icon(Icons.share_rounded, color: Colors.grey[600]),
-              tooltip: 'مشاركة',
+              tooltip: webText(context, 'مشاركة', 'Share'),
             ),
           ],
         ),
@@ -370,8 +375,11 @@ class _WebOfferCardState extends State<WebOfferCard> {
   Future<void> _share() async {
     await SharePlus.instance.share(
       ShareParams(
-          text:
-              'شاهد هذا العرض المميز: ${widget.offer.name}\n${widget.offer.web}'),
+          text: webText(
+        context,
+        'شاهد هذا العرض المميز: ${widget.offer.name}\n${widget.offer.web}',
+        'Check out this featured offer: ${widget.offer.name}\n${widget.offer.web}',
+      )),
     );
   }
 

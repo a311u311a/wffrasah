@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
+import '../localization/app_localizations.dart';
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
@@ -10,39 +11,47 @@ class WebFaqScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: const WebNavigationBar(),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              padding: ResponsivePadding.page(context),
-              constraints: const BoxConstraints(maxWidth: 1000),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 40),
-                  _buildHeader(context),
-                  const SizedBox(height: 40),
-                  _buildContent(context),
-                  const SizedBox(height: 40),
-                ],
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+
+    return Directionality(
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+      child: Scaffold(
+        backgroundColor: Colors.grey[50],
+        appBar: const WebNavigationBar(),
+        body: SingleChildScrollView(
+          child: Column(
+            children: [
+              Container(
+                padding: ResponsivePadding.page(context),
+                constraints: const BoxConstraints(maxWidth: 1000),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 40),
+                    _buildHeader(context),
+                    const SizedBox(height: 40),
+                    _buildContent(context),
+                    const SizedBox(height: 40),
+                  ],
+                ),
               ),
-            ),
-            const WebFooter(),
-          ],
+              const WebFooter(),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  String _t(BuildContext context, String key) =>
+      AppLocalizations.of(context)?.translate(key) ?? key;
 
   Widget _buildHeader(BuildContext context) {
     return Center(
       child: Column(
         children: [
           Text(
-            'الأسئلة الشائعة',
+            _t(context, 'faq_title'),
             style: TextStyle(
               fontSize: ResponsiveLayout.isDesktop(context) ? 42 : 32,
               fontWeight: FontWeight.w900,
@@ -52,7 +61,7 @@ class WebFaqScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'إجابات على الأسئلة الأكثر شيوعاً',
+            _t(context, 'faq_subtitle'),
             style: TextStyle(
               fontSize: 18,
               color: Colors.grey[700],
@@ -65,32 +74,26 @@ class WebFaqScreen extends StatelessWidget {
   }
 
   Widget _buildContent(BuildContext context) {
-    // قائمة الأسئلة من faq_screen.dart
     final faqs = [
       {
-        'question': 'هل التطبيق مجاني؟',
-        'answer':
-            'نعم، التطبيق مجاني بالكامل. نحن نحصل على عمولة بسيطة من المتاجر عند استخدامك للكوبونات عبر تطبيقنا، وهذا لا يؤثر على السعر الذي تدفعه.',
+        'question': _t(context, 'faq_q1'),
+        'answer': _t(context, 'faq_a1'),
       },
       {
-        'question': 'كيف أستخدم كود الخصم؟',
-        'answer':
-            'ببساطة، اضغط على زر "نسخ الكود" ثم ألصقه في خانة الكوبون في صفحة الدفع بالمتجر.',
+        'question': _t(context, 'faq_q2'),
+        'answer': _t(context, 'faq_a2'),
       },
       {
-        'question': 'الكود لا يعمل، ماذا أفعل؟',
-        'answer':
-            'تأكد من قراءة شروط استخدام الكوبون (مثل الحد الأدنى للطلب والمنتجات المشمولة). إذا استمرت المشكلة، فهذا يعني أن صلاحية الكود قد انتهت.',
+        'question': _t(context, 'faq_q3'),
+        'answer': _t(context, 'faq_a3'),
       },
       {
-        'question': 'هل يمكن استخدام كود الخصم أكثر من مرة؟',
-        'answer':
-            'نعم. يختلف ذلك من متجر لآخر، ولكن في كثير من الحالات يمكن استخدام كود الخصم عدة مرات.',
+        'question': _t(context, 'faq_q4'),
+        'answer': _t(context, 'faq_a4'),
       },
       {
-        'question': 'هل يتم تحديث أكواد الخصم في التطبيق؟',
-        'answer':
-            'نعم. يتم تحديث أكواد الخصم باستمرار لضمان توفر أحدث وأفضل العروض للمستخدمين.',
+        'question': _t(context, 'faq_q5'),
+        'answer': _t(context, 'faq_a5'),
       },
     ];
 

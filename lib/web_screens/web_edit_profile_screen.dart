@@ -5,6 +5,7 @@ import '../constants.dart';
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
+import '../web_widgets/web_i18n.dart';
 
 /// Web version of Edit Profile Screen
 class WebEditProfileScreen extends StatefulWidget {
@@ -68,8 +69,9 @@ class _WebEditProfileScreenState extends State<WebEditProfileScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('تم حفظ التعديلات بنجاح'),
+          SnackBar(
+            content: Text(webText(context, 'تم حفظ التعديلات بنجاح',
+                'Profile updated successfully')),
             backgroundColor: Colors.green,
           ),
         );
@@ -79,7 +81,8 @@ class _WebEditProfileScreenState extends State<WebEditProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('خطأ: ${e.toString()}'),
+            content: Text(webText(
+                context, 'خطأ: ${e.toString()}', 'Error: ${e.toString()}')),
             backgroundColor: Colors.red,
           ),
         );
@@ -141,7 +144,7 @@ class _WebEditProfileScreenState extends State<WebEditProfileScreen> {
               ),
               const SizedBox(width: 12),
               Text(
-                'تعديل الملف الشخصي',
+                webText(context, 'تعديل الملف الشخصي', 'Edit Profile'),
                 style: TextStyle(
                   fontSize: ResponsiveLayout.isDesktop(context) ? 36 : 28,
                   fontWeight: FontWeight.w900,
@@ -155,7 +158,8 @@ class _WebEditProfileScreenState extends State<WebEditProfileScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 56),
             child: Text(
-              'قم بتحديث معلوماتك الشخصية',
+              webText(context, 'قم بتحديث معلوماتك الشخصية',
+                  'Update your personal information'),
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey[700],
@@ -215,7 +219,8 @@ class _WebEditProfileScreenState extends State<WebEditProfileScreen> {
               controller: _nameController,
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'الرجاء إدخال الاسم';
+                  return webText(
+                      context, 'الرجاء إدخال الاسم', 'Please enter your name');
                 }
                 return null;
               },
@@ -224,7 +229,7 @@ class _WebEditProfileScreenState extends State<WebEditProfileScreen> {
                 fontFamily: 'Tajawal',
               ),
               decoration: InputDecoration(
-                labelText: 'الاسم',
+                labelText: webText(context, 'الاسم', 'Name'),
                 labelStyle: TextStyle(
                   fontFamily: 'Tajawal',
                   color: Colors.grey[600],
@@ -262,7 +267,7 @@ class _WebEditProfileScreenState extends State<WebEditProfileScreen> {
                 color: Colors.grey[600],
               ),
               decoration: InputDecoration(
-                labelText: 'البريد الإلكتروني',
+                labelText: webText(context, 'البريد الإلكتروني', 'Email'),
                 labelStyle: TextStyle(
                   fontFamily: 'Tajawal',
                   color: Colors.grey[600],
@@ -278,7 +283,8 @@ class _WebEditProfileScreenState extends State<WebEditProfileScreen> {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Colors.grey[200]!),
                 ),
-                helperText: 'لا يمكن تغيير البريد الإلكتروني',
+                helperText: webText(context, 'لا يمكن تغيير البريد الإلكتروني',
+                    'Email cannot be changed'),
                 helperStyle: TextStyle(
                   fontFamily: 'Tajawal',
                   fontSize: 12,
@@ -299,9 +305,9 @@ class _WebEditProfileScreenState extends State<WebEditProfileScreen> {
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : const Text(
-                      'حفظ التعديلات',
-                      style: TextStyle(
+                  : Text(
+                      webText(context, 'حفظ التعديلات', 'Save Changes'),
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         fontFamily: 'Tajawal',

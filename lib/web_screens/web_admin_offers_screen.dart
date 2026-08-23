@@ -8,6 +8,7 @@ import '../models/offers.dart';
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
+import '../web_widgets/web_i18n.dart';
 
 // ✅ صفحة إدارة العروض على الويب (مستقلة) - تصميم مُحدّث
 class WebAdminOffersScreen extends StatefulWidget {
@@ -67,10 +68,8 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
   // =========================
 
   Future<List<Map<String, dynamic>>> _loadOffers() async {
-    final data = await _sb
-        .from('offers')
-        .select()
-        .order('created_at', ascending: false);
+    final data =
+        await _sb.from('offers').select().order('created_at', ascending: false);
     return List<Map<String, dynamic>>.from(data as List);
   }
 
@@ -85,13 +84,16 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: const Text('حذف العرض؟', style: TextStyle(fontFamily: _font)),
-        content: const Text('سيتم حذف العرض نهائياً. هل أنت متأكد؟',
-            style: TextStyle(fontFamily: _font)),
+        title: Text(webText(context, 'حذف العرض؟', 'Delete offer?'),
+            style: const TextStyle(fontFamily: _font)),
+        content: Text(
+            webText(context, 'سيتم حذف العرض نهائياً. هل أنت متأكد؟',
+                'The offer will be permanently deleted. Are you sure?'),
+            style: const TextStyle(fontFamily: _font)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('إلغاء',
+            child: Text(webText(context, 'إلغاء', 'Cancel'),
                 style: TextStyle(
                     color: Colors.grey[600],
                     fontFamily: _font,
@@ -99,7 +101,8 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('حذف', style: TextStyle(color: Colors.redAccent)),
+            child: Text(webText(context, 'حذف', 'Delete'),
+                style: const TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
@@ -109,11 +112,16 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
       try {
         await _sb.from('offers').delete().eq('id', id);
         if (mounted) {
-          showSnackBar(context, 'تم حذف العرض');
+          showSnackBar(
+              context, webText(context, 'تم حذف العرض', 'Offer deleted'));
           _refreshOffers();
         }
       } catch (e) {
-        if (mounted) showSnackBar(context, 'خطأ في الحذف: $e', isError: true);
+        if (mounted) {
+          showSnackBar(context,
+              webText(context, 'خطأ في الحذف: $e', 'Delete failed: $e'),
+              isError: true);
+        }
       }
     }
   }
@@ -149,7 +157,9 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  offer == null ? 'إضافة عرض جديد' : 'تعديل العرض',
+                  offer == null
+                      ? webText(context, 'إضافة عرض جديد', 'Add New Offer')
+                      : webText(context, 'تعديل العرض', 'Edit Offer'),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
@@ -159,7 +169,7 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                 ),
               ),
               IconButton(
-                tooltip: 'إغلاق',
+                tooltip: webText(context, 'إغلاق', 'Close'),
                 onPressed: () => Navigator.pop(context),
                 icon: Icon(Icons.close_rounded, color: Colors.grey[600]),
               ),
@@ -241,7 +251,7 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'إدارة العروض',
+                  webText(context, 'إدارة العروض', 'Manage Offers'),
                   style: TextStyle(
                     fontSize: ResponsiveLayout.isDesktop(context) ? 28 : 22,
                     fontWeight: FontWeight.w900,
@@ -254,7 +264,8 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            'إضافة، تعديل، أو حذف العروض بسهولة',
+            webText(context, 'إضافة، تعديل، أو حذف العروض بسهولة',
+                'Add, edit, or delete offers easily'),
             style: TextStyle(
               fontSize: 13,
               fontFamily: _font,
@@ -285,7 +296,10 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(40),
                     child: Text(
-                      'حدث خطأ في تحميل العروض: ${snapshot.error}',
+                      webText(
+                          context,
+                          'حدث خطأ في تحميل العروض: ${snapshot.error}',
+                          'Failed to load offers: ${snapshot.error}'),
                       style: const TextStyle(color: Colors.red),
                       textAlign: TextAlign.center,
                     ),
@@ -308,7 +322,8 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(40),
                     child: Text(
-                      'لا توجد عروض حالياً',
+                      webText(context, 'لا توجد عروض حالياً',
+                          'No offers available right now'),
                       style: TextStyle(
                         color: Colors.grey[500],
                         fontSize: 16,
@@ -349,9 +364,9 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
         ),
         onPressed: () => _openAddOrEditDialog(),
         icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text(
-          'إضافة عرض',
-          style: TextStyle(
+        label: Text(
+          webText(context, 'إضافة عرض', 'Add Offer'),
+          style: const TextStyle(
             color: Colors.white,
             fontFamily: _font,
             fontWeight: FontWeight.w900,
@@ -398,7 +413,8 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
               controller: _searchCtrl,
               onChanged: (v) => setState(() => _search = v),
               decoration: InputDecoration(
-                hintText: 'ابحث بالوصف أو الوسوم أو الرابط…',
+                hintText: webText(context, 'ابحث بالوصف أو الوسوم أو الرابط…',
+                    'Search by description, tags, or link...'),
                 hintStyle: TextStyle(
                   fontFamily: _font,
                   fontWeight: FontWeight.w700,
@@ -415,7 +431,7 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
           ),
           if (_search.trim().isNotEmpty)
             IconButton(
-              tooltip: 'مسح',
+              tooltip: webText(context, 'مسح', 'Clear'),
               onPressed: () {
                 _searchCtrl.clear();
                 setState(() => _search = '');
@@ -516,7 +532,8 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
 
   // ✅ بطاقة العرض: اسم المتجر + الكود + الوصف
   Widget _offerCard(Offer offer, String id, {required String code}) {
-    final storeName = _storeNames[offer.storeId] ?? 'بدون متجر';
+    final storeName =
+        _storeNames[offer.storeId] ?? webText(context, 'بدون متجر', 'No store');
 
     return Container(
       decoration: BoxDecoration(
@@ -593,7 +610,7 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                             width: 26,
                             child: PopupMenuButton<String>(
                               padding: EdgeInsets.zero,
-                              tooltip: 'خيارات',
+                              tooltip: webText(context, 'خيارات', 'Options'),
                               onSelected: (v) {
                                 if (v == 'edit') {
                                   _openAddOrEditDialog(offer: offer);
@@ -602,11 +619,15 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                                   _deleteOffer(id);
                                 }
                               },
-                              itemBuilder: (_) => const [
+                              itemBuilder: (_) => [
                                 PopupMenuItem(
-                                    value: 'edit', child: Text('تعديل')),
+                                    value: 'edit',
+                                    child: Text(
+                                        webText(context, 'تعديل', 'Edit'))),
                                 PopupMenuItem(
-                                    value: 'delete', child: Text('حذف')),
+                                    value: 'delete',
+                                    child: Text(
+                                        webText(context, 'حذف', 'Delete'))),
                               ],
                               child: Icon(Icons.more_horiz,
                                   color: Colors.grey[500]),
@@ -652,7 +673,7 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                         )
                       else
                         Text(
-                          'بدون كود',
+                          webText(context, 'بدون كود', 'No code'),
                           style: TextStyle(
                             fontFamily: _font,
                             fontSize: 11,
@@ -684,7 +705,7 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                       overflow: TextOverflow.ellipsis,
                     )
                   : Text(
-                      'لا يوجد وصف',
+                      webText(context, 'لا يوجد وصف', 'No description'),
                       style: TextStyle(
                         fontFamily: _font,
                         fontSize: 12,
@@ -714,16 +735,28 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                     // ✅ المدة المتبقية
                     String remainingText;
                     if (isExpired) {
-                      remainingText =
-                          '$dateStr • منتهي منذ ${daysLeft.abs()} يوم';
+                      remainingText = webText(
+                          context,
+                          '$dateStr • منتهي منذ ${daysLeft.abs()} يوم',
+                          '$dateStr • expired ${daysLeft.abs()} days ago');
                     } else if (daysLeft == 0) {
-                      remainingText = '$dateStr • ينتهي اليوم!';
+                      remainingText = webText(
+                          context,
+                          '$dateStr • ينتهي اليوم!',
+                          '$dateStr • expires today');
                     } else if (daysLeft == 1) {
-                      remainingText = '$dateStr • باقي يوم واحد';
+                      remainingText = webText(context,
+                          '$dateStr • باقي يوم واحد', '$dateStr • 1 day left');
                     } else if (daysLeft <= 10) {
-                      remainingText = '$dateStr • باقي $daysLeft أيام';
+                      remainingText = webText(
+                          context,
+                          '$dateStr • باقي $daysLeft أيام',
+                          '$dateStr • $daysLeft days left');
                     } else {
-                      remainingText = '$dateStr • باقي $daysLeft يوم';
+                      remainingText = webText(
+                          context,
+                          '$dateStr • باقي $daysLeft يوم',
+                          '$dateStr • $daysLeft days left');
                     }
 
                     // ✅ إذا بقي 5 أيام أو أقل: خلفية حمراء كاملة مع نص أبيض
@@ -925,7 +958,11 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
       return _sb.storage.from('images').getPublicUrl(path);
     } catch (e) {
       if (mounted) {
-        showSnackBar(context, 'خطأ في رفع الصورة: $e', isError: true);
+        showSnackBar(
+            context,
+            webText(
+                context, 'خطأ في رفع الصورة: $e', 'Image upload failed: $e'),
+            isError: true);
       }
       return null;
     }
@@ -943,11 +980,17 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
 
   Future<void> _save() async {
     if (_selectedStoreId == null || _selectedStoreId!.isEmpty) {
-      showSnackBar(context, 'الرجاء اختيار المتجر', isError: true);
+      showSnackBar(context,
+          webText(context, 'الرجاء اختيار المتجر', 'Please choose a store'),
+          isError: true);
       return;
     }
     if (_descArCtrl.text.trim().isEmpty) {
-      showSnackBar(context, 'الرجاء إدخال الوصف بالعربية', isError: true);
+      showSnackBar(
+          context,
+          webText(context, 'الرجاء إدخال الوصف بالعربية',
+              'Please enter the Arabic description'),
+          isError: true);
       return;
     }
 
@@ -989,18 +1032,31 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
 
       if (_isEdit) {
         await _sb.from('offers').update(data).eq('id', widget.offer!.id);
-        if (mounted) showSnackBar(context, 'تم تحديث العرض بنجاح');
+        if (mounted) {
+          showSnackBar(
+              context,
+              webText(context, 'تم تحديث العرض بنجاح',
+                  'Offer updated successfully'));
+        }
       } else {
         await _sb.from('offers').insert({
           ...data,
           'created_at': DateTime.now().toIso8601String(),
         });
-        if (mounted) showSnackBar(context, 'تم إضافة العرض بنجاح');
+        if (mounted) {
+          showSnackBar(
+              context,
+              webText(
+                  context, 'تم إضافة العرض بنجاح', 'Offer added successfully'));
+        }
       }
 
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      if (mounted) showSnackBar(context, 'خطأ: $e', isError: true);
+      if (mounted) {
+        showSnackBar(context, webText(context, 'خطأ: $e', 'Error: $e'),
+            isError: true);
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -1022,7 +1078,8 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 1) الصورة
-                  _buildSectionTitle('صورة العرض'),
+                  _buildSectionTitle(
+                      webText(context, 'صورة العرض', 'Offer Image')),
                   const SizedBox(height: 10),
                   Center(
                     child: GestureDetector(
@@ -1053,7 +1110,9 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                                       Icon(Icons.add_photo_alternate_rounded,
                                           size: 40, color: Colors.grey[400]),
                                       const SizedBox(height: 6),
-                                      Text('اختر صورة',
+                                      Text(
+                                          webText(context, 'اختر صورة',
+                                              'Choose Image'),
                                           style: TextStyle(
                                               fontFamily: _font,
                                               color: Colors.grey[500],
@@ -1066,7 +1125,8 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                   const SizedBox(height: 24),
 
                   // 2) اختر المتجر
-                  _buildSectionTitle('اختر المتجر'),
+                  _buildSectionTitle(
+                      webText(context, 'اختر المتجر', 'Choose Store')),
                   const SizedBox(height: 10),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -1078,14 +1138,16 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         value: _selectedStoreId,
-                        hint: Text('اختر المتجر',
+                        hint: Text(
+                            webText(context, 'اختر المتجر', 'Choose Store'),
                             style: TextStyle(
                                 fontFamily: _font, color: Colors.grey[500])),
                         isExpanded: true,
                         items: [
-                          const DropdownMenuItem<String>(
+                          DropdownMenuItem<String>(
                             value: null,
-                            child: Text('اختر المتجر',
+                            child: Text(
+                                webText(context, 'اختر المتجر', 'Choose Store'),
                                 style: TextStyle(fontFamily: _font)),
                           ),
                           ..._stores.map((s) {
@@ -1106,7 +1168,8 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                   const SizedBox(height: 24),
 
                   // 3) فئة العرض
-                  _buildSectionTitle('فئة العرض'),
+                  _buildSectionTitle(
+                      webText(context, 'فئة العرض', 'Offer Category')),
                   const SizedBox(height: 10),
                   FutureBuilder<List<Map<String, dynamic>>>(
                     future: _sb.from('categories').select(),
@@ -1125,15 +1188,18 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
                             value: _selectedCategoryId,
-                            hint: Text('اختر الفئة',
+                            hint: Text(
+                                webText(
+                                    context, 'اختر الفئة', 'Choose Category'),
                                 style: TextStyle(
                                     fontFamily: _font,
                                     color: Colors.grey[500])),
                             isExpanded: true,
                             items: [
-                              const DropdownMenuItem<String>(
+                              DropdownMenuItem<String>(
                                 value: null,
-                                child: Text('بدون فئة',
+                                child: Text(
+                                    webText(context, 'بدون فئة', 'No Category'),
                                     style: TextStyle(fontFamily: _font)),
                               ),
                               ...categories.map((cat) =>
@@ -1156,7 +1222,8 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                   const SizedBox(height: 24),
 
                   // 4) تاريخ الصلاحية
-                  _buildSectionTitle('تاريخ الصلاحية'),
+                  _buildSectionTitle(
+                      webText(context, 'تاريخ الصلاحية', 'Expiry Date')),
                   const SizedBox(height: 10),
                   GestureDetector(
                     onTap: _pickExpiryDate,
@@ -1176,7 +1243,8 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                           Text(
                             _expiryDate != null
                                 ? '${_expiryDate!.year}/${_expiryDate!.month}/${_expiryDate!.day}'
-                                : 'اختر التاريخ',
+                                : webText(
+                                    context, 'اختر التاريخ', 'Choose Date'),
                             style: TextStyle(
                               fontFamily: _font,
                               fontWeight: FontWeight.w700,
@@ -1199,18 +1267,21 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                   const SizedBox(height: 24),
 
                   // 5) الوصف بالعربي
-                  _buildSectionTitle('الوصف بالعربية'),
+                  _buildSectionTitle(
+                      webText(context, 'الوصف بالعربية', 'Arabic Description')),
                   const SizedBox(height: 10),
                   _inputField(
                     _descArCtrl,
-                    'اكتب وصف العرض بالعربية',
+                    webText(context, 'اكتب وصف العرض بالعربية',
+                        'Write offer description in Arabic'),
                     Icons.description_rounded,
                     maxLines: 3,
                   ),
                   const SizedBox(height: 24),
 
                   // 6) الوصف بالانجليزي
-                  _buildSectionTitle('الوصف بالإنجليزية'),
+                  _buildSectionTitle(webText(
+                      context, 'الوصف بالإنجليزية', 'English Description')),
                   const SizedBox(height: 10),
                   _inputField(
                     _descEnCtrl,
@@ -1221,7 +1292,8 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                   const SizedBox(height: 24),
 
                   // 7) كود الخصم
-                  _buildSectionTitle('كود الخصم'),
+                  _buildSectionTitle(
+                      webText(context, 'كود الخصم', 'Discount Code')),
                   const SizedBox(height: 10),
                   _inputField(
                     _codeCtrl,
@@ -1231,7 +1303,8 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                   const SizedBox(height: 24),
 
                   // 8) رابط المتجر
-                  _buildSectionTitle('رابط المتجر'),
+                  _buildSectionTitle(
+                      webText(context, 'رابط المتجر', 'Store Link')),
                   const SizedBox(height: 10),
                   _inputField(
                     _storeUrlCtrl,
@@ -1240,9 +1313,14 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                   ),
                   const SizedBox(height: 24),
 
-                  _buildSectionTitle('الوسوم (اختياري)'),
+                  _buildSectionTitle(
+                      webText(context, 'الوسوم (اختياري)', 'Tags (Optional)')),
                   const SizedBox(height: 10),
-                  _inputField(_tagsCtrl, 'خصم, عرض, رمضان', Icons.tag_rounded),
+                  _inputField(
+                      _tagsCtrl,
+                      webText(
+                          context, 'خصم, عرض, رمضان', 'discount, offer, sale'),
+                      Icons.tag_rounded),
                   const SizedBox(height: 12),
                 ],
               ),
@@ -1269,9 +1347,9 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child: const Text(
-                        'إلغاء',
-                        style: TextStyle(
+                      child: Text(
+                        webText(context, 'إلغاء', 'Cancel'),
+                        style: const TextStyle(
                           fontFamily: _font,
                           fontWeight: FontWeight.w900,
                           fontSize: 16,
@@ -1302,7 +1380,11 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                                   strokeWidth: 2.5, color: Colors.white),
                             )
                           : Text(
-                              _isEdit ? 'تحديث العرض' : 'إضافة العرض',
+                              _isEdit
+                                  ? webText(
+                                      context, 'تحديث العرض', 'Update Offer')
+                                  : webText(
+                                      context, 'إضافة العرض', 'Add Offer'),
                               style: const TextStyle(
                                 fontFamily: _font,
                                 fontWeight: FontWeight.w900,

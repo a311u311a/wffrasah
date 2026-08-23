@@ -9,6 +9,7 @@ import '../../constants.dart';
 import '../../web_widgets/responsive_layout.dart';
 import '../../web_widgets/web_navigation_bar.dart';
 import '../../web_widgets/web_footer.dart';
+import '../../web_widgets/web_i18n.dart';
 
 /// ✅ صفحة إدارة بنرات الكاروسيل على الويب (UI احترافي - نفس المهام)
 class WebAdminCarouselScreen extends StatefulWidget {
@@ -65,7 +66,11 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
       return _sb.storage.from('images').getPublicUrl(fileName);
     } catch (e) {
       if (mounted) {
-        showSnackBar(context, 'خطأ في رفع الصورة: $e', isError: true);
+        showSnackBar(
+            context,
+            webText(
+                context, 'خطأ في رفع الصورة: $e', 'Image upload failed: $e'),
+            isError: true);
       }
       return null;
     }
@@ -76,13 +81,16 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: const Text('حذف البنر؟', style: TextStyle(fontFamily: _font)),
-        content: const Text('هل أنت متأكد من حذف هذا البنر؟',
-            style: TextStyle(fontFamily: _font)),
+        title: Text(webText(context, 'حذف البنر؟', 'Delete banner?'),
+            style: const TextStyle(fontFamily: _font)),
+        content: Text(
+            webText(context, 'هل أنت متأكد من حذف هذا البنر؟',
+                'Are you sure you want to delete this banner?'),
+            style: const TextStyle(fontFamily: _font)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('إلغاء',
+            child: Text(webText(context, 'إلغاء', 'Cancel'),
                 style: TextStyle(
                   fontFamily: _font,
                   fontWeight: FontWeight.w800,
@@ -91,7 +99,8 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('حذف', style: TextStyle(color: Colors.redAccent)),
+            child: Text(webText(context, 'حذف', 'Delete'),
+                style: const TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
@@ -101,12 +110,17 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
       try {
         await _sb.from('carousel').delete().eq('id', id);
         if (mounted) {
-          showSnackBar(context, 'تم حذف البنر بنجاح');
+          showSnackBar(
+              context,
+              webText(context, 'تم حذف البنر بنجاح',
+                  'Banner deleted successfully'));
           _refreshCarousel();
         }
       } catch (e) {
         if (mounted) {
-          showSnackBar(context, 'خطأ في الحذف: $e', isError: true);
+          showSnackBar(context,
+              webText(context, 'خطأ في الحذف: $e', 'Delete failed: $e'),
+              isError: true);
         }
       }
     }
@@ -162,7 +176,9 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  item == null ? 'إضافة بنر جديد' : 'تعديل البنر',
+                  item == null
+                      ? webText(context, 'إضافة بنر جديد', 'Add New Banner')
+                      : webText(context, 'تعديل البنر', 'Edit Banner'),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
@@ -230,7 +246,8 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'صورة البنر',
+                                  webText(
+                                      context, 'صورة البنر', 'Banner Image'),
                                   style: TextStyle(
                                     fontFamily: _font,
                                     fontWeight: FontWeight.w900,
@@ -239,7 +256,10 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  'اضغط لاختيار صورة (يفضل PNG أو JPG)',
+                                  webText(
+                                      context,
+                                      'اضغط لاختيار صورة (يفضل PNG أو JPG)',
+                                      'Tap to choose an image (PNG or JPG preferred)'),
                                   style: TextStyle(
                                     fontFamily: _font,
                                     fontWeight: FontWeight.w700,
@@ -258,11 +278,17 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
 
                   const SizedBox(height: 16),
 
-                  _inputField(nameArCtrl, 'الاسم (عربي)', Icons.title_rounded),
+                  _inputField(
+                      nameArCtrl,
+                      webText(context, 'الاسم (عربي)', 'Name (Arabic)'),
+                      Icons.title_rounded),
                   _inputField(
                       nameEnCtrl, 'Name (English)', Icons.title_outlined),
                   _inputField(
-                      webCtrl, 'رابط الموقع (Web Link)', Icons.link_rounded),
+                      webCtrl,
+                      webText(
+                          context, 'رابط الموقع (Web Link)', 'Website Link'),
+                      Icons.link_rounded),
                   const SizedBox(height: 6),
                 ],
               ),
@@ -272,7 +298,7 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
             TextButton(
               onPressed: isSaving ? null : () => Navigator.pop(context),
               child: Text(
-                'إلغاء',
+                webText(context, 'إلغاء', 'Cancel'),
                 style: TextStyle(
                   color: Colors.grey[600],
                   fontFamily: _font,
@@ -295,12 +321,18 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
                     : () async {
                         // validation
                         if (nameArCtrl.text.trim().isEmpty) {
-                          showSnackBar(context, 'الرجاء إدخال الاسم العربي',
+                          showSnackBar(
+                              context,
+                              webText(context, 'الرجاء إدخال الاسم العربي',
+                                  'Please enter the Arabic name'),
                               isError: true);
                           return;
                         }
                         if (item == null && pickedImage == null) {
-                          showSnackBar(context, 'الرجاء اختيار صورة البنر',
+                          showSnackBar(
+                              context,
+                              webText(context, 'الرجاء اختيار صورة البنر',
+                                  'Please choose a banner image'),
                               isError: true);
                           return;
                         }
@@ -326,7 +358,10 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
                             await _sb.from('carousel').insert(payload);
                             if (mounted) {
                               Navigator.pop(context);
-                              showSnackBar(context, 'تمت الإضافة بنجاح ✅');
+                              showSnackBar(
+                                  context,
+                                  webText(context, 'تمت الإضافة بنجاح ✅',
+                                      'Added successfully'));
                               _refreshCarousel();
                             }
                           } else {
@@ -336,13 +371,18 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
                                 .eq('id', editingId);
                             if (mounted) {
                               Navigator.pop(context);
-                              showSnackBar(context, 'تم التحديث بنجاح ✅');
+                              showSnackBar(
+                                  context,
+                                  webText(context, 'تم التحديث بنجاح ✅',
+                                      'Updated successfully'));
                               _refreshCarousel();
                             }
                           }
                         } catch (e) {
                           if (mounted) {
-                            showSnackBar(context, 'خطأ: $e', isError: true);
+                            showSnackBar(context,
+                                webText(context, 'خطأ: $e', 'Error: $e'),
+                                isError: true);
                           }
                         } finally {
                           if (mounted) setStateDialog(() => isSaving = false);
@@ -360,7 +400,9 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
                     : const Icon(Icons.check_circle_rounded,
                         color: Colors.white),
                 label: Text(
-                  item == null ? 'إضافة' : 'حفظ',
+                  item == null
+                      ? webText(context, 'إضافة', 'Add')
+                      : webText(context, 'حفظ', 'Save'),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
@@ -490,7 +532,7 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'إدارة بنرات الصور',
+                  webText(context, 'إدارة بنرات الصور', 'Manage Image Banners'),
                   style: TextStyle(
                     fontSize: ResponsiveLayout.isDesktop(context) ? 28 : 22,
                     fontWeight: FontWeight.w900,
@@ -503,7 +545,8 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            'إضافة، تعديل، أو حذف بنرات الكاروسيل بسهولة',
+            webText(context, 'إضافة، تعديل، أو حذف بنرات الكاروسيل بسهولة',
+                'Add, edit, or delete carousel banners easily'),
             style: TextStyle(
               fontSize: 13,
               fontFamily: _font,
@@ -539,7 +582,8 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
                       border: Border.all(color: Colors.red[100]!),
                     ),
                     child: Text(
-                      'حدث خطأ: ${snapshot.error}',
+                      webText(context, 'حدث خطأ: ${snapshot.error}',
+                          'Error: ${snapshot.error}'),
                       style: const TextStyle(color: Colors.red),
                     ),
                   ),
@@ -566,7 +610,8 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
                             size: 60, color: Colors.grey[300]),
                         const SizedBox(height: 10),
                         Text(
-                          'لا توجد صور في الشريط حالياً',
+                          webText(context, 'لا توجد صور في الشريط حالياً',
+                              'No images in the carousel right now'),
                           style: TextStyle(
                             color: Colors.grey[500],
                             fontSize: 16,
@@ -605,9 +650,9 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
         ),
         onPressed: () => _openAddOrEditDialog(),
         icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text(
-          'إضافة بنر',
-          style: TextStyle(
+        label: Text(
+          webText(context, 'إضافة بنر', 'Add Banner'),
+          style: const TextStyle(
             color: Colors.white,
             fontFamily: _font,
             fontWeight: FontWeight.w900,
@@ -654,7 +699,8 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
               controller: _searchCtrl,
               onChanged: (v) => setState(() => _search = v),
               decoration: InputDecoration(
-                hintText: 'ابحث بالاسم أو الرابط…',
+                hintText: webText(context, 'ابحث بالاسم أو الرابط…',
+                    'Search by name or link...'),
                 hintStyle: TextStyle(
                   fontFamily: _font,
                   fontWeight: FontWeight.w700,
@@ -671,7 +717,7 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
           ),
           if (_search.trim().isNotEmpty)
             IconButton(
-              tooltip: 'مسح',
+              tooltip: webText(context, 'مسح', 'Clear'),
               onPressed: () {
                 _searchCtrl.clear();
                 setState(() => _search = '');
@@ -712,7 +758,10 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
         final item = items[i];
 
         final imageUrl = (item['image'] ?? '').toString();
-        final name = (item['name_ar'] ?? item['name'] ?? 'بدون اسم').toString();
+        final name = (item['name_ar'] ??
+                item['name'] ??
+                webText(context, 'بدون اسم', 'No name'))
+            .toString();
         final link = (item['web'] ?? '').toString();
         final id = (item['id'] ?? '').toString();
 
@@ -796,7 +845,9 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        link.isEmpty ? 'بدون رابط' : link,
+                        link.isEmpty
+                            ? webText(context, 'بدون رابط', 'No link')
+                            : link,
                         style: TextStyle(
                           fontFamily: _font,
                           fontWeight: FontWeight.w700,
@@ -814,14 +865,18 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
 
                 // Actions
                 PopupMenuButton<String>(
-                  tooltip: 'خيارات',
+                  tooltip: webText(context, 'خيارات', 'Options'),
                   onSelected: (v) {
                     if (v == 'edit') _openAddOrEditDialog(item: item);
                     if (v == 'delete') _deleteItem(id);
                   },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'edit', child: Text('تعديل')),
-                    PopupMenuItem(value: 'delete', child: Text('حذف')),
+                  itemBuilder: (_) => [
+                    PopupMenuItem(
+                        value: 'edit',
+                        child: Text(webText(context, 'تعديل', 'Edit'))),
+                    PopupMenuItem(
+                        value: 'delete',
+                        child: Text(webText(context, 'حذف', 'Delete'))),
                   ],
                 ),
               ],
@@ -834,13 +889,13 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
               children: [
                 const Spacer(),
                 IconButton(
-                  tooltip: 'تعديل',
+                  tooltip: webText(context, 'تعديل', 'Edit'),
                   onPressed: () => _openAddOrEditDialog(item: item),
                   icon: Icon(Icons.edit_note_rounded,
                       color: Colors.blueGrey[500]),
                 ),
                 IconButton(
-                  tooltip: 'حذف',
+                  tooltip: webText(context, 'حذف', 'Delete'),
                   onPressed: () => _deleteItem(id),
                   icon: const Icon(Icons.delete_sweep_outlined,
                       color: Colors.redAccent),

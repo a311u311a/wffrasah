@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../models/carousel.dart';
 import '../constants.dart';
 import 'responsive_layout.dart';
+import 'web_i18n.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// بنر متحرك بتصميم سينمائي حديث
@@ -180,9 +181,9 @@ class _WebBannerCarouselState extends State<WebBannerCarousel> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Text(
-                                'تسوق الآن',
-                                style: TextStyle(
+                              Text(
+                                webText(context, 'تسوق الآن', 'Shop Now'),
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,

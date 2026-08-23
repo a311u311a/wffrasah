@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../constants.dart';
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
@@ -43,7 +43,7 @@ class WebPrivacyScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Text(
                         l10n?.translate('privacy_top_note') ??
-                            'Privacy Policy - وفرها صح  سياسة الخصوصية . موقع وتطبيق وفرها صح This Privacy Policy explains how وفرها صح collects, uses. and protects your personal information when you use our website and services',
+                            'Privacy Policy - Waferha Sah. This Privacy Policy explains how Waferha Sah collects, uses, and protects your personal information when you use our website and services.',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 16,
@@ -63,7 +63,7 @@ class WebPrivacyScreen extends StatelessWidget {
                         // Section Title
                         Text(
                           l10n?.translate('privacy_subtitle') ??
-                              'Privacy Policy – وفرها صح',
+                              'Privacy Policy - Waferha Sah',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,

@@ -5,6 +5,7 @@ import '../constants.dart';
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
+import '../web_widgets/web_i18n.dart';
 
 /// Web version of Change Password Screen
 class WebChangePasswordScreen extends StatefulWidget {
@@ -46,8 +47,9 @@ class _WebChangePasswordScreenState extends State<WebChangePasswordScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('تم تغيير كلمة المرور بنجاح'),
+          SnackBar(
+            content: Text(webText(context, 'تم تغيير كلمة المرور بنجاح',
+                'Password changed successfully')),
             backgroundColor: Colors.green,
           ),
         );
@@ -57,7 +59,8 @@ class _WebChangePasswordScreenState extends State<WebChangePasswordScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('خطأ: ${e.toString()}'),
+            content: Text(webText(
+                context, 'خطأ: ${e.toString()}', 'Error: ${e.toString()}')),
             backgroundColor: Colors.red,
           ),
         );
@@ -112,7 +115,7 @@ class _WebChangePasswordScreenState extends State<WebChangePasswordScreen> {
               ),
               const SizedBox(width: 12),
               Text(
-                'تغيير كلمة المرور',
+                webText(context, 'تغيير كلمة المرور', 'Change Password'),
                 style: TextStyle(
                   fontSize: ResponsiveLayout.isDesktop(context) ? 36 : 28,
                   fontWeight: FontWeight.w900,
@@ -126,7 +129,8 @@ class _WebChangePasswordScreenState extends State<WebChangePasswordScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 56),
             child: Text(
-              'قم بتحديث كلمة المرور الخاصة بك',
+              webText(context, 'قم بتحديث كلمة المرور الخاصة بك',
+                  'Update your password'),
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey[700],
@@ -163,13 +167,15 @@ class _WebChangePasswordScreenState extends State<WebChangePasswordScreen> {
           children: [
             _buildTextField(
               controller: _currentPasswordController,
-              label: 'كلمة المرور الحالية',
+              label:
+                  webText(context, 'كلمة المرور الحالية', 'Current Password'),
               obscureText: _obscureCurrentPassword,
               onToggleVisibility: () => setState(
                   () => _obscureCurrentPassword = !_obscureCurrentPassword),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'الرجاء إدخال كلمة المرور الحالية';
+                  return webText(context, 'الرجاء إدخال كلمة المرور الحالية',
+                      'Please enter your current password');
                 }
                 return null;
               },
@@ -177,16 +183,20 @@ class _WebChangePasswordScreenState extends State<WebChangePasswordScreen> {
             const SizedBox(height: 24),
             _buildTextField(
               controller: _newPasswordController,
-              label: 'كلمة المرور الجديدة',
+              label: webText(context, 'كلمة المرور الجديدة', 'New Password'),
               obscureText: _obscureNewPassword,
               onToggleVisibility: () =>
                   setState(() => _obscureNewPassword = !_obscureNewPassword),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'الرجاء إدخال كلمة المرور الجديدة';
+                  return webText(context, 'الرجاء إدخال كلمة المرور الجديدة',
+                      'Please enter your new password');
                 }
                 if (value.length < 6) {
-                  return 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
+                  return webText(
+                      context,
+                      'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
+                      'Password must be at least 6 characters');
                 }
                 return null;
               },
@@ -194,16 +204,19 @@ class _WebChangePasswordScreenState extends State<WebChangePasswordScreen> {
             const SizedBox(height: 24),
             _buildTextField(
               controller: _confirmPasswordController,
-              label: 'تأكيد كلمة المرور الجديدة',
+              label: webText(
+                  context, 'تأكيد كلمة المرور الجديدة', 'Confirm New Password'),
               obscureText: _obscureConfirmPassword,
               onToggleVisibility: () => setState(
                   () => _obscureConfirmPassword = !_obscureConfirmPassword),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'الرجاء تأكيد كلمة المرور';
+                  return webText(context, 'الرجاء تأكيد كلمة المرور',
+                      'Please confirm your password');
                 }
                 if (value != _newPasswordController.text) {
-                  return 'كلمات المرور غير متطابقة';
+                  return webText(context, 'كلمات المرور غير متطابقة',
+                      'Passwords do not match');
                 }
                 return null;
               },
@@ -229,9 +242,9 @@ class _WebChangePasswordScreenState extends State<WebChangePasswordScreen> {
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : const Text(
-                      'حفظ التغييرات',
-                      style: TextStyle(
+                  : Text(
+                      webText(context, 'حفظ التغييرات', 'Save Changes'),
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         fontFamily: 'Tajawal',

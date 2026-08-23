@@ -6,6 +6,7 @@ import '../constants.dart';
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
+import '../web_widgets/web_i18n.dart';
 
 /// Web version of Notifications History Screen
 class WebNotificationsHistoryScreen extends StatefulWidget {
@@ -71,8 +72,9 @@ class _WebNotificationsHistoryScreenState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('فشل حذف الإشعار'),
+          SnackBar(
+            content: Text(webText(
+                context, 'فشل حذف الإشعار', 'Failed to delete notification')),
             backgroundColor: Colors.red,
           ),
         );
@@ -125,7 +127,7 @@ class _WebNotificationsHistoryScreenState
               ),
               const SizedBox(width: 12),
               Text(
-                'الإشعارات',
+                webText(context, 'الإشعارات', 'Notifications'),
                 style: TextStyle(
                   fontSize: ResponsiveLayout.isDesktop(context) ? 36 : 28,
                   fontWeight: FontWeight.w900,
@@ -139,7 +141,8 @@ class _WebNotificationsHistoryScreenState
           Padding(
             padding: const EdgeInsets.only(right: 56),
             child: Text(
-              'جميع الإشعارات والتحديثات',
+              webText(context, 'جميع الإشعارات والتحديثات',
+                  'All notifications and updates'),
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey[700],
@@ -185,7 +188,8 @@ class _WebNotificationsHistoryScreenState
 
   Widget _buildNotificationCard(Map<String, dynamic> notification) {
     final isRead = notification['is_read'] ?? false;
-    final title = notification['title'] ?? 'إشعار';
+    final title =
+        notification['title'] ?? webText(context, 'إشعار', 'Notification');
     final body = notification['body'] ?? '';
     final createdAt = notification['created_at'] != null
         ? DateTime.parse(notification['created_at'])
@@ -306,7 +310,7 @@ class _WebNotificationsHistoryScreenState
                       _deleteNotification(notification['id'].toString()),
                   icon: Icon(Icons.delete_outline_rounded,
                       color: Colors.grey[400]),
-                  tooltip: 'حذف',
+                  tooltip: webText(context, 'حذف', 'Delete'),
                 ),
               ],
             ),
@@ -342,9 +346,9 @@ class _WebNotificationsHistoryScreenState
               ),
             ),
             const SizedBox(height: 20),
-            const Text(
-              'لا توجد إشعارات',
-              style: TextStyle(
+            Text(
+              webText(context, 'لا توجد إشعارات', 'No notifications'),
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
                 fontFamily: 'Tajawal',
@@ -352,7 +356,8 @@ class _WebNotificationsHistoryScreenState
             ),
             const SizedBox(height: 8),
             Text(
-              'سيظهر هنا جميع الإشعارات والتحديثات',
+              webText(context, 'سيظهر هنا جميع الإشعارات والتحديثات',
+                  'All notifications and updates will appear here'),
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[600],
@@ -373,15 +378,18 @@ class _WebNotificationsHistoryScreenState
     if (difference.inDays == 0) {
       if (difference.inHours == 0) {
         if (difference.inMinutes == 0) {
-          return 'الآن';
+          return webText(context, 'الآن', 'Now');
         }
-        return 'منذ ${difference.inMinutes} دقيقة';
+        return webText(context, 'منذ ${difference.inMinutes} دقيقة',
+            '${difference.inMinutes} min ago');
       }
-      return 'منذ ${difference.inHours} ساعة';
+      return webText(context, 'منذ ${difference.inHours} ساعة',
+          '${difference.inHours} hours ago');
     } else if (difference.inDays == 1) {
-      return 'أمس';
+      return webText(context, 'أمس', 'Yesterday');
     } else if (difference.inDays < 7) {
-      return 'منذ ${difference.inDays} أيام';
+      return webText(context, 'منذ ${difference.inDays} أيام',
+          '${difference.inDays} days ago');
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }

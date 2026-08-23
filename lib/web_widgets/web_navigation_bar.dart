@@ -296,7 +296,8 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
                   child: Text(
                     user.userMetadata?['full_name'] ??
                         localizations?.translate('unknown_user') ??
-                        'مستخدم',
+                        localizations?.translate('user') ??
+                        'User',
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 14,
@@ -550,7 +551,9 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          user.userMetadata?['full_name'] ?? 'مرحباً!',
+                          user.userMetadata?['full_name'] ??
+                              (localizations?.translate('welcome') ??
+                                  'Welcome!'),
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
@@ -705,9 +708,9 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
                         }
                       },
                       icon: const Icon(Icons.logout_rounded, size: 20),
-                      label: const Text(
-                        'تسجيل الخروج',
-                        style: TextStyle(
+                      label: Text(
+                        localizations?.translate('logout') ?? 'Logout',
+                        style: const TextStyle(
                           fontWeight: FontWeight.w700,
                           fontFamily: 'Tajawal',
                           fontSize: 15,
@@ -731,9 +734,9 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
                         Navigator.pushNamed(context, '/signin');
                       },
                       icon: const Icon(Icons.login_rounded, size: 20),
-                      label: const Text(
-                        'تسجيل الدخول',
-                        style: TextStyle(
+                      label: Text(
+                        localizations?.translate('sign_in') ?? 'Sign In',
+                        style: const TextStyle(
                           fontWeight: FontWeight.w700,
                           fontFamily: 'Tajawal',
                           fontSize: 15,

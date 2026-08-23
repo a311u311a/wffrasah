@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
+import 'web_i18n.dart';
 
 /// شريط البحث البارز للصفحة الرئيسية
 class WebSearchBar extends StatefulWidget {
@@ -31,13 +32,15 @@ class _WebSearchBarState extends State<WebSearchBar> {
       constraints: const BoxConstraints(maxWidth: 700),
       child: TextField(
         controller: _controller,
-        textDirection: TextDirection.rtl,
+        textDirection: webTextDirection(context),
         style: const TextStyle(
           fontFamily: 'Tajawal',
           fontSize: 16,
         ),
         decoration: InputDecoration(
-          hintText: widget.hintText ?? 'ابحث عن الكوبونات والمتاجر...',
+          hintText: widget.hintText ??
+              webText(context, 'ابحث عن الكوبونات والمتاجر...',
+                  'Search coupons and stores...'),
           hintStyle: TextStyle(
             fontFamily: 'Tajawal',
             color: Colors.grey[400],

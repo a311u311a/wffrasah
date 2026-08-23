@@ -10,6 +10,7 @@ import '../screens/login_signup/widgets/snackbar.dart';
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
+import '../web_widgets/web_i18n.dart';
 
 /// صفحة إدارة الكوبونات على الويب
 class WebAdminCouponsScreen extends StatefulWidget {
@@ -122,7 +123,11 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
       return _sb.storage.from('images').getPublicUrl(path);
     } catch (e) {
       if (mounted) {
-        showSnackBar(context, 'خطأ في رفع الصورة: $e', isError: true);
+        showSnackBar(
+            context,
+            webText(
+                context, 'خطأ في رفع الصورة: $e', 'Image upload failed: $e'),
+            isError: true);
       }
       return null;
     }
@@ -184,7 +189,9 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text(
-            _editingId == null ? 'إضافة كوبون جديد' : 'تعديل الكوبون',
+            _editingId == null
+                ? webText(context, 'إضافة كوبون جديد', 'Add New Coupon')
+                : webText(context, 'تعديل الكوبون', 'Edit Coupon'),
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -232,19 +239,28 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    _inputField(_couponCodeCtrl, 'كود الخصم',
+                    _inputField(
+                        _couponCodeCtrl,
+                        webText(context, 'كود الخصم', 'Discount Code'),
                         Icons.confirmation_number),
-                    _inputField(_couponDescArCtrl, 'وصف الكوبون (بالعربي)',
+                    _inputField(
+                        _couponDescArCtrl,
+                        webText(context, 'وصف الكوبون (بالعربي)',
+                            'Coupon Description (Arabic)'),
                         Icons.description,
                         maxLines: 3),
                     _inputField(_couponDescEnCtrl, 'Description (English)',
                         Icons.description_outlined,
                         maxLines: 3),
-                    _inputField(_couponWebCtrl, 'رابط الموقع (Web Link)',
+                    _inputField(
+                        _couponWebCtrl,
+                        webText(
+                            context, 'رابط الموقع (Web Link)', 'Website Link'),
                         Icons.language_outlined),
 
                     const SizedBox(height: 15),
-                    _buildSectionTitle('تاريخ الانتهاء'),
+                    _buildSectionTitle(
+                        webText(context, 'تاريخ الانتهاء', 'Expiry Date')),
                     InkWell(
                       onTap: () async {
                         final picked = await showDatePicker(
@@ -271,8 +287,14 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                             const SizedBox(width: 15),
                             Text(
                               _selectedExpiryDate != null
-                                  ? 'ينتهي في: ${_selectedExpiryDate!.year}-${_selectedExpiryDate!.month}-${_selectedExpiryDate!.day}'
-                                  : 'تاريخ انتهاء الصلاحية (اختياري)',
+                                  ? webText(
+                                      context,
+                                      'ينتهي في: ${_selectedExpiryDate!.year}-${_selectedExpiryDate!.month}-${_selectedExpiryDate!.day}',
+                                      'Expires on: ${_selectedExpiryDate!.year}-${_selectedExpiryDate!.month}-${_selectedExpiryDate!.day}')
+                                  : webText(
+                                      context,
+                                      'تاريخ انتهاء الصلاحية (اختياري)',
+                                      'Expiry date (optional)'),
                               style: const TextStyle(
                                 fontWeight: FontWeight.normal,
                                 fontSize: 14,
@@ -296,11 +318,13 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                     ),
 
                     const SizedBox(height: 15),
-                    _buildSectionTitle('ربط المتجر'),
+                    _buildSectionTitle(
+                        webText(context, 'ربط المتجر', 'Link Store')),
                     _buildStorePicker(stores, setStateDialog),
 
                     const SizedBox(height: 20),
-                    _buildSectionTitle('الوسوم (6 Tags)'),
+                    _buildSectionTitle(
+                        webText(context, 'الوسوم (6 Tags)', 'Tags (6)')),
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -315,7 +339,8 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                       itemBuilder: (ctx, i) => TextFormField(
                         controller: _tagCtrls[i],
                         decoration: InputDecoration(
-                          hintText: 'وسم ${i + 1}',
+                          hintText:
+                              webText(context, 'وسم ${i + 1}', 'Tag ${i + 1}'),
                           hintStyle: const TextStyle(
                             fontSize: 14,
                             color: Colors.black54,
@@ -347,9 +372,9 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
           actions: [
             TextButton(
               onPressed: _isSaving ? null : () => Navigator.pop(context),
-              child: const Text(
-                'إلغاء',
-                style: TextStyle(color: Colors.grey, fontFamily: _font),
+              child: Text(
+                webText(context, 'إلغاء', 'Cancel'),
+                style: const TextStyle(color: Colors.grey, fontFamily: _font),
               ),
             ),
             SizedBox(
@@ -373,8 +398,9 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                       )
                     : Text(
                         _editingId == null
-                            ? 'حفظ ونشر الكوبون'
-                            : 'حفظ التعديلات',
+                            ? webText(context, 'حفظ ونشر الكوبون',
+                                'Save & Publish Coupon')
+                            : webText(context, 'حفظ التعديلات', 'Save Changes'),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
@@ -418,8 +444,12 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
             Expanded(
               child: Text(
                 _selectedStoreId != null
-                    ? 'تم اختيار المتجر: ${_selectedStoreName ?? _selectedStoreId}'
-                    : 'اضغط لاختيار المتجر',
+                    ? webText(
+                        context,
+                        'تم اختيار المتجر: ${_selectedStoreName ?? _selectedStoreId}',
+                        'Selected store: ${_selectedStoreName ?? _selectedStoreId}')
+                    : webText(
+                        context, 'اضغط لاختيار المتجر', 'Tap to choose store'),
                 style: const TextStyle(
                   fontWeight: FontWeight.normal,
                   fontSize: 14,
@@ -434,7 +464,9 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
       ),
       itemBuilder: (context) {
         return stores.map((store) {
-          final storeName = store['name_ar'] ?? store['name'] ?? 'متجر';
+          final storeName = store['name_ar'] ??
+              store['name'] ??
+              webText(context, 'متجر', 'Store');
           final slug = (store['slug'] ?? '').toString();
           final img = store['image'];
 
@@ -503,9 +535,10 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
       children: [
         Icon(Icons.add_a_photo, color: Constants.primaryColor),
         const SizedBox(height: 4),
-        const Text(
-          "صورة الكوبون",
-          style: TextStyle(fontSize: 10, color: Colors.grey, fontFamily: _font),
+        Text(
+          webText(context, "صورة الكوبون", "Coupon Image"),
+          style: const TextStyle(
+              fontSize: 10, color: Colors.grey, fontFamily: _font),
         ),
       ],
     );
@@ -556,8 +589,9 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
           fontWeight: FontWeight.normal,
           fontFamily: _font,
         ),
-        validator: (v) =>
-            (v == null || v.trim().isEmpty) ? 'هذا الحقل مطلوب' : null,
+        validator: (v) => (v == null || v.trim().isEmpty)
+            ? webText(context, 'هذا الحقل مطلوب', 'This field is required')
+            : null,
       ),
     );
   }
@@ -565,7 +599,9 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
   Future<void> _saveCoupon(StateSetter setStateDialog) async {
     if (!(_couponFormKey.currentState?.validate() ?? false)) return;
     if (_selectedStoreId == null || _selectedStoreId!.isEmpty) {
-      showSnackBar(context, 'يرجى اختيار المتجر', isError: true);
+      showSnackBar(context,
+          webText(context, 'يرجى اختيار المتجر', 'Please choose a store'),
+          isError: true);
       return;
     }
 
@@ -614,10 +650,16 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
       if (!mounted) return;
       Navigator.pop(context);
       _refreshCoupons();
-      showSnackBar(context,
-          _editingId == null ? 'تمت الإضافة بنجاح ✅' : 'تم التحديث بنجاح ✅');
+      showSnackBar(
+          context,
+          _editingId == null
+              ? webText(context, 'تمت الإضافة بنجاح ✅', 'Added successfully')
+              : webText(context, 'تم التحديث بنجاح ✅', 'Updated successfully'));
     } catch (e) {
-      if (mounted) showSnackBar(context, 'خطأ: $e', isError: true);
+      if (mounted) {
+        showSnackBar(context, webText(context, 'خطأ: $e', 'Error: $e'),
+            isError: true);
+      }
     } finally {
       if (mounted) {
         setStateDialog(() => _isSaving = false);
@@ -630,16 +672,20 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('حذف الكوبون؟', style: TextStyle(fontFamily: _font)),
-        content: const Text('سيتم حذف الكوبون نهائياً. هل أنت متأكد؟',
-            style: TextStyle(fontFamily: _font)),
+        title: Text(webText(context, 'حذف الكوبون؟', 'Delete coupon?'),
+            style: const TextStyle(fontFamily: _font)),
+        content: Text(
+            webText(context, 'سيتم حذف الكوبون نهائياً. هل أنت متأكد؟',
+                'The coupon will be permanently deleted. Are you sure?'),
+            style: const TextStyle(fontFamily: _font)),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('إلغاء')),
+              child: Text(webText(context, 'إلغاء', 'Cancel'))),
           TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('حذف', style: TextStyle(color: Colors.red))),
+              child: Text(webText(context, 'حذف', 'Delete'),
+                  style: const TextStyle(color: Colors.red))),
         ],
       ),
     );
@@ -649,10 +695,15 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
         await _sb.from('coupons').delete().eq('id', id);
         if (mounted) {
           _refreshCoupons();
-          showSnackBar(context, 'تم الحذف');
+          showSnackBar(
+              context, webText(context, 'تم الحذف', 'Deleted successfully'));
         }
       } catch (e) {
-        if (mounted) showSnackBar(context, 'خطأ في الحذف: $e', isError: true);
+        if (mounted) {
+          showSnackBar(context,
+              webText(context, 'خطأ في الحذف: $e', 'Delete failed: $e'),
+              isError: true);
+        }
       }
     }
   }
@@ -744,7 +795,7 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'إدارة الكوبونات',
+                  webText(context, 'إدارة الكوبونات', 'Manage Coupons'),
                   style: TextStyle(
                     fontSize: ResponsiveLayout.isDesktop(context) ? 28 : 22,
                     fontWeight: FontWeight.w900,
@@ -757,7 +808,8 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            'إضافة، تعديل، أو حذف أكواد الخصم بسهولة',
+            webText(context, 'إضافة، تعديل، أو حذف أكواد الخصم بسهولة',
+                'Add, edit, or delete discount codes easily'),
             style: TextStyle(
               fontSize: 13,
               fontFamily: _font,
@@ -795,7 +847,10 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(40),
                     child: Text(
-                      'خطأ في تحميل الكوبونات: ${snapshot.error}',
+                      webText(
+                          context,
+                          'خطأ في تحميل الكوبونات: ${snapshot.error}',
+                          'Failed to load coupons: ${snapshot.error}'),
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: Colors.redAccent),
                     ),
@@ -809,7 +864,8 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(40),
                     child: Text(
-                      'لا توجد كوبونات حالياً',
+                      webText(context, 'لا توجد كوبونات حالياً',
+                          'No coupons available right now'),
                       style: TextStyle(
                         color: Colors.grey[500],
                         fontSize: 16,
@@ -832,7 +888,8 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                       child: Padding(
                         padding: const EdgeInsets.all(40),
                         child: Text(
-                          'لا توجد نتائج مطابقة للبحث',
+                          webText(context, 'لا توجد نتائج مطابقة للبحث',
+                              'No matching search results'),
                           style: TextStyle(
                             color: Colors.grey[500],
                             fontSize: 16,
@@ -896,9 +953,9 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
               ),
               onPressed: () => _openAddOrEditDialog(),
               icon: const Icon(Icons.add_rounded, color: Colors.white),
-              label: const Text(
-                'إضافة كوبون',
-                style: TextStyle(
+              label: Text(
+                webText(context, 'إضافة كوبون', 'Add Coupon'),
+                style: const TextStyle(
                   color: Colors.white,
                   fontFamily: _font,
                   fontWeight: FontWeight.w900,
@@ -927,9 +984,9 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
             ),
             onPressed: () => _openAddOrEditDialog(),
             icon: const Icon(Icons.add_rounded, color: Colors.white),
-            label: const Text(
-              'إضافة كوبون',
-              style: TextStyle(
+            label: Text(
+              webText(context, 'إضافة كوبون', 'Add Coupon'),
+              style: const TextStyle(
                 color: Colors.white,
                 fontFamily: _font,
                 fontWeight: FontWeight.w900,
@@ -958,7 +1015,8 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
               controller: _searchCtrl,
               onChanged: (v) => setState(() => _search = v),
               decoration: InputDecoration(
-                hintText: 'ابحث بالكود أو اسم المتجر…',
+                hintText: webText(context, 'ابحث بالكود أو اسم المتجر…',
+                    'Search by code or store name...'),
                 hintStyle: TextStyle(
                   fontFamily: _font,
                   fontWeight: FontWeight.w700,
@@ -975,7 +1033,7 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
           ),
           if (_search.trim().isNotEmpty)
             IconButton(
-              tooltip: 'مسح',
+              tooltip: webText(context, 'مسح', 'Clear'),
               onPressed: () {
                 _searchCtrl.clear();
                 setState(() => _search = '');
@@ -1119,14 +1177,18 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
 
                 // Actions
                 PopupMenuButton<String>(
-                  tooltip: 'خيارات',
+                  tooltip: webText(context, 'خيارات', 'Options'),
                   onSelected: (v) {
                     if (v == 'edit') _openAddOrEditDialog(coupon: coupon);
                     if (v == 'delete') _deleteCoupon(id);
                   },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'edit', child: Text('تعديل')),
-                    PopupMenuItem(value: 'delete', child: Text('حذف')),
+                  itemBuilder: (_) => [
+                    PopupMenuItem(
+                        value: 'edit',
+                        child: Text(webText(context, 'تعديل', 'Edit'))),
+                    PopupMenuItem(
+                        value: 'delete',
+                        child: Text(webText(context, 'حذف', 'Delete'))),
                   ],
                 ),
               ],
@@ -1137,7 +1199,9 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
             Align(
               alignment: Alignment.centerRight, // ✅ يبدأ من اليمين للعربية
               child: Text(
-                description.isEmpty ? 'بدون وصف' : description,
+                description.isEmpty
+                    ? webText(context, 'بدون وصف', 'No description')
+                    : description,
                 style: TextStyle(
                   fontFamily: _font,
                   fontWeight: FontWeight.w700,
@@ -1160,13 +1224,13 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                 _expiryBadge(expiryDate),
                 const Spacer(),
                 IconButton(
-                  tooltip: 'تعديل',
+                  tooltip: webText(context, 'تعديل', 'Edit'),
                   onPressed: () => _openAddOrEditDialog(coupon: coupon),
                   icon: Icon(Icons.edit_note_rounded,
                       color: Colors.blueGrey[500]),
                 ),
                 IconButton(
-                  tooltip: 'حذف',
+                  tooltip: webText(context, 'حذف', 'Delete'),
                   onPressed: () => _deleteCoupon(id),
                   icon: const Icon(Icons.delete_sweep_outlined,
                       color: Colors.redAccent),
@@ -1195,7 +1259,7 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                 size: 12, color: Colors.grey[600]),
             const SizedBox(width: 6),
             Text(
-              'غير محدد',
+              webText(context, 'غير محدد', 'Not set'),
               style: TextStyle(
                 color: Colors.grey[700],
                 fontWeight: FontWeight.w700,
@@ -1228,15 +1292,22 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
     // ✅ المدة المتبقية مع التاريخ
     String remainingText;
     if (isExpired) {
-      remainingText = '$dateStr • منتهي منذ ${daysLeft.abs()} يوم';
+      remainingText = webText(
+          context,
+          '$dateStr • منتهي منذ ${daysLeft.abs()} يوم',
+          '$dateStr • expired ${daysLeft.abs()} days ago');
     } else if (daysLeft == 0) {
-      remainingText = '$dateStr • ينتهي اليوم!';
+      remainingText = webText(
+          context, '$dateStr • ينتهي اليوم!', '$dateStr • expires today');
     } else if (daysLeft == 1) {
-      remainingText = '$dateStr • باقي يوم واحد';
+      remainingText =
+          webText(context, '$dateStr • باقي يوم واحد', '$dateStr • 1 day left');
     } else if (daysLeft <= 10) {
-      remainingText = '$dateStr • باقي $daysLeft أيام';
+      remainingText = webText(context, '$dateStr • باقي $daysLeft أيام',
+          '$dateStr • $daysLeft days left');
     } else {
-      remainingText = '$dateStr • باقي $daysLeft يوم';
+      remainingText = webText(context, '$dateStr • باقي $daysLeft يوم',
+          '$dateStr • $daysLeft days left');
     }
 
     return Container(

@@ -120,7 +120,7 @@ class WebFooter extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Text(
-              'وفرها صح',
+              localizations?.translate('app_name') ?? 'Waferha Sah',
               style: GoogleFonts.cairo(
                 fontSize: 24,
                 fontWeight: FontWeight.w900,
@@ -131,8 +131,12 @@ class WebFooter extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(
-          localizations?.translate('about_app_intro_body') ??
-              'منصتك الأولى للحصول على أفضل العروض والخصومات من متاجرك المفضلة. وفّر المال واستمتع بتجربة تسوق ذكية.',
+          (localizations?.translate('footer_about_text') ??
+                  'Your first platform for the best offers and discounts from your favorite stores. Save money and enjoy smarter shopping.')
+              .replaceAll(
+            '{appName}',
+            localizations?.translate('app_name') ?? 'Waferha Sah',
+          ),
           style: TextStyle(
             fontSize: 14,
             color: Colors.grey[600],

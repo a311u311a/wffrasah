@@ -12,6 +12,7 @@ import '../models/store.dart';
 import '../models/coupon.dart';
 import '../models/offers.dart';
 import '../providers/locale_provider.dart';
+import 'web_i18n.dart';
 
 class WebSearchDialog extends StatefulWidget {
   const WebSearchDialog({super.key});
@@ -191,9 +192,9 @@ class _WebSearchDialogState extends State<WebSearchDialog> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0.5,
-        title: const Text(
-          'البحث',
-          style: TextStyle(
+        title: Text(
+          webText(context, 'البحث', 'Search'),
+          style: const TextStyle(
             fontFamily: _font,
             fontWeight: FontWeight.w900,
           ),
@@ -237,7 +238,8 @@ class _WebSearchDialogState extends State<WebSearchDialog> {
         autofocus: true,
         onChanged: _onQueryChanged,
         decoration: InputDecoration(
-          hintText: 'اكتب اسم المتجر...',
+          hintText:
+              webText(context, 'اكتب اسم المتجر...', 'Type store name...'),
           hintStyle: TextStyle(
             fontFamily: _font,
             fontWeight: FontWeight.w700,
@@ -263,7 +265,8 @@ class _WebSearchDialogState extends State<WebSearchDialog> {
 
   Widget _storesResults() {
     if (_controller.text.trim().isEmpty) {
-      return _hintCard('اكتب حرفين أو أكثر للبحث عن متجر.');
+      return _hintCard(webText(context, 'اكتب حرفين أو أكثر للبحث عن متجر.',
+          'Type two or more letters to search for a store.'));
     }
 
     if (isSearchingStores) {
@@ -275,7 +278,8 @@ class _WebSearchDialogState extends State<WebSearchDialog> {
     }
 
     if (storeResults.isEmpty) {
-      return _hintCard('لا توجد متاجر مطابقة.');
+      return _hintCard(webText(
+          context, 'لا توجد متاجر مطابقة.', 'No matching stores found.'));
     }
 
     return Container(
@@ -288,9 +292,9 @@ class _WebSearchDialogState extends State<WebSearchDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'المتاجر',
-            style: TextStyle(
+          Text(
+            webText(context, 'المتاجر', 'Stores'),
+            style: const TextStyle(
               fontFamily: _font,
               fontWeight: FontWeight.w900,
               fontSize: 14,
@@ -365,7 +369,10 @@ class _WebSearchDialogState extends State<WebSearchDialog> {
 
   Widget _storeContent() {
     if (selectedStore == null) {
-      return _hintCard('اختر متجرًا لعرض الكوبونات والعروض الخاصة به.');
+      return _hintCard(webText(
+          context,
+          'اختر متجرًا لعرض الكوبونات والعروض الخاصة به.',
+          'Choose a store to view its coupons and offers.'));
     }
 
     if (isLoadingStoreContent) {
@@ -394,7 +401,8 @@ class _WebSearchDialogState extends State<WebSearchDialog> {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'نتائج: ${selectedStore!.name}',
+                  webText(context, 'نتائج: ${selectedStore!.name}',
+                      'Results: ${selectedStore!.name}'),
                   style: const TextStyle(
                     fontFamily: _font,
                     fontWeight: FontWeight.w900,
@@ -412,11 +420,12 @@ class _WebSearchDialogState extends State<WebSearchDialog> {
 
         // كوبونات
         _contentSection(
-          title: 'الكوبونات',
+          title: webText(context, 'الكوبونات', 'Coupons'),
           icon: Icons.confirmation_number_rounded,
           count: storeCoupons.length,
           child: storeCoupons.isEmpty
-              ? _hintCard('لا توجد كوبونات لهذا المتجر.')
+              ? _hintCard(webText(context, 'لا توجد كوبونات لهذا المتجر.',
+                  'No coupons for this store.'))
               : Column(
                   children:
                       storeCoupons.take(12).map((c) => _couponRow(c)).toList(),
@@ -427,11 +436,12 @@ class _WebSearchDialogState extends State<WebSearchDialog> {
 
         // عروض
         _contentSection(
-          title: 'العروض',
+          title: webText(context, 'العروض', 'Offers'),
           icon: Icons.local_offer_rounded,
           count: storeOffers.length,
           child: storeOffers.isEmpty
-              ? _hintCard('لا توجد عروض لهذا المتجر.')
+              ? _hintCard(webText(context, 'لا توجد عروض لهذا المتجر.',
+                  'No offers for this store.'))
               : Column(
                   children:
                       storeOffers.take(12).map((o) => _offerRow(o)).toList(),
@@ -539,7 +549,7 @@ class _WebSearchDialogState extends State<WebSearchDialog> {
                   if (c.code.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Text(
-                      'كود: ${c.code}',
+                      webText(context, 'كود: ${c.code}', 'Code: ${c.code}'),
                       style: TextStyle(
                         fontFamily: _font,
                         fontWeight: FontWeight.w900,

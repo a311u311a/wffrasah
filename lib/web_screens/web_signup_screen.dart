@@ -10,6 +10,7 @@ import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
 import '../localization/app_localizations.dart';
 import '../providers/locale_provider.dart';
+import '../web_widgets/web_i18n.dart';
 
 /// صفحة التسجيل للويب
 class WebSignUpScreen extends StatefulWidget {
@@ -173,10 +174,13 @@ class _WebSignUpScreenState extends State<WebSignUpScreen> {
     final t = AppLocalizations.of(context);
     final isDesktop = ResponsiveLayout.isDesktop(context);
     final welcomePanel = _buildWelcomePanel(
-      badge: 'ابدأ التوفير اليوم',
-      title: 'أنشئ حسابك واحفظ أفضل العروض',
-      subtitle:
+      badge: webText(context, 'ابدأ التوفير اليوم', 'Start saving today'),
+      title: webText(context, 'أنشئ حسابك واحفظ أفضل العروض',
+          'Create your account and save the best deals'),
+      subtitle: webText(
+          context,
           'سجل الآن لتجميع كوبوناتك وعروضك المفضلة والوصول إليها بسرعة من أي مكان.',
+          'Sign up to collect your favorite coupons and offers and reach them quickly from anywhere.'),
     );
     final formCard = _buildFormCard(t);
 

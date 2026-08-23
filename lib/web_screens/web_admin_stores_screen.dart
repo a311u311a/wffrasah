@@ -9,6 +9,7 @@ import '../screens/login_signup/widgets/snackbar.dart';
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
+import '../web_widgets/web_i18n.dart';
 
 /// صفحة إدارة المتاجر على الويب (UI مُعاد تصميمه - نفس الخصائص)
 class WebAdminStoresScreen extends StatefulWidget {
@@ -124,7 +125,11 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
       return _sb.storage.from('images').getPublicUrl(path);
     } catch (e) {
       if (mounted) {
-        showSnackBar(context, 'خطأ في رفع الصورة: $e', isError: true);
+        showSnackBar(
+            context,
+            webText(
+                context, 'خطأ في رفع الصورة: $e', 'Image upload failed: $e'),
+            isError: true);
       }
       return null;
     }
@@ -176,7 +181,9 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  _editingId == null ? 'إضافة متجر جديد' : 'تعديل المتجر',
+                  _editingId == null
+                      ? webText(context, 'إضافة متجر جديد', 'Add New Store')
+                      : webText(context, 'تعديل المتجر', 'Edit Store'),
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
@@ -218,7 +225,8 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
                     _twoColumns(
                       left: _inputField(
                         _storeNameArCtrl,
-                        'اسم المتجر (عربي)',
+                        webText(context, 'اسم المتجر (عربي)',
+                            'Store Name (Arabic)'),
                         Icons.storefront_rounded,
                       ),
                       right: _inputField(
@@ -230,7 +238,8 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
                     _twoColumns(
                       left: _inputField(
                         _storeDescArCtrl,
-                        'وصف المتجر (عربي)',
+                        webText(context, 'وصف المتجر (عربي)',
+                            'Store Description (Arabic)'),
                         Icons.description_rounded,
                         maxLines: 3,
                       ),
@@ -251,7 +260,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
             TextButton(
               onPressed: _isSaving ? null : () => Navigator.pop(context),
               child: Text(
-                'إلغاء',
+                webText(context, 'إلغاء', 'Cancel'),
                 style: TextStyle(
                   color: Colors.grey[600],
                   fontFamily: _font,
@@ -282,7 +291,9 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
                     : const Icon(Icons.check_circle_rounded,
                         color: Colors.white),
                 label: Text(
-                  _editingId == null ? 'إضافة' : 'حفظ',
+                  _editingId == null
+                      ? webText(context, 'إضافة', 'Add')
+                      : webText(context, 'حفظ', 'Save'),
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
@@ -358,7 +369,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'شعار المتجر',
+                    webText(context, 'شعار المتجر', 'Store Logo'),
                     style: TextStyle(
                       fontFamily: _font,
                       fontWeight: FontWeight.w900,
@@ -367,7 +378,8 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'اضغط لاختيار صورة (يفضل PNG أو JPG)',
+                    webText(context, 'اضغط لاختيار صورة (يفضل PNG أو JPG)',
+                        'Tap to choose an image (PNG or JPG preferred)'),
                     style: TextStyle(
                       fontFamily: _font,
                       fontWeight: FontWeight.w700,
@@ -403,7 +415,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
                   color: Constants.primaryColor, size: 20),
               const SizedBox(width: 8),
               Text(
-                'الفئة',
+                webText(context, 'الفئة', 'Category'),
                 style: TextStyle(
                   fontFamily: _font,
                   fontWeight: FontWeight.w900,
@@ -425,7 +437,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
                 value: _selectedCategoryId,
                 isExpanded: true,
                 hint: Text(
-                  'اختر الفئة',
+                  webText(context, 'اختر الفئة', 'Choose Category'),
                   style: TextStyle(
                     fontFamily: _font,
                     color: Colors.grey[500],
@@ -435,7 +447,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
                   DropdownMenuItem<String>(
                     value: null,
                     child: Text(
-                      'بدون فئة',
+                      webText(context, 'بدون فئة', 'No Category'),
                       style: TextStyle(
                         fontFamily: _font,
                         color: Colors.grey[600],
@@ -528,8 +540,9 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
           fontWeight: FontWeight.w800,
           color: Colors.grey[900],
         ),
-        validator: (v) =>
-            (v == null || v.trim().isEmpty) ? 'هذا الحقل مطلوب' : null,
+        validator: (v) => (v == null || v.trim().isEmpty)
+            ? webText(context, 'هذا الحقل مطلوب', 'This field is required')
+            : null,
       ),
     );
   }
@@ -576,10 +589,15 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
       _refreshStores();
       showSnackBar(
         context,
-        _editingId == null ? 'تمت الإضافة بنجاح' : 'تم التحديث بنجاح',
+        _editingId == null
+            ? webText(context, 'تمت الإضافة بنجاح', 'Added successfully')
+            : webText(context, 'تم التحديث بنجاح', 'Updated successfully'),
       );
     } catch (e) {
-      if (mounted) showSnackBar(context, 'خطأ: $e', isError: true);
+      if (mounted) {
+        showSnackBar(context, webText(context, 'خطأ: $e', 'Error: $e'),
+            isError: true);
+      }
     } finally {
       if (mounted) {
         setStateDialog(() => _isSaving = false);
@@ -592,18 +610,23 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('حذف المتجر؟', style: TextStyle(fontFamily: _font)),
-        content: const Text(
-          'سيتم حذف المتجر وكل الكوبونات المرتبطة به. هل أنت متأكد؟',
-          style: TextStyle(fontFamily: _font),
+        title: Text(webText(context, 'حذف المتجر؟', 'Delete store?'),
+            style: const TextStyle(fontFamily: _font)),
+        content: Text(
+          webText(
+              context,
+              'سيتم حذف المتجر وكل الكوبونات المرتبطة به. هل أنت متأكد؟',
+              'The store and all linked coupons will be deleted. Are you sure?'),
+          style: const TextStyle(fontFamily: _font),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('إلغاء')),
+              child: Text(webText(context, 'إلغاء', 'Cancel'))),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('حذف', style: TextStyle(color: Colors.red)),
+            child: Text(webText(context, 'حذف', 'Delete'),
+                style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -614,10 +637,15 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
         await _sb.from('stores').delete().eq('id', id);
         if (mounted) {
           _refreshStores();
-          showSnackBar(context, 'تم حذف المتجر');
+          showSnackBar(context,
+              webText(context, 'تم حذف المتجر', 'Store deleted successfully'));
         }
       } catch (e) {
-        if (mounted) showSnackBar(context, 'خطأ في الحذف: $e', isError: true);
+        if (mounted) {
+          showSnackBar(context,
+              webText(context, 'خطأ في الحذف: $e', 'Delete failed: $e'),
+              isError: true);
+        }
       }
     }
   }
@@ -743,7 +771,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'إدارة المتاجر',
+                  webText(context, 'إدارة المتاجر', 'Manage Stores'),
                   style: TextStyle(
                     fontSize: ResponsiveLayout.isDesktop(context) ? 28 : 22,
                     fontWeight: FontWeight.w900,
@@ -757,7 +785,8 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            'إضافة، تعديل، أو حذف المتاجر بسهولة',
+            webText(context, 'إضافة، تعديل، أو حذف المتاجر بسهولة',
+                'Add, edit, or delete stores easily'),
             style: TextStyle(
               fontSize: 13,
               fontFamily: _font,
@@ -797,7 +826,10 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(40),
                     child: Text(
-                      'خطأ في تحميل المتاجر: ${snapshot.error}',
+                      webText(
+                          context,
+                          'خطأ في تحميل المتاجر: ${snapshot.error}',
+                          'Failed to load stores: ${snapshot.error}'),
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: Colors.redAccent),
                     ),
@@ -811,7 +843,8 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(40),
                     child: Text(
-                      'لا توجد متاجر حالياً',
+                      webText(context, 'لا توجد متاجر حالياً',
+                          'No stores available right now'),
                       style: TextStyle(
                         color: Colors.grey[500],
                         fontSize: 16,
@@ -876,9 +909,9 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
               ),
               onPressed: () => _openAddOrEditDialog(),
               icon: const Icon(Icons.add_rounded, color: Colors.white),
-              label: const Text(
-                'إضافة متجر',
-                style: TextStyle(
+              label: Text(
+                webText(context, 'إضافة متجر', 'Add Store'),
+                style: const TextStyle(
                   color: Colors.white,
                   fontFamily: _font,
                   fontWeight: FontWeight.w900,
@@ -908,9 +941,9 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
             ),
             onPressed: () => _openAddOrEditDialog(),
             icon: const Icon(Icons.add_rounded, color: Colors.white),
-            label: const Text(
-              'إضافة متجر',
-              style: TextStyle(
+            label: Text(
+              webText(context, 'إضافة متجر', 'Add Store'),
+              style: const TextStyle(
                 color: Colors.white,
                 fontFamily: _font,
                 fontWeight: FontWeight.w900,
@@ -939,7 +972,8 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
               controller: _searchCtrl,
               onChanged: (v) => setState(() => _search = v),
               decoration: InputDecoration(
-                hintText: 'ابحث باسم المتجر أو slug…',
+                hintText: webText(context, 'ابحث باسم المتجر أو slug…',
+                    'Search by store name or slug...'),
                 hintStyle: TextStyle(
                   fontFamily: _font,
                   fontWeight: FontWeight.w700,
@@ -956,7 +990,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
           ),
           if (_search.trim().isNotEmpty)
             IconButton(
-              tooltip: 'مسح',
+              tooltip: webText(context, 'مسح', 'Clear'),
               onPressed: () {
                 _searchCtrl.clear();
                 setState(() => _search = '');
@@ -1080,7 +1114,9 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        slug.isEmpty ? 'بدون slug' : slug,
+                        slug.isEmpty
+                            ? webText(context, 'بدون slug', 'No slug')
+                            : slug,
                         style: TextStyle(
                           fontFamily: _font,
                           fontWeight: FontWeight.w700,
@@ -1096,14 +1132,18 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
 
                 // Actions
                 PopupMenuButton<String>(
-                  tooltip: 'خيارات',
+                  tooltip: webText(context, 'خيارات', 'Options'),
                   onSelected: (v) {
                     if (v == 'edit') _openAddOrEditDialog(store: store);
                     if (v == 'delete') _deleteStore(id);
                   },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'edit', child: Text('تعديل')),
-                    PopupMenuItem(value: 'delete', child: Text('حذف')),
+                  itemBuilder: (_) => [
+                    PopupMenuItem(
+                        value: 'edit',
+                        child: Text(webText(context, 'تعديل', 'Edit'))),
+                    PopupMenuItem(
+                        value: 'delete',
+                        child: Text(webText(context, 'حذف', 'Delete'))),
                   ],
                 ),
               ],
@@ -1114,7 +1154,9 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
             Align(
               alignment: Alignment.centerRight, // ✅ يبدأ من اليمين للعربية
               child: Text(
-                desc.isEmpty ? 'بدون وصف' : desc,
+                desc.isEmpty
+                    ? webText(context, 'بدون وصف', 'No description')
+                    : desc,
                 style: TextStyle(
                   fontFamily: _font,
                   fontWeight: FontWeight.w700,
@@ -1134,19 +1176,20 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
             // Footer: count badges + buttons
             Row(
               children: [
-                _countBadge(
-                    couponsCount, 'كوبون', Icons.confirmation_number_rounded),
+                _countBadge(couponsCount, webText(context, 'كوبون', 'Coupon'),
+                    Icons.confirmation_number_rounded),
                 const SizedBox(width: 8),
-                _countBadge(offersCount, 'عرض', Icons.local_offer_rounded),
+                _countBadge(offersCount, webText(context, 'عرض', 'Offer'),
+                    Icons.local_offer_rounded),
                 const Spacer(),
                 IconButton(
-                  tooltip: 'تعديل',
+                  tooltip: webText(context, 'تعديل', 'Edit'),
                   onPressed: () => _openAddOrEditDialog(store: store),
                   icon: Icon(Icons.edit_note_rounded,
                       color: Colors.blueGrey[500]),
                 ),
                 IconButton(
-                  tooltip: 'حذف',
+                  tooltip: webText(context, 'حذف', 'Delete'),
                   onPressed: () => _deleteStore(id),
                   icon: const Icon(Icons.delete_sweep_outlined,
                       color: Colors.redAccent),

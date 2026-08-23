@@ -13,6 +13,7 @@ import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
 import '../web_widgets/web_coupon_card.dart';
 import '../web_widgets/web_offer_card.dart';
+import '../web_widgets/web_i18n.dart';
 
 /// Web version of Store Detail Screen
 /// Shows store information with coupons and offers in tabs
@@ -346,8 +347,10 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
                   children: [
                     const Icon(Icons.confirmation_number_rounded, size: 20),
                     const SizedBox(width: 8),
-                    Text(
-                        'كوبونات الخصم ${hasCoupons ? '(${_coupons.length})' : ''}'),
+                    Text(webText(
+                        context,
+                        'كوبونات الخصم ${hasCoupons ? '(${_coupons.length})' : ''}',
+                        'Discount Coupons ${hasCoupons ? '(${_coupons.length})' : ''}')),
                   ],
                 ),
               ),
@@ -357,8 +360,10 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
                   children: [
                     const Icon(Icons.local_offer_rounded, size: 20),
                     const SizedBox(width: 8),
-                    Text(
-                        'العروض المتاحة ${hasOffers ? '(${_offers.length})' : ''}'),
+                    Text(webText(
+                        context,
+                        'العروض المتاحة ${hasOffers ? '(${_offers.length})' : ''}',
+                        'Available Offers ${hasOffers ? '(${_offers.length})' : ''}')),
                   ],
                 ),
               ),
@@ -387,7 +392,8 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
 
   Widget _buildCouponsGrid() {
     if (_coupons.isEmpty) {
-      return _buildEmptyState('لا توجد كوبونات متاحة حالياً');
+      return _buildEmptyState(webText(context, 'لا توجد كوبونات متاحة حالياً',
+          'No coupons available right now'));
     }
 
     return LayoutBuilder(
@@ -419,7 +425,8 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
 
   Widget _buildOffersGrid() {
     if (_offers.isEmpty) {
-      return _buildEmptyState('لا توجد عروض متاحة حالياً');
+      return _buildEmptyState(webText(context, 'لا توجد عروض متاحة حالياً',
+          'No offers available right now'));
     }
 
     return LayoutBuilder(
@@ -486,7 +493,7 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              'تحقق مرة أخرى قريباً',
+              webText(context, 'تحقق مرة أخرى قريباً', 'Check back soon'),
               style: TextStyle(
                 fontFamily: 'Tajawal',
                 fontSize: 14,

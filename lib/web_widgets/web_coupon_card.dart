@@ -9,6 +9,7 @@ import 'package:vector_math/vector_math_64.dart' as vector;
 import '../constants.dart';
 import '../models/coupon.dart';
 import '../providers/favorites_provider.dart';
+import 'web_i18n.dart';
 
 /// بطاقة كوبون محسّنة للويب - بدون عرض اسم/أيقونة المتجر ✅
 class WebCouponCard extends StatefulWidget {
@@ -332,7 +333,7 @@ class _WebCouponCardState extends State<WebCouponCard> {
                               children: [
                                 // ✅ تم النسخ
                                 Text(
-                                  'تم النسخ ✅',
+                                  webText(context, 'تم النسخ ✅', 'Copied'),
                                   style: TextStyle(
                                     fontSize: widget.compact ? 10.5 : 12,
                                     fontWeight: FontWeight.w900,
@@ -373,7 +374,8 @@ class _WebCouponCardState extends State<WebCouponCard> {
                               SizedBox(width: widget.compact ? 4 : 6),
                               Flexible(
                                 child: Text(
-                                  'اضغط لنسخ الكوبون',
+                                  webText(context, 'اضغط لنسخ الكوبون',
+                                      'Tap to copy coupon'),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -431,8 +433,8 @@ class _WebCouponCardState extends State<WebCouponCard> {
                       SizedBox(width: widget.compact ? 4 : 6),
                       Text(
                         widget.coupon.code.isNotEmpty
-                            ? 'نسخ واستخدام'
-                            : 'استخدام العرض',
+                            ? webText(context, 'نسخ واستخدام', 'Copy & Use')
+                            : webText(context, 'استخدام العرض', 'Use Offer'),
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: widget.compact ? 14 : 12,
@@ -495,7 +497,11 @@ class _WebCouponCardState extends State<WebCouponCard> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'تم نسخ الكود: ${widget.coupon.code}',
+                  webText(
+                    context,
+                    'تم نسخ الكود: ${widget.coupon.code}',
+                    'Code copied: ${widget.coupon.code}',
+                  ),
                   style: const TextStyle(fontFamily: 'Tajawal'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -527,7 +533,7 @@ class _WebCouponCardState extends State<WebCouponCard> {
     await SharePlus.instance.share(
       ShareParams(
         text: '${widget.coupon.name}\n'
-            '${widget.coupon.code.isNotEmpty ? "كود الخصم: ${widget.coupon.code}" : ""}',
+            '${widget.coupon.code.isNotEmpty ? webText(context, "كود الخصم: ${widget.coupon.code}", "Discount code: ${widget.coupon.code}") : ""}',
       ),
     );
   }

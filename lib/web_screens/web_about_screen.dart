@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../constants.dart';
+import '../localization/app_localizations.dart';
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
@@ -15,7 +16,6 @@ class WebAboutScreen extends StatefulWidget {
 
 class _WebAboutScreenState extends State<WebAboutScreen> {
   String _version = '';
-  final String _appName = 'rbhan';
 
   @override
   void initState() {
@@ -33,175 +33,198 @@ class _WebAboutScreenState extends State<WebAboutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50], // مطابق للموبايل F8F9FA تقريباً
-      appBar: const WebNavigationBar(),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // المحتوى الرئيسي
-            Container(
-              padding: ResponsivePadding.page(context),
-              constraints: const BoxConstraints(maxWidth: 1000),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 40),
-                  _buildHeader(context),
-                  const SizedBox(height: 60),
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final appName = _t('app_name');
 
-                  // Logo & Version
-                  Center(
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Constants.primaryColor
-                                    .withValues(alpha: 0.1),
-                                blurRadius: 20,
-                                spreadRadius: 5,
-                              ),
-                            ],
+    return Directionality(
+      textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+      child: Scaffold(
+        backgroundColor: Colors.grey[50], // مطابق للموبايل F8F9FA تقريباً
+        appBar: const WebNavigationBar(),
+        body: SingleChildScrollView(
+          child: Column(
+            children: [
+              // المحتوى الرئيسي
+              Container(
+                padding: ResponsivePadding.page(context),
+                constraints: const BoxConstraints(maxWidth: 1000),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 40),
+                    _buildHeader(context),
+                    const SizedBox(height: 60),
+
+                    // Logo & Version
+                    Center(
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Constants.primaryColor
+                                      .withValues(alpha: 0.1),
+                                  blurRadius: 20,
+                                  spreadRadius: 5,
+                                ),
+                              ],
+                            ),
+                            padding: const EdgeInsets.all(20),
+                            child: Image.asset('assets/image/coupon.png',
+                                errorBuilder: (c, e, s) => Icon(
+                                    Icons.shopping_bag,
+                                    size: 50,
+                                    color: Constants.primaryColor)),
                           ),
-                          padding: const EdgeInsets.all(20),
-                          child: Image.asset('assets/image/coupon.png',
-                              errorBuilder: (c, e, s) => Icon(
-                                  Icons.shopping_bag,
-                                  size: 50,
-                                  color: Constants.primaryColor)),
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          _appName,
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Constants.primaryColor,
-                            fontFamily: 'Tajawal',
-                          ),
-                        ),
-                        Text(
-                          'Version $_version',
-                          style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                              fontFamily: 'Tajawal'),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  // Intro Section
-                  _buildSectionContainer(
-                    child: Column(
-                      children: [
-                        const Text(
-                          'وجهتك الأولى للتسوق الذكي والتوفير الحقيقي.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                              fontFamily: 'Tajawal'),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'نؤمن في $_appName بأن التسوق الممتع لا يجب أن يكون مكلفاً. نحن منصة متكاملة تجمع لك أحدث وأقوى الكوبونات وعروض الخصم من أشهر المتاجر المحلية والعالمية في مكان واحد.\n\nهدفنا هو تمكين المستهلك من الحصول على أفضل المنتجات بأقل الأسعار، من خلال واجهة سهلة الاستخدام وتحديثات يومية تضمن لك فاعلية كل كود خصم قبل استخدامه. مع $_appName، التوفير أصبح بضغطة زر.',
-                          textAlign: TextAlign.justify,
-                          style: const TextStyle(
-                              fontSize: 16,
-                              height: 1.8,
-                              color: Colors.black87,
-                              fontFamily: 'Tajawal'),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // Why Us Section
-                  _buildSectionContainer(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Center(
-                          child: Text(
-                            'لماذا نحن؟ (ما الذي يميزنا؟)',
+                          const SizedBox(height: 20),
+                          Text(
+                            appName,
                             style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Constants.primaryColor,
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Constants.primaryColor,
+                              fontFamily: 'Tajawal',
+                            ),
+                          ),
+                          Text(
+                            '${_t('version')} $_version',
+                            style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
                                 fontFamily: 'Tajawal'),
                           ),
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          'لأننا نحرص على أن تحصل على كود خصم يعمل من أول مرة، جاء $_appName ليقدم لك تجربة خصومات موثوقة عبر:',
-                          textAlign: TextAlign.justify,
-                          style: const TextStyle(
-                              fontSize: 16, height: 1.6, fontFamily: 'Tajawal'),
-                        ),
-                        const SizedBox(height: 20),
-                        _buildFeatureItem('تحديث يومي',
-                            'نقوم بفحص وتجربة جميع الكوبونات يدويًا يوميًا للتأكد من فعاليتها وصلاحيتها.'),
-                        _buildFeatureItem('عروض حصرية',
-                            'أكواد خصم خاصة لمستخدمي $_appName فقط عبر شراكات مباشرة مع المتاجر .'),
-                        _buildFeatureItem('تنبيهات ذكية',
-                            'لا تفوت فرصة أبداً! سنرسل لك إشعارات فورية عند توفر عرض جديد لمتجرك المفضل.'),
-                        _buildFeatureItem('شفافية تامة',
-                            'توضيح جميع شروط استخدام الكوبون بكل وضوح قبل الاستخدام.'),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 30),
+                    const SizedBox(height: 40),
 
-                  // Social Media Section
-                  _buildSectionContainer(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const Text(
-                          ' تابعنا وشاركنا تجربتك أو استفساراتك عبر منصاتنا الرسمية:',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              fontSize: 16, height: 1.6, fontFamily: 'Tajawal'),
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              _buildSocialRow('assets/icon/x.png',
-                                  'X (تويتر سابقاً)', '@rbhanco'),
-                              const SizedBox(width: 20),
-                              _buildSocialRow('assets/icon/instagram.png',
-                                  'إنستغرام', '@rbhan.co'),
-                              const SizedBox(width: 20),
-                              _buildSocialRow('assets/icon/tiktok.png',
-                                  'تيك توك', '@rbhan.co'),
-                            ]),
-                      ],
+                    // Intro Section
+                    _buildSectionContainer(
+                      child: Column(
+                        children: [
+                          Text(
+                            _t('about_app_intro_title'),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                                fontFamily: 'Tajawal'),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _t('about_app_intro_body')
+                                .replaceAll('{appName}', appName),
+                            textAlign: TextAlign.justify,
+                            style: const TextStyle(
+                                fontSize: 16,
+                                height: 1.8,
+                                color: Colors.black87,
+                                fontFamily: 'Tajawal'),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 60),
-                ],
+
+                    const SizedBox(height: 30),
+
+                    // Why Us Section
+                    _buildSectionContainer(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Center(
+                            child: Text(
+                              _t('about_app_why_title'),
+                              style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Constants.primaryColor,
+                                  fontFamily: 'Tajawal'),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            _t('about_app_why_body')
+                                .replaceAll('{appName}', appName),
+                            textAlign: TextAlign.justify,
+                            style: const TextStyle(
+                                fontSize: 16,
+                                height: 1.6,
+                                fontFamily: 'Tajawal'),
+                          ),
+                          const SizedBox(height: 20),
+                          _buildFeatureItem(
+                            _t('about_feature_daily_updates_title'),
+                            _t('about_feature_daily_updates_body'),
+                          ),
+                          _buildFeatureItem(
+                            _t('about_feature_exclusive_offers_title'),
+                            _t('about_feature_exclusive_offers_body')
+                                .replaceAll('{appName}', appName),
+                          ),
+                          _buildFeatureItem(
+                            _t('about_feature_smart_alerts_title'),
+                            _t('about_feature_smart_alerts_body'),
+                          ),
+                          _buildFeatureItem(
+                            _t('about_feature_transparency_title'),
+                            _t('about_feature_transparency_body'),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    // Social Media Section
+                    _buildSectionContainer(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            _t('about_social_text'),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                                fontSize: 16,
+                                height: 1.6,
+                                fontFamily: 'Tajawal'),
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _buildSocialRow('assets/icon/x.png',
+                                    _t('x_platform'), '@rbhanco'),
+                                const SizedBox(width: 20),
+                                _buildSocialRow('assets/icon/instagram.png',
+                                    _t('instagram_platform'), '@rbhan.co'),
+                                const SizedBox(width: 20),
+                                _buildSocialRow('assets/icon/tiktok.png',
+                                    _t('tiktok_platform'), '@rbhan.co'),
+                              ]),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 60),
+                  ],
+                ),
               ),
-            ),
-            const WebFooter(),
-          ],
+              const WebFooter(),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  String _t(String key) => AppLocalizations.of(context)?.translate(key) ?? key;
 
   Widget _buildHeader(BuildContext context) {
     return Center(
@@ -209,7 +232,7 @@ class _WebAboutScreenState extends State<WebAboutScreen> {
         // Added Column to contain text widgets
         children: [
           Text(
-            'من نحن',
+            _t('about'),
             style: TextStyle(
               fontSize: ResponsiveLayout.isDesktop(context) ? 42 : 32,
               fontWeight: FontWeight.w900,
@@ -219,7 +242,7 @@ class _WebAboutScreenState extends State<WebAboutScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            'تعرف على منصة الكوبونات الأولى',
+            _t('about_app_subtitle'),
             style: TextStyle(
               fontSize: 18,
               color: Colors.grey[700],
