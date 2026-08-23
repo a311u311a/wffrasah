@@ -13,6 +13,8 @@ import '../web_widgets/web_coupon_card.dart';
 import '../web_widgets/web_offer_card.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../localization/app_localizations.dart';
+
 /// صفحة المفضلة للويب
 class WebFavoritesScreen extends StatefulWidget {
   const WebFavoritesScreen({super.key});
@@ -39,6 +41,8 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
   List<Offer> favoriteOffers = [];
   Map<String, Store> storesMap = {};
   bool isLoading = true;
+
+  String _t(String key) => AppLocalizations.of(context)?.translate(key) ?? key;
 
   @override
   void initState() {
@@ -101,7 +105,7 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
       setState(() => isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('حدث خطأ: $e')),
+          SnackBar(content: Text('${_t('error_prefix')}: $e')),
         );
       }
     }
@@ -182,7 +186,7 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
                   border: Border.all(color: const Color(0xFFD8D4FF)),
                 ),
                 child: Text(
-                  'كل ما أعجبك من كوبونات وعروض في مكان واحد',
+                  _t('favorites_hero_badge'),
                   style: GoogleFonts.cairo(
                     color: ink,
                     fontSize: 13,
@@ -196,7 +200,7 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
                     const LinearGradient(colors: [orange, yellow, pink])
                         .createShader(bounds),
                 child: Text(
-                  'المفضلة في واجهة موحدة وسريعة',
+                  _t('favorites_hero_title'),
                   style: GoogleFonts.cairo(
                     color: Colors.white,
                     fontSize: compact ? 28 : 38,
@@ -207,7 +211,7 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
               ),
               const SizedBox(height: 14),
               Text(
-                'ارجع بسرعة إلى الكوبونات والعروض التي حفظتها، واستخدمها مباشرة من نفس الصفحة.',
+                _t('favorites_hero_subtitle'),
                 style: GoogleFonts.cairo(
                   color: secondary,
                   fontSize: compact ? 14 : 16,
@@ -224,9 +228,8 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
 
   Widget _buildFavoritesSection() {
     return _buildSection(
-      title: 'المفضلة',
-      subtitle:
-          'العناصر المحفوظة لديك مرتبة حسب النوع لتصل إلى عروضك وكوبوناتك بسرعة.',
+      title: _t('favorites'),
+      subtitle: _t('favorites_page_subtitle'),
       child: _buildFavoritesGrid(),
     );
   }
@@ -297,7 +300,7 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
             const Icon(Icons.favorite_border, size: 90, color: faded),
             const SizedBox(height: 20),
             Text(
-              'لا توجد عناصر في المفضلة',
+              _t('favorites_empty_title'),
               style: GoogleFonts.cairo(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
@@ -306,7 +309,7 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'ابدأ بإضافة الكوبونات والعروض التي تعجبك إلى المفضلة',
+              _t('favorites_empty_subtitle'),
               textAlign: TextAlign.center,
               style: GoogleFonts.cairo(
                 fontSize: 16,
@@ -319,7 +322,7 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
               onPressed: () => Navigator.pushNamed(context, '/'),
               icon: const Icon(Icons.explore_rounded),
               label: Text(
-                'استكشف الكوبونات والعروض',
+                _t('explore_coupons_offers'),
                 style: GoogleFonts.cairo(
                   fontWeight: FontWeight.w800,
                 ),
@@ -351,7 +354,8 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
               const Icon(Icons.local_offer, color: orange, size: 24),
               const SizedBox(width: 8),
               Text(
-                'العروض المفضلة (${favoriteOffers.length})',
+                _t('favorite_offers_count')
+                    .replaceAll('{count}', '${favoriteOffers.length}'),
                 style: GoogleFonts.cairo(
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
@@ -399,7 +403,8 @@ class _WebFavoritesScreenState extends State<WebFavoritesScreen> {
               const Icon(Icons.confirmation_number, color: orange, size: 24),
               const SizedBox(width: 8),
               Text(
-                'الكوبونات المفضلة (${favoriteCoupons.length})',
+                _t('favorite_coupons_count')
+                    .replaceAll('{count}', '${favoriteCoupons.length}'),
                 style: GoogleFonts.cairo(
                   fontSize: 20,
                   fontWeight: FontWeight.w900,

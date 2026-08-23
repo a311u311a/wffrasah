@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../localization/app_localizations.dart';
 import '../models/coupon.dart';
 import '../models/store.dart';
 import '../providers/locale_provider.dart';
@@ -38,6 +40,8 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
   Map<String, Store> storesMap = {};
   bool isLoading = true;
   String searchQuery = '';
+
+  String _t(String key) => AppLocalizations.of(context)?.translate(key) ?? key;
 
   @override
   void initState() {
@@ -104,7 +108,7 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
       setState(() => isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('حدث خطأ: $e')),
+          SnackBar(content: Text('${_t('error_prefix')}: $e')),
         );
       }
     }
@@ -198,7 +202,7 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
                   border: Border.all(color: const Color(0xFFD8D4FF)),
                 ),
                 child: Text(
-                  'تصفح جميع الكوبونات وابحث حسب الكود أو المتجر',
+                  _t('coupons_hero_badge'),
                   style: GoogleFonts.cairo(
                     color: ink,
                     fontSize: 13,
@@ -212,7 +216,7 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
                     const LinearGradient(colors: [orange, yellow, pink])
                         .createShader(bounds),
                 child: Text(
-                  'جميع الكوبونات في واجهة موحدة وسريعة',
+                  _t('coupons_hero_title'),
                   style: GoogleFonts.cairo(
                     color: Colors.white,
                     fontSize: compact ? 28 : 38,
@@ -223,7 +227,7 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
               ),
               const SizedBox(height: 14),
               Text(
-                'ابحث عن الكوبون المناسب، شاهد المتجر المرتبط به، وانسخ الكود أو انتقل للمتجر مباشرة من نفس الشاشة.',
+                _t('coupons_hero_subtitle'),
                 style: GoogleFonts.cairo(
                   color: secondary,
                   fontSize: compact ? 14 : 16,
@@ -266,7 +270,7 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
               ),
               decoration: InputDecoration(
                 border: InputBorder.none,
-                hintText: 'ابحث عن كوبون...',
+                hintText: _t('search_hint'),
                 hintStyle: GoogleFonts.cairo(
                   color: faded,
                   fontSize: 15,
@@ -292,9 +296,8 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
 
   Widget _buildCouponsSection() {
     return _buildSection(
-      title: 'الكوبونات',
-      subtitle:
-          'كل الكوبونات المتاحة مرتبة في شبكة واحدة مع البحث المباشر حسب الكود أو المتجر.',
+      title: _t('coupons'),
+      subtitle: _t('coupons_page_subtitle'),
       child: _buildCouponsGrid(),
     );
   }
@@ -366,8 +369,9 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
             const SizedBox(height: 20),
             Text(
               searchQuery.isNotEmpty
-                  ? 'لا توجد نتائج للبحث عن "$searchQuery"'
-                  : 'لا توجد كوبونات متاحة حالياً',
+                  ? _t('no_coupon_search_results')
+                      .replaceAll('{query}', searchQuery)
+                  : _t('no_coupons'),
               textAlign: TextAlign.center,
               style: GoogleFonts.cairo(
                 fontSize: 18,
@@ -386,7 +390,8 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
         Padding(
           padding: const EdgeInsets.only(bottom: 20),
           child: Text(
-            'تم العثور على ${displayCoupons.length} كوبون',
+            _t('coupons_found')
+                .replaceAll('{count}', '${displayCoupons.length}'),
             style: GoogleFonts.cairo(
               fontSize: 16,
               color: secondary,
@@ -418,7 +423,7 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
 
                 return WebCouponCard(
                   coupon: coupon,
-                  storeName: store?.name ?? 'متجر',
+                  storeName: store?.name ?? _t('store'),
                   compact: true,
                 );
               },

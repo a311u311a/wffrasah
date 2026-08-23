@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../localization/app_localizations.dart';
 import '../models/category.dart';
 import '../models/store.dart';
 import '../providers/locale_provider.dart';
@@ -42,6 +43,8 @@ class _WebStoresScreenState extends State<WebStoresScreen> {
 
   bool isLoading = true;
   String searchQuery = '';
+
+  String _t(String key) => AppLocalizations.of(context)?.translate(key) ?? key;
 
   @override
   void initState() {
@@ -116,7 +119,7 @@ class _WebStoresScreenState extends State<WebStoresScreen> {
       setState(() => isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('حدث خطأ: $e')),
+          SnackBar(content: Text('${_t('error_prefix')}: $e')),
         );
       }
     }
@@ -240,7 +243,7 @@ class _WebStoresScreenState extends State<WebStoresScreen> {
                   border: Border.all(color: const Color(0xFFD8D4FF)),
                 ),
                 child: Text(
-                  'تصفح جميع المتاجر والفلترة حسب الفئة أو الاسم',
+                  _t('stores_hero_badge'),
                   style: GoogleFonts.cairo(
                     color: ink,
                     fontSize: 13,
@@ -254,7 +257,7 @@ class _WebStoresScreenState extends State<WebStoresScreen> {
                     const LinearGradient(colors: [orange, yellow, pink])
                         .createShader(bounds),
                 child: Text(
-                  'جميع المتاجر في واجهة موحدة وسريعة',
+                  _t('stores_hero_title'),
                   style: GoogleFonts.cairo(
                     color: Colors.white,
                     fontSize: compact ? 28 : 38,
@@ -265,7 +268,7 @@ class _WebStoresScreenState extends State<WebStoresScreen> {
               ),
               const SizedBox(height: 14),
               Text(
-                'ابحث عن المتجر المناسب، صف النتائج حسب الفئة، وانتقل مباشرة إلى صفحة كل متجر من نفس الشاشة.',
+                _t('stores_hero_subtitle'),
                 style: GoogleFonts.cairo(
                   color: secondary,
                   fontSize: compact ? 14 : 16,
@@ -308,7 +311,7 @@ class _WebStoresScreenState extends State<WebStoresScreen> {
               ),
               decoration: InputDecoration(
                 border: InputBorder.none,
-                hintText: 'ابحث عن متجر...',
+                hintText: _t('search_store_hint'),
                 hintStyle: GoogleFonts.cairo(
                   color: faded,
                   fontSize: 15,
@@ -334,18 +337,18 @@ class _WebStoresScreenState extends State<WebStoresScreen> {
 
   Widget _buildStoresSection() {
     return _buildSection(
-      title: 'المتاجر',
+      title: _t('stores'),
       subtitle: selectedCategoryId == null
-          ? 'كل المتاجر المتاحة مرتبة في شبكة واحدة مع البحث المباشر.'
-          : 'النتائج الحالية مفلترة حسب الفئة المحددة مع استمرار البحث النصي.',
+          ? _t('stores_section_subtitle')
+          : _t('stores_filtered_subtitle'),
       child: _buildStoresGrid(),
     );
   }
 
   Widget _buildCategoriesSection() {
     return _buildSection(
-      title: 'الفئات',
-      subtitle: 'اختر الفئة المناسبة لتصفية المتاجر بسرعة من نفس الصفحة.',
+      title: _t('categories'),
+      subtitle: _t('categories_subtitle'),
       child: _buildCategoriesHorizontal(),
     );
   }
@@ -375,8 +378,9 @@ class _WebStoresScreenState extends State<WebStoresScreen> {
             const SizedBox(height: 20),
             Text(
               searchQuery.isEmpty
-                  ? 'لا توجد متاجر متاحة'
-                  : 'لا توجد نتائج للبحث عن "$searchQuery"',
+                  ? _t('no_stores')
+                  : _t('no_store_search_results')
+                      .replaceAll('{query}', searchQuery),
               textAlign: TextAlign.center,
               style: GoogleFonts.cairo(
                 fontSize: 18,
@@ -395,7 +399,8 @@ class _WebStoresScreenState extends State<WebStoresScreen> {
         Padding(
           padding: const EdgeInsets.only(bottom: 20),
           child: Text(
-            'تم العثور على ${filteredStores.length} متجر',
+            _t('stores_found')
+                .replaceAll('{count}', '${filteredStores.length}'),
             style: GoogleFonts.cairo(
               fontSize: 16,
               color: secondary,
@@ -441,12 +446,12 @@ class _WebStoresScreenState extends State<WebStoresScreen> {
 
   Widget _buildCategoriesSidebar() {
     return _buildSection(
-      title: 'الفئات',
-      subtitle: 'اختيار الفئة يحدث النتائج فوراً من دون تغيير في المهام.',
+      title: _t('categories'),
+      subtitle: _t('categories_sidebar_subtitle'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildCategoryItem(null, 'الكل', Icons.apps_rounded),
+          _buildCategoryItem(null, _t('all'), Icons.apps_rounded),
           ...categories.map(
             (category) => _buildCategoryItem(
               category.id,
@@ -546,7 +551,7 @@ class _WebStoresScreenState extends State<WebStoresScreen> {
         itemCount: categories.length + 1,
         itemBuilder: (context, index) {
           if (index == 0) {
-            return _buildHorizontalCategoryChip(null, 'الكل');
+            return _buildHorizontalCategoryChip(null, _t('all'));
           }
           final category = categories[index - 1];
           return _buildHorizontalCategoryChip(category.id, category.name);

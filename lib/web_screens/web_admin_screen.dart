@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../constants.dart';
+import '../localization/app_localizations.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import 'web_admin_stores_screen.dart';
 import 'web_admin_coupons_screen.dart';
@@ -27,15 +28,15 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
   String _version = '';
   final SupabaseClient _sb = Supabase.instance.client;
 
-  final List<String> _titles = [
-    'نظرة عامة',
-    'إدارة المتاجر',
-    'إدارة الكوبونات',
-    'إدارة العروض',
-    'إدارة الفئات',
-    'بنر الصور',
-    'بانتظار الموافقة',
-    'الإشعارات',
+  final List<String> _titleKeys = [
+    'admin_overview',
+    'admin_manage_stores',
+    'admin_manage_coupons',
+    'admin_manage_offers',
+    'admin_manage_categories',
+    'admin_carousel_banner',
+    'admin_pending_approval',
+    'notifications',
   ];
 
   final List<IconData> _icons = [
@@ -83,8 +84,14 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
     }
   }
 
+  String _t(String key) => AppLocalizations.of(context)?.translate(key) ?? key;
+
   @override
   Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
+    final isArabic = locale == 'ar';
+    final textDirection = isArabic ? TextDirection.rtl : TextDirection.ltr;
+    final titles = _titleKeys.map(_t).toList();
     final List<Widget> pages = [
       _AdminOverview(
         countRows: _countRows,
@@ -99,153 +106,149 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
       const WebAdminNotificationsScreen(isEmbedded: true),
     ];
 
-    // Assuming RTL directionality is handled by the higher-level app theme or Directionality widget.
-    // In RTL, Row adds children from Right to Left.
-    // So Sidebar should be first content-wise to appear on the Right.
-    // Wait, in RTL, Row children are: [First, Second] -> First is on Right, Second is on Left.
-    // So yes, Sidebar first.
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFF9F9F9),
-      appBar: const WebNavigationBar(),
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // --- Sidebar ---
-          Container(
-            width: 280,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(
-                left: BorderSide(
-                    color: Colors.grey[200]!), // Left border for RTL sidebar
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 10,
-                  offset: const Offset(-2, 0), // Shadow to the left
+    return Directionality(
+      textDirection: textDirection,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF9F9F9),
+        appBar: const WebNavigationBar(),
+        body: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- Sidebar ---
+            Container(
+              width: 280,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  left: BorderSide(color: Colors.grey[200]!),
                 ),
-              ],
-            ),
-            child: Column(
-              children: [
-                const SizedBox(height: 30),
-                // Sidebar Header / User Info could go here
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        backgroundColor:
-                            Constants.primaryColor.withValues(alpha: 0.1),
-                        child: Icon(Icons.admin_panel_settings,
-                            color: Constants.primaryColor),
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'لوحة التحكم',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Tajawal',
-                        ),
-                      ),
-                    ],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                    offset: Offset(isArabic ? -2 : 2, 0),
                   ),
-                ),
-                const SizedBox(height: 10),
-                const Divider(height: 40),
-
-                // Navigation Items
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: _titles.length,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemBuilder: (context, index) {
-                      final isSelected = _selectedIndex == index;
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? Constants.primaryColor.withValues(alpha: 0.1)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(10),
+                ],
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 30),
+                  // Sidebar Header / User Info could go here
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundColor:
+                              Constants.primaryColor.withValues(alpha: 0.1),
+                          child: Icon(Icons.admin_panel_settings,
+                              color: Constants.primaryColor),
                         ),
-                        child: InkWell(
-                          onTap: () => setState(() => _selectedIndex = index),
-                          borderRadius: BorderRadius.circular(10),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 14),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  _icons[index],
-                                  color: isSelected
-                                      ? Constants.primaryColor
-                                      : Colors.grey[600],
-                                  size: 24,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    _titles[index],
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      color: isSelected
-                                          ? Constants.primaryColor
-                                          : Colors.grey[800],
-                                      fontWeight: isSelected
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
-                                      fontFamily: 'Tajawal',
-                                      fontSize: 15,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                _AdminCountBadge(
-                                  future: _countRows(_countSources[index]),
-                                  color: Constants.primaryColor,
-                                  isSelected: isSelected,
-                                ),
-                              ],
-                            ),
+                        const SizedBox(width: 12),
+                        Text(
+                          _t('admin_panel'),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Tajawal',
                           ),
                         ),
-                      );
-                    },
+                      ],
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 10),
+                  const Divider(height: 40),
 
-                // Footer in Sidebar (Optional)
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Text(
-                    _version.isEmpty ? '' : 'الإصدار $_version',
-                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                  // Navigation Items
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: titles.length,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemBuilder: (context, index) {
+                        final isSelected = _selectedIndex == index;
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? Constants.primaryColor.withValues(alpha: 0.1)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: InkWell(
+                            onTap: () => setState(() => _selectedIndex = index),
+                            borderRadius: BorderRadius.circular(10),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 14),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    _icons[index],
+                                    color: isSelected
+                                        ? Constants.primaryColor
+                                        : Colors.grey[600],
+                                    size: 24,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      titles[index],
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: isSelected
+                                            ? Constants.primaryColor
+                                            : Colors.grey[800],
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                        fontFamily: 'Tajawal',
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  _AdminCountBadge(
+                                    future: _countRows(_countSources[index]),
+                                    color: Constants.primaryColor,
+                                    isSelected: isSelected,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
 
-          // --- Main Content Area ---
-          Expanded(
-            child: Column(
-              children: [
-                Expanded(
-                  child: IndexedStack(
-                    index: _selectedIndex,
-                    children: pages,
+                  // Footer in Sidebar (Optional)
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Text(
+                      _version.isEmpty ? '' : '${_t('version')} $_version',
+                      style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+
+            // --- Main Content Area ---
+            Expanded(
+              child: Column(
+                children: [
+                  Expanded(
+                    child: IndexedStack(
+                      index: _selectedIndex,
+                      children: pages,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -343,9 +346,12 @@ class _AdminOverview extends StatelessWidget {
         final approvalRate = coupons + pending == 0
             ? 1.0
             : coupons / (coupons + pending).clamp(1, 999999);
+        final localizations = AppLocalizations.of(context);
+        String t(String key) => localizations?.translate(key) ?? key;
+        final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
         return Directionality(
-          textDirection: TextDirection.rtl,
+          textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(28, 36, 28, 32),
             child: Column(
@@ -369,57 +375,57 @@ class _AdminOverview extends StatelessWidget {
                       childAspectRatio: compact ? 1.75 : 1.45,
                       children: [
                         _MetricTile(
-                          title: 'المتاجر',
+                          title: t('stores'),
                           value: stores,
-                          subtitle: 'نشطة في المنصة',
+                          subtitle: t('admin_stores_subtitle'),
                           icon: Icons.storefront_rounded,
                           color: const Color(0xFF0EA5A4),
                           onTap: () => onOpenSection(1),
                         ),
                         _MetricTile(
-                          title: 'الكوبونات',
+                          title: t('coupons'),
                           value: coupons,
-                          subtitle: 'كوبونات معتمدة',
+                          subtitle: t('admin_coupons_subtitle'),
                           icon: Icons.confirmation_number_rounded,
                           color: Constants.primaryColor,
                           onTap: () => onOpenSection(2),
                         ),
                         _MetricTile(
-                          title: 'العروض',
+                          title: t('offers'),
                           value: offers,
-                          subtitle: 'عروض منشورة',
+                          subtitle: t('admin_offers_subtitle'),
                           icon: Icons.local_offer_rounded,
                           color: const Color(0xFF0284C7),
                           onTap: () => onOpenSection(3),
                         ),
                         _MetricTile(
-                          title: 'الفئات',
+                          title: t('categories'),
                           value: categories,
-                          subtitle: 'تصنيف ظاهر',
+                          subtitle: t('admin_categories_subtitle'),
                           icon: Icons.category_rounded,
                           color: const Color(0xFFF59E0B),
                           onTap: () => onOpenSection(4),
                         ),
                         _MetricTile(
-                          title: 'بنر الصور',
+                          title: t('admin_carousel_banner'),
                           value: carousel,
-                          subtitle: 'صور في الشريط',
+                          subtitle: t('admin_carousel_subtitle'),
                           icon: Icons.view_carousel_rounded,
                           color: const Color(0xFF0EA5A4),
                           onTap: () => onOpenSection(5),
                         ),
                         _MetricTile(
-                          title: 'بانتظار الموافقة',
+                          title: t('admin_pending_approval'),
                           value: pending,
-                          subtitle: 'تحتاج مراجعة',
+                          subtitle: t('admin_pending_subtitle'),
                           icon: Icons.pending_actions_rounded,
                           color: const Color(0xFFE11D48),
                           onTap: () => onOpenSection(6),
                         ),
                         _MetricTile(
-                          title: 'الإشعارات',
+                          title: t('notifications'),
                           value: notifications,
-                          subtitle: 'رسائل مرسلة',
+                          subtitle: t('admin_notifications_subtitle'),
                           icon: Icons.notifications_active_rounded,
                           color: const Color(0xFF7C3AED),
                           onTap: () => onOpenSection(7),
@@ -436,7 +442,7 @@ class _AdminOverview extends StatelessWidget {
                       Expanded(
                         flex: 3,
                         child: _ChartPanel(
-                          title: 'ملخص المحتوى حسب القسم',
+                          title: t('admin_content_summary'),
                           child: _LineChart(
                             values: [
                               stores.toDouble(),
@@ -454,7 +460,7 @@ class _AdminOverview extends StatelessWidget {
                       Expanded(
                         flex: 1,
                         child: _ChartPanel(
-                          title: 'نسبة الاعتماد',
+                          title: t('admin_approval_rate'),
                           child: _GaugeChart(value: approvalRate),
                         ),
                       ),
@@ -482,9 +488,14 @@ class _AdminOverview extends StatelessWidget {
                     final compact = constraints.maxWidth < 1050;
                     final panels = [
                       _ChartPanel(
-                        title: 'توزيع الإدارة',
+                        title: t('admin_management_distribution'),
                         child: _BarChart(
-                          labels: const ['متاجر', 'كوبونات', 'عروض', 'بنرات'],
+                          labels: [
+                            t('stores'),
+                            t('coupons'),
+                            t('offers'),
+                            t('admin_banners_short'),
+                          ],
                           values: [
                             stores.toDouble(),
                             coupons.toDouble(),
@@ -495,9 +506,9 @@ class _AdminOverview extends StatelessWidget {
                         ),
                       ),
                       _ChartPanel(
-                        title: 'حالة المراجعة',
+                        title: t('admin_review_status'),
                         child: _BarChart(
-                          labels: const ['معتمد', 'معلق'],
+                          labels: [t('admin_approved'), t('admin_pending')],
                           values: [coupons.toDouble(), pending.toDouble()],
                           color: Constants.primaryColor,
                         ),
@@ -552,6 +563,8 @@ class _OverviewHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    String t(String key) => localizations?.translate(key) ?? key;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -571,13 +584,13 @@ class _OverviewHeader extends StatelessWidget {
             child: Icon(Icons.analytics_rounded, color: Constants.primaryColor),
           ),
           const SizedBox(width: 14),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'لوحة تحكم أداء المحتوى',
-                  style: TextStyle(
+                  t('admin_performance_dashboard'),
+                  style: const TextStyle(
                     fontSize: 22,
                     height: 1.35,
                     fontWeight: FontWeight.w900,
@@ -585,10 +598,10 @@ class _OverviewHeader extends StatelessWidget {
                     color: Color(0xFF111827),
                   ),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
-                  'نظرة تشغيلية على المتاجر، الكوبونات، العروض، والمراجعات الحالية.',
-                  style: TextStyle(
+                  t('admin_performance_subtitle'),
+                  style: const TextStyle(
                     fontSize: 13,
                     height: 1.5,
                     fontFamily: 'Tajawal',
@@ -621,7 +634,12 @@ class _OverviewHeader extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'عنصر منشور | اعتماد ${(approvalRate * 100).round()}%',
+                  t('admin_published_approval')
+                      .replaceAll('{count}', '$totalContent')
+                      .replaceAll(
+                        '{rate}',
+                        '${(approvalRate * 100).round()}',
+                      ),
                   style: const TextStyle(
                     fontSize: 12,
                     fontFamily: 'Tajawal',
@@ -783,23 +801,33 @@ class _QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localizations = AppLocalizations.of(context);
+    String t(String key) => localizations?.translate(key) ?? key;
     final actions = [
-      (title: 'إدارة المتاجر', icon: Icons.storefront_rounded, index: 1),
       (
-        title: 'إدارة الكوبونات',
+        title: t('admin_manage_stores'),
+        icon: Icons.storefront_rounded,
+        index: 1
+      ),
+      (
+        title: t('admin_manage_coupons'),
         icon: Icons.confirmation_number_rounded,
         index: 2
       ),
-      (title: 'إدارة العروض', icon: Icons.local_offer_rounded, index: 3),
       (
-        title: 'مراجعة المعلّق',
+        title: t('admin_manage_offers'),
+        icon: Icons.local_offer_rounded,
+        index: 3
+      ),
+      (
+        title: t('admin_review_pending'),
         icon: Icons.pending_actions_rounded,
         index: 6
       ),
     ];
 
     return _ChartPanel(
-      title: 'اختصارات الإدارة',
+      title: t('admin_shortcuts'),
       child: ListView(
         padding: EdgeInsets.zero,
         children: actions

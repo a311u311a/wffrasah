@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../localization/app_localizations.dart';
 import '../models/offers.dart';
 import '../models/store.dart';
 import '../providers/locale_provider.dart';
@@ -38,6 +40,8 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
   Map<String, Store> storesMap = {};
   bool isLoading = true;
   String searchQuery = '';
+
+  String _t(String key) => AppLocalizations.of(context)?.translate(key) ?? key;
 
   @override
   void initState() {
@@ -94,7 +98,7 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
       setState(() => isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('حدث خطأ: $e')),
+          SnackBar(content: Text('${_t('error_prefix')}: $e')),
         );
       }
     }
@@ -214,7 +218,7 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
                   border: Border.all(color: const Color(0xFFD8D4FF)),
                 ),
                 child: Text(
-                  'تصفح جميع العروض وابحث حسب المتجر أو الوصف',
+                  _t('offers_hero_badge'),
                   style: GoogleFonts.cairo(
                     color: ink,
                     fontSize: 13,
@@ -228,7 +232,7 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
                     const LinearGradient(colors: [orange, yellow, pink])
                         .createShader(bounds),
                 child: Text(
-                  'جميع العروض في واجهة موحدة وسريعة',
+                  _t('offers_hero_title'),
                   style: GoogleFonts.cairo(
                     color: Colors.white,
                     fontSize: compact ? 28 : 38,
@@ -239,7 +243,7 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
               ),
               const SizedBox(height: 14),
               Text(
-                'ابحث عن العرض المناسب، شاهد المتجر المرتبط به، وانتقل للعرض مباشرة من نفس الشاشة.',
+                _t('offers_hero_subtitle'),
                 style: GoogleFonts.cairo(
                   color: secondary,
                   fontSize: compact ? 14 : 16,
@@ -282,7 +286,7 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
               ),
               decoration: InputDecoration(
                 border: InputBorder.none,
-                hintText: 'ابحث عن عرض...',
+                hintText: _t('search_offer_hint'),
                 hintStyle: GoogleFonts.cairo(
                   color: faded,
                   fontSize: 15,
@@ -308,9 +312,8 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
 
   Widget _buildOffersSection() {
     return _buildSection(
-      title: 'العروض',
-      subtitle:
-          'كل العروض المتاحة مرتبة في شبكة واحدة مع البحث المباشر حسب المتجر أو الوصف.',
+      title: _t('offers'),
+      subtitle: _t('offers_page_subtitle'),
       child: _buildOffersGrid(),
     );
   }
@@ -381,8 +384,9 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
             const SizedBox(height: 20),
             Text(
               searchQuery.isNotEmpty
-                  ? 'لا توجد نتائج للبحث عن "$searchQuery"'
-                  : 'لا توجد عروض متاحة حالياً',
+                  ? _t('no_offer_search_results')
+                      .replaceAll('{query}', searchQuery)
+                  : _t('no_offers'),
               textAlign: TextAlign.center,
               style: GoogleFonts.cairo(
                 fontSize: 18,
@@ -401,7 +405,7 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
         Padding(
           padding: const EdgeInsets.only(bottom: 20),
           child: Text(
-            'تم العثور على ${displayOffers.length} عرض',
+            _t('offers_found').replaceAll('{count}', '${displayOffers.length}'),
             style: GoogleFonts.cairo(
               fontSize: 16,
               color: secondary,
@@ -430,7 +434,7 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
                 final store = storesMap[offer.storeId.toLowerCase().trim()];
                 return WebOfferCard(
                   offer: offer,
-                  storeName: store?.name ?? 'متجر',
+                  storeName: store?.name ?? _t('store'),
                   storeImage: store?.image,
                 );
               },
