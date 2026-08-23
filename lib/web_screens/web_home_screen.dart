@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../localization/app_localizations.dart';
 import '../models/carousel.dart';
 import '../models/coupon.dart';
 import '../models/offers.dart';
@@ -122,6 +123,8 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
     return map;
   }
 
+  String _t(String key) => AppLocalizations.of(context)?.translate(key) ?? key;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -200,7 +203,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                   color: ink, fontSize: 15, fontWeight: FontWeight.w700),
               decoration: InputDecoration(
                 border: InputBorder.none,
-                hintText: 'ابحث عن متجر، كوبون، أو عرض ساخن...',
+                hintText: _t('search_hint_web'),
                 hintStyle: GoogleFonts.cairo(
                     color: faded, fontSize: 15, fontWeight: FontWeight.w600),
               ),
@@ -218,7 +221,8 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                 const SizedBox(height: 12),
                 SizedBox(
                     width: double.infinity,
-                    child: _gradientButton(label: 'بحث', onPressed: () {})),
+                    child:
+                        _gradientButton(label: _t('search'), onPressed: () {})),
               ],
             );
           }
@@ -229,7 +233,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
               const SizedBox(width: 12),
               field,
               const SizedBox(width: 12),
-              _gradientButton(label: 'بحث', onPressed: () {}),
+              _gradientButton(label: _t('search'), onPressed: () {}),
             ],
           );
         },
@@ -269,7 +273,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      'المتاجر',
+                      _t('top_stores'),
                       style: GoogleFonts.cairo(
                         color: ink,
                         fontSize: 26,
@@ -285,7 +289,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                           horizontal: 16, vertical: 12),
                     ),
                     child: Text(
-                      'تصفح أكثر',
+                      _t('view_more'),
                       style: GoogleFonts.cairo(
                         fontSize: 15,
                         fontWeight: FontWeight.w900,
@@ -404,7 +408,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      'الكوبونات',
+                      _t('latest_coupons'),
                       style: GoogleFonts.cairo(
                         color: ink,
                         fontSize: 26,
@@ -420,7 +424,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                           horizontal: 16, vertical: 12),
                     ),
                     child: Text(
-                      'تصفح أكثر',
+                      _t('view_more'),
                       style: GoogleFonts.cairo(
                         fontSize: 15,
                         fontWeight: FontWeight.w900,
@@ -445,7 +449,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                   final store = storesMap[coupon.storeId.toLowerCase().trim()];
                   return WebCouponCard(
                     coupon: coupon,
-                    storeName: store?.name ?? 'متجر',
+                    storeName: store?.name ?? _t('store'),
                     compact: true,
                   );
                 },
@@ -483,7 +487,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      'العروض',
+                      _t('latest_offers'),
                       style: GoogleFonts.cairo(
                         color: ink,
                         fontSize: 26,
@@ -499,7 +503,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                           horizontal: 16, vertical: 12),
                     ),
                     child: Text(
-                      'تصفح أكثر',
+                      _t('view_more'),
                       style: GoogleFonts.cairo(
                         fontSize: 15,
                         fontWeight: FontWeight.w900,
@@ -524,7 +528,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                   final store = storesMap[offer.storeId.toLowerCase().trim()];
                   return WebOfferCard(
                     offer: offer,
-                    storeName: store?.name ?? 'متجر',
+                    storeName: store?.name ?? _t('store'),
                     storeImage: store?.image,
                   );
                 },
