@@ -33,9 +33,8 @@ Future<void> main() async {
     const envSupabaseUrl = String.fromEnvironment('SUPABASE_URL');
     const envSupabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
-    final String supabaseUrl = envSupabaseUrl.isNotEmpty
-        ? envSupabaseUrl
-        : SupabaseConfig.url;
+    final String supabaseUrl =
+        envSupabaseUrl.isNotEmpty ? envSupabaseUrl : SupabaseConfig.url;
     final String supabasePublishableKey = envSupabaseAnonKey.isNotEmpty
         ? envSupabaseAnonKey
         : SupabaseConfig.publishableKey;
