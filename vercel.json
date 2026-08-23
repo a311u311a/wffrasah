@@ -1,5 +1,5 @@
 {
-  "buildCommand": "node -e 'const fs=require(\"fs\");fs.mkdirSync(\"lib/config\",{recursive:true});fs.writeFileSync(\"lib/config/supabase_config.dart\",\"class SupabaseConfig { static const String url = String.fromEnvironment(\\\"SUPABASE_URL\\\"); static const String publishableKey = String.fromEnvironment(\\\"SUPABASE_ANON_KEY\\\"); static const String anonKey = publishableKey; }\\\\n\");' && flutter/bin/flutter build web --release --base-href / --dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY",
+  "buildCommand": "node tool/vercel_supabase_config.js && flutter/bin/flutter build web --release --base-href / --dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY",
   "outputDirectory": "build/web",
   "installCommand": "if [ ! -d \"flutter\" ]; then git clone https://github.com/flutter/flutter.git -b stable --depth 1; fi && flutter/bin/flutter doctor && flutter/bin/flutter pub get",
   "framework": null,
