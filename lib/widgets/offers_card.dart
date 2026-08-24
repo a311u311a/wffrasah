@@ -41,13 +41,7 @@ class _OffersCardState extends State<OffersCard> {
     final scale = AppResponsive.tabletScale(context);
     final iconSize = 18.0 * scale;
     final isEnglish = Localizations.localeOf(context).languageCode == 'en';
-    final storeName = isEnglish && widget.offer.storeNameEn.trim().isNotEmpty
-        ? widget.offer.storeNameEn.trim()
-        : !isEnglish && widget.offer.storeNameAr.trim().isNotEmpty
-            ? widget.offer.storeNameAr.trim()
-            : !isEnglish
-                ? widget.offer.storeName.trim()
-                : '';
+    final storeName = widget.offer.storeName.trim();
     final offerName = isEnglish && widget.offer.nameEn.trim().isNotEmpty
         ? widget.offer.nameEn.trim()
         : !isEnglish && widget.offer.nameAr.trim().isNotEmpty
