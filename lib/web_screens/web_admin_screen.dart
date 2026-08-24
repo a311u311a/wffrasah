@@ -311,6 +311,88 @@ class _AdminCountBadge extends StatelessWidget {
   }
 }
 
+class _OverviewData {
+  final int stores;
+  final int coupons;
+  final int offers;
+  final int categories;
+  final int carousel;
+  final int pending;
+  final int notifications;
+  final int couponCopies;
+  final int offerCopies;
+  final int storeClicks;
+  final int activeItems;
+
+  const _OverviewData({
+    required this.stores,
+    required this.coupons,
+    required this.offers,
+    required this.categories,
+    required this.carousel,
+    required this.pending,
+    required this.notifications,
+    required this.couponCopies,
+    required this.offerCopies,
+    required this.storeClicks,
+    required this.activeItems,
+  });
+
+  factory _OverviewData.empty() {
+    return const _OverviewData(
+      stores: 0,
+      coupons: 0,
+      offers: 0,
+      categories: 0,
+      carousel: 0,
+      pending: 0,
+      notifications: 0,
+      couponCopies: 0,
+      offerCopies: 0,
+      storeClicks: 0,
+      activeItems: 0,
+    );
+  }
+
+  factory _OverviewData.fromRows({
+    required List<int> counts,
+    required List<dynamic> events,
+  }) {
+    var couponCopies = 0;
+    var offerCopies = 0;
+    var storeClicks = 0;
+    final activeItemKeys = <String>{};
+
+    for (final event in events) {
+      if (event is! Map) continue;
+      final eventType = event['event_type']?.toString() ?? '';
+      final itemType = event['item_type']?.toString() ?? '';
+      final itemId = event['item_id']?.toString() ?? '';
+
+      if (eventType == 'coupon_copy') couponCopies++;
+      if (eventType == 'offer_copy') offerCopies++;
+      if (eventType == 'store_click') storeClicks++;
+      if (itemType.isNotEmpty && itemId.isNotEmpty) {
+        activeItemKeys.add('$itemType:$itemId');
+      }
+    }
+
+    return _OverviewData(
+      stores: counts[0],
+      coupons: counts[1],
+      offers: counts[2],
+      categories: counts[3],
+      carousel: counts[4],
+      pending: counts[5],
+      notifications: counts[6],
+      couponCopies: couponCopies,
+      offerCopies: offerCopies,
+      storeClicks: storeClicks,
+      activeItems: activeItemKeys.length,
+    );
+  }
+}
+
 class _AdminOverview extends StatelessWidget {
   final Future<int> Function(String source) countRows;
   final ValueChanged<int> onOpenSection;
@@ -320,28 +402,53 @@ class _AdminOverview extends StatelessWidget {
     required this.onOpenSection,
   });
 
+  Future<_OverviewData> _loadData() async {
+    final counts = await Future.wait([
+      countRows('stores'),
+      countRows('coupons'),
+      countRows('offers'),
+      countRows('categories'),
+      countRows('carousel'),
+      countRows('admin_pending_coupons'),
+      countRows('notifications'),
+    ]);
+
+    final since = DateTime.now()
+        .toUtc()
+        .subtract(const Duration(days: 30))
+        .toIso8601String();
+
+    List<dynamic> events = const [];
+    try {
+      events = await Supabase.instance.client
+          .from('analytics_events')
+          .select('event_type,item_type,item_id,store_id,created_at')
+          .gte('created_at', since);
+    } catch (_) {
+      events = const [];
+    }
+
+    return _OverviewData.fromRows(counts: counts, events: events);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<int>>(
-      future: Future.wait([
-        countRows('stores'),
-        countRows('coupons'),
-        countRows('offers'),
-        countRows('categories'),
-        countRows('carousel'),
-        countRows('admin_pending_coupons'),
-        countRows('notifications'),
-      ]),
+    return FutureBuilder<_OverviewData>(
+      future: _loadData(),
       builder: (context, snapshot) {
-        final counts = snapshot.data ?? const [0, 0, 0, 0, 0, 0, 0];
+        final data = snapshot.data ?? _OverviewData.empty();
         final loading = snapshot.connectionState == ConnectionState.waiting;
-        final stores = counts[0];
-        final coupons = counts[1];
-        final offers = counts[2];
-        final categories = counts[3];
-        final carousel = counts[4];
-        final pending = counts[5];
-        final notifications = counts[6];
+        final stores = data.stores;
+        final coupons = data.coupons;
+        final offers = data.offers;
+        final categories = data.categories;
+        final carousel = data.carousel;
+        final pending = data.pending;
+        final notifications = data.notifications;
+        final copies = data.couponCopies + data.offerCopies;
+        final clicks = data.storeClicks;
+        final conversionRate =
+            copies + clicks == 0 ? 0.0 : copies / (copies + clicks);
         final totalContent = coupons + offers;
         final approvalRate = coupons + pending == 0
             ? 1.0
@@ -363,6 +470,55 @@ class _AdminOverview extends StatelessWidget {
                   approvalRate: approvalRate,
                 ),
                 const SizedBox(height: 18),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final compact = constraints.maxWidth < 1050;
+                    return GridView.count(
+                      crossAxisCount: compact ? 2 : 4,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: compact ? 1.9 : 1.8,
+                      children: [
+                        _MetricTile(
+                          title: t('admin_code_copies'),
+                          value: copies,
+                          subtitle: t('admin_last_30_days'),
+                          icon: Icons.content_copy_rounded,
+                          color: Constants.primaryColor,
+                          onTap: () {},
+                        ),
+                        _MetricTile(
+                          title: t('admin_store_clicks'),
+                          value: clicks,
+                          subtitle: t('admin_last_30_days'),
+                          icon: Icons.open_in_new_rounded,
+                          color: const Color(0xFF0284C7),
+                          onTap: () {},
+                        ),
+                        _MetricTile(
+                          title: t('admin_conversion_rate'),
+                          value:
+                              (conversionRate.clamp(0.0, 9.99) * 100).round(),
+                          subtitle: t('admin_copies_per_clicks'),
+                          icon: Icons.trending_up_rounded,
+                          color: const Color(0xFF10B981),
+                          onTap: () {},
+                        ),
+                        _MetricTile(
+                          title: t('admin_active_items'),
+                          value: data.activeItems,
+                          subtitle: t('admin_with_user_activity'),
+                          icon: Icons.touch_app_rounded,
+                          color: const Color(0xFFF59E0B),
+                          onTap: () {},
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final compact = constraints.maxWidth < 1050;
@@ -442,16 +598,13 @@ class _AdminOverview extends StatelessWidget {
                       Expanded(
                         flex: 3,
                         child: _ChartPanel(
-                          title: t('admin_content_summary'),
+                          title: t('admin_activity_summary'),
                           child: _LineChart(
                             values: [
-                              stores.toDouble(),
-                              coupons.toDouble(),
-                              offers.toDouble(),
-                              categories.toDouble(),
-                              carousel.toDouble(),
-                              pending.toDouble(),
-                              notifications.toDouble(),
+                              data.couponCopies.toDouble(),
+                              data.offerCopies.toDouble(),
+                              data.storeClicks.toDouble(),
+                              data.activeItems.toDouble(),
                             ],
                           ),
                         ),
@@ -460,8 +613,8 @@ class _AdminOverview extends StatelessWidget {
                       Expanded(
                         flex: 1,
                         child: _ChartPanel(
-                          title: t('admin_approval_rate'),
-                          child: _GaugeChart(value: approvalRate),
+                          title: t('admin_conversion_rate'),
+                          child: _GaugeChart(value: conversionRate),
                         ),
                       ),
                     ];
@@ -491,16 +644,14 @@ class _AdminOverview extends StatelessWidget {
                         title: t('admin_management_distribution'),
                         child: _BarChart(
                           labels: [
-                            t('stores'),
-                            t('coupons'),
-                            t('offers'),
-                            t('admin_banners_short'),
+                            t('admin_coupon_copies_short'),
+                            t('admin_offer_copies_short'),
+                            t('admin_store_clicks_short'),
                           ],
                           values: [
-                            stores.toDouble(),
-                            coupons.toDouble(),
-                            offers.toDouble(),
-                            carousel.toDouble(),
+                            data.couponCopies.toDouble(),
+                            data.offerCopies.toDouble(),
+                            data.storeClicks.toDouble(),
                           ],
                           color: const Color(0xFF0EA5A4),
                         ),

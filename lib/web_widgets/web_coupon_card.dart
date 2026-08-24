@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // ✅ Clipboard الرسمي
 import 'package:provider/provider.dart';
@@ -9,6 +11,7 @@ import 'package:vector_math/vector_math_64.dart' as vector;
 import '../constants.dart';
 import '../models/coupon.dart';
 import '../providers/favorites_provider.dart';
+import '../services/analytics_service.dart';
 import 'web_i18n.dart';
 
 /// بطاقة كوبون محسّنة للويب - بدون عرض اسم/أيقونة المتجر ✅
@@ -484,6 +487,12 @@ class _WebCouponCardState extends State<WebCouponCard> {
 
     try {
       await Clipboard.setData(ClipboardData(text: widget.coupon.code));
+      unawaited(AnalyticsService.trackEvent(
+        eventType: 'coupon_copy',
+        itemType: 'coupon',
+        itemId: widget.coupon.id,
+        storeId: widget.coupon.storeId,
+      ));
       HapticFeedback.lightImpact();
 
       if (!mounted) return;
@@ -554,6 +563,12 @@ class _WebCouponCardState extends State<WebCouponCard> {
     final ok = await canLaunchUrl(uri);
     if (!ok) return;
 
+    unawaited(AnalyticsService.trackEvent(
+      eventType: 'store_click',
+      itemType: 'coupon',
+      itemId: widget.coupon.id,
+      storeId: widget.coupon.storeId,
+    ));
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }

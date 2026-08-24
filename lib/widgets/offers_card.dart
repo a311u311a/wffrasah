@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
@@ -9,6 +11,7 @@ import '../constants.dart';
 import '../models/offers.dart';
 import '../providers/favorites_provider.dart';
 import '../localization/app_localizations.dart';
+import '../services/analytics_service.dart';
 import 'app_responsive.dart';
 
 class OffersCard extends StatefulWidget {
@@ -37,6 +40,30 @@ class _OffersCardState extends State<OffersCard> {
     final String fullCode = hasCode ? widget.offer.tags.first.trim() : "";
     final scale = AppResponsive.tabletScale(context);
     final iconSize = 18.0 * scale;
+    final isEnglish = Localizations.localeOf(context).languageCode == 'en';
+    final storeName = isEnglish && widget.offer.storeNameEn.trim().isNotEmpty
+        ? widget.offer.storeNameEn.trim()
+        : !isEnglish && widget.offer.storeNameAr.trim().isNotEmpty
+            ? widget.offer.storeNameAr.trim()
+            : !isEnglish
+                ? widget.offer.storeName.trim()
+                : '';
+    final offerName = isEnglish && widget.offer.nameEn.trim().isNotEmpty
+        ? widget.offer.nameEn.trim()
+        : !isEnglish && widget.offer.nameAr.trim().isNotEmpty
+            ? widget.offer.nameAr.trim()
+            : widget.offer.name;
+    final titleText = storeName.isNotEmpty
+        ? storeName
+        : widget.offer.storeId.trim().isNotEmpty
+            ? widget.offer.storeId.trim()
+            : offerName;
+    final offerDescription =
+        isEnglish && widget.offer.descriptionEn.trim().isNotEmpty
+            ? widget.offer.descriptionEn.trim()
+            : !isEnglish && widget.offer.descriptionAr.trim().isNotEmpty
+                ? widget.offer.descriptionAr.trim()
+                : widget.offer.description;
 
     return Card(
       margin: const EdgeInsets.only(top: 5, left: 15, right: 15, bottom: 15),
@@ -211,7 +238,7 @@ class _OffersCardState extends State<OffersCard> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    widget.offer.name,
+                    titleText,
                     style: TextStyle(
                       fontSize: 15 * scale,
                       fontWeight: FontWeight.w600,
@@ -222,10 +249,10 @@ class _OffersCardState extends State<OffersCard> {
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.start,
                   ),
-                  if (widget.offer.description.trim().isNotEmpty) ...[
+                  if (offerDescription.trim().isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Text(
-                      widget.offer.description,
+                      offerDescription,
                       style: TextStyle(
                         fontSize: 12 * scale,
                         color: Colors.grey[700],
@@ -268,7 +295,7 @@ class _OffersCardState extends State<OffersCard> {
                                       const SizedBox(width: 8),
                                       Text(
                                         localizations?.translate('copied') ??
-                                            'تم النسخ',
+                                            (isEnglish ? 'Copied' : 'تم النسخ'),
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 14 * scale,
@@ -319,8 +346,12 @@ class _OffersCardState extends State<OffersCard> {
                                               ? 'copy_and_go_to_store'
                                               : 'go_to_store_directly') ??
                                           (hasCode
-                                              ? 'نسخ الكود والذهاب للمتجر'
-                                              : 'اذهب للمتجر مباشرة'),
+                                              ? (isEnglish
+                                                  ? 'Copy code & go to store'
+                                                  : 'نسخ الكود والذهاب للمتجر')
+                                              : (isEnglish
+                                                  ? 'Go to store directly'
+                                                  : 'اذهب للمتجر مباشرة')),
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 14 * scale,
@@ -370,6 +401,12 @@ class _OffersCardState extends State<OffersCard> {
     await Clipboard.setData(
       ClipboardData(text: widget.offer.tags.first.trim()),
     );
+    unawaited(AnalyticsService.trackEvent(
+      eventType: 'offer_copy',
+      itemType: 'offer',
+      itemId: widget.offer.id,
+      storeId: widget.offer.storeId,
+    ));
 
     await Future.delayed(const Duration(milliseconds: 800));
     await _launchStore();
@@ -389,6 +426,12 @@ class _OffersCardState extends State<OffersCard> {
     try {
       final Uri url = Uri.parse(widget.offer.web);
       if (await canLaunchUrl(url)) {
+        unawaited(AnalyticsService.trackEvent(
+          eventType: 'store_click',
+          itemType: 'offer',
+          itemId: widget.offer.id,
+          storeId: widget.offer.storeId,
+        ));
         await launchUrl(url, mode: LaunchMode.externalApplication);
       }
     } catch (_) {}

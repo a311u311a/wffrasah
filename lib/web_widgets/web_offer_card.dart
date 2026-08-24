@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +9,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../constants.dart';
 import '../models/offers.dart';
 import '../providers/favorites_provider.dart';
+import '../services/analytics_service.dart';
 import 'web_i18n.dart';
 
 /// بطاقة عرض (Offer) للويب
@@ -259,6 +262,12 @@ class _WebOfferCardState extends State<WebOfferCard> {
             child: InkWell(
               onTap: () {
                 Clipboard.setData(ClipboardData(text: widget.offer.code));
+                unawaited(AnalyticsService.trackEvent(
+                  eventType: 'offer_copy',
+                  itemType: 'offer',
+                  itemId: widget.offer.id,
+                  storeId: widget.offer.storeId,
+                ));
                 HapticFeedback.mediumImpact();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -387,6 +396,12 @@ class _WebOfferCardState extends State<WebOfferCard> {
     if (widget.offer.web.isNotEmpty) {
       final uri = Uri.parse(widget.offer.web);
       if (await canLaunchUrl(uri)) {
+        unawaited(AnalyticsService.trackEvent(
+          eventType: 'store_click',
+          itemType: 'offer',
+          itemId: widget.offer.id,
+          storeId: widget.offer.storeId,
+        ));
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
     }
