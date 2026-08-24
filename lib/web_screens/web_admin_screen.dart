@@ -460,7 +460,7 @@ class _AdminOverview extends StatelessWidget {
         return Directionality(
           textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(28, 36, 28, 32),
+            padding: const EdgeInsets.fromLTRB(28, 28, 28, 32),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -469,7 +469,7 @@ class _AdminOverview extends StatelessWidget {
                   totalContent: totalContent,
                   approvalRate: approvalRate,
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 20),
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final compact = constraints.maxWidth < 1050;
@@ -477,9 +477,9 @@ class _AdminOverview extends StatelessWidget {
                       crossAxisCount: compact ? 2 : 4,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio: compact ? 1.9 : 1.8,
+                      crossAxisSpacing: 14,
+                      mainAxisSpacing: 14,
+                      childAspectRatio: compact ? 1.75 : 1.95,
                       children: [
                         _MetricTile(
                           title: t('admin_code_copies'),
@@ -518,6 +518,19 @@ class _AdminOverview extends StatelessWidget {
                     );
                   },
                 ),
+                const SizedBox(height: 22),
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(start: 2),
+                  child: Text(
+                    t('admin_content_overview'),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      fontFamily: 'Tajawal',
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 10),
                 LayoutBuilder(
                   builder: (context, constraints) {
@@ -526,9 +539,9 @@ class _AdminOverview extends StatelessWidget {
                       crossAxisCount: compact ? 3 : 6,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio: compact ? 1.75 : 1.45,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: compact ? 1.65 : 1.55,
                       children: [
                         _MetricTile(
                           title: t('stores'),
@@ -590,7 +603,7 @@ class _AdminOverview extends StatelessWidget {
                     );
                   },
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 22),
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final wide = constraints.maxWidth >= 1180;
@@ -623,7 +636,7 @@ class _AdminOverview extends StatelessWidget {
                       return Column(
                         children: [
                           SizedBox(height: 260, child: mainCharts.first),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 14),
                           SizedBox(height: 260, child: mainCharts.last),
                         ],
                       );
@@ -635,7 +648,7 @@ class _AdminOverview extends StatelessWidget {
                     );
                   },
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 14),
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final compact = constraints.maxWidth < 1050;
@@ -671,7 +684,7 @@ class _AdminOverview extends StatelessWidget {
                       return Column(
                         children: panels
                             .map((panel) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 10),
+                                  padding: const EdgeInsets.only(bottom: 14),
                                   child: SizedBox(height: 320, child: panel),
                                 ))
                             .toList(),
@@ -679,7 +692,7 @@ class _AdminOverview extends StatelessWidget {
                     }
 
                     return SizedBox(
-                      height: 340,
+                      height: 350,
                       child: Row(
                         children: [
                           Expanded(child: panels[0]),
@@ -717,11 +730,18 @@ class _OverviewHeader extends StatelessWidget {
     final localizations = AppLocalizations.of(context);
     String t(String key) => localizations?.translate(key) ?? key;
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF111827),
         border: Border.all(color: const Color(0xFFE5E7EB)),
         borderRadius: BorderRadius.circular(8),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x12000000),
+            blurRadius: 18,
+            offset: Offset(0, 8),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -746,7 +766,7 @@ class _OverviewHeader extends StatelessWidget {
                     height: 1.35,
                     fontWeight: FontWeight.w900,
                     fontFamily: 'Tajawal',
-                    color: Color(0xFF111827),
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -756,7 +776,7 @@ class _OverviewHeader extends StatelessWidget {
                     fontSize: 13,
                     height: 1.5,
                     fontFamily: 'Tajawal',
-                    color: Color(0xFF6B7280),
+                    color: Color(0xFFD1D5DB),
                   ),
                 ),
               ],
@@ -781,7 +801,7 @@ class _OverviewHeader extends StatelessWidget {
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
                     fontFamily: 'Tajawal',
-                    color: Color(0xFF111827),
+                    color: Colors.white,
                   ),
                 ),
                 Text(
@@ -794,7 +814,7 @@ class _OverviewHeader extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 12,
                     fontFamily: 'Tajawal',
-                    color: Color(0xFF6B7280),
+                    color: Color(0xFFD1D5DB),
                   ),
                 ),
               ],
@@ -835,6 +855,13 @@ class _MetricTile extends StatelessWidget {
           decoration: BoxDecoration(
             border: Border.all(color: const Color(0xFFE5E7EB)),
             borderRadius: BorderRadius.circular(8),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x08000000),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -909,6 +936,13 @@ class _ChartPanel extends StatelessWidget {
         color: Colors.white,
         border: Border.all(color: const Color(0xFFE5E7EB)),
         borderRadius: BorderRadius.circular(8),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 12,
+            offset: Offset(0, 5),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
