@@ -534,14 +534,14 @@ class _AdminOverview extends StatelessWidget {
                 const SizedBox(height: 10),
                 LayoutBuilder(
                   builder: (context, constraints) {
-                    final compact = constraints.maxWidth < 1050;
                     return GridView.count(
-                      crossAxisCount: compact ? 3 : 6,
+                      crossAxisCount: 7,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: compact ? 1.65 : 1.55,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 8,
+                      childAspectRatio:
+                          constraints.maxWidth < 1050 ? 1.08 : 1.28,
                       children: [
                         _MetricTile(
                           title: t('stores'),
@@ -851,7 +851,7 @@ class _MetricTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             border: Border.all(color: const Color(0xFFE5E7EB)),
             borderRadius: BorderRadius.circular(8),
@@ -870,14 +870,14 @@ class _MetricTile extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    width: 34,
-                    height: 34,
+                    width: 30,
+                    height: 30,
                     decoration: BoxDecoration(
                       color: color.withValues(alpha: 0.10),
                       shape: BoxShape.circle,
                       border: Border.all(color: color.withValues(alpha: 0.22)),
                     ),
-                    child: Icon(icon, size: 18, color: color),
+                    child: Icon(icon, size: 16, color: color),
                   ),
                   const SizedBox(width: 9),
                   Expanded(
@@ -886,7 +886,7 @@ class _MetricTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 13,
+                        fontSize: 12,
                         fontWeight: FontWeight.w800,
                         fontFamily: 'Tajawal',
                         color: Color(0xFF111827),
@@ -898,7 +898,7 @@ class _MetricTile extends StatelessWidget {
               Text(
                 '$value',
                 style: const TextStyle(
-                  fontSize: 26,
+                  fontSize: 23,
                   fontWeight: FontWeight.w900,
                   fontFamily: 'Tajawal',
                   color: Color(0xFF111827),
@@ -909,7 +909,7 @@ class _MetricTile extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 11,
+                  fontSize: 10,
                   fontFamily: 'Tajawal',
                   color: Color(0xFF6B7280),
                 ),
