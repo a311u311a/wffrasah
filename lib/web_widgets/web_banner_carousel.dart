@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../models/carousel.dart';
 import '../constants.dart';
 import 'responsive_layout.dart';
@@ -282,13 +281,16 @@ class _RetryingWebBannerImageState extends State<_RetryingWebBannerImage> {
   Widget build(BuildContext context) {
     final imageUrl = widget.imageUrl.trim();
 
-    return CachedNetworkImage(
+    return Image.network(
+      _imageUrlForAttempt(imageUrl),
       key: ValueKey('$imageUrl-$_retryAttempt'),
-      imageUrl: _imageUrlForAttempt(imageUrl),
-      cacheKey: imageUrl,
       fit: BoxFit.cover,
-      placeholder: (context, url) => _bannerImageFallback(showLoader: true),
-      errorWidget: (context, url, error) {
+      gaplessPlayback: true,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return _bannerImageFallback(showLoader: true);
+      },
+      errorBuilder: (context, error, stackTrace) {
         _scheduleRetry();
         return _bannerImageFallback(showLoader: _retryAttempt < _maxRetries);
       },
