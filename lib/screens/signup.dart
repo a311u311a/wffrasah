@@ -104,7 +104,12 @@ class _SignupState extends State<Signup> {
       );
 
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const BottomNavBar()),
+        MaterialPageRoute(
+          builder: (_) => const BottomNavBar(
+            initialIndex: 4,
+            openActivityOnStart: true,
+          ),
+        ),
         (route) => false,
       );
     } on AuthException catch (e) {

@@ -18,6 +18,18 @@ class Coupon {
   final String image;
   final String web;
 
+  final String storeName;
+  final String storeNameAr;
+  final String storeNameEn;
+  final String storeImage;
+  final String? discountPercent;
+  final String couponType;
+  final String terms;
+  final String termsAr;
+  final String termsEn;
+  final bool isActive;
+  final DateTime? lastUsedAt;
+
   final List<String> tags;
 
   final DateTime? createdAt;
@@ -35,6 +47,17 @@ class Coupon {
     required this.descriptionEn,
     required this.image,
     required this.web,
+    required this.storeName,
+    required this.storeNameAr,
+    required this.storeNameEn,
+    required this.storeImage,
+    required this.discountPercent,
+    required this.couponType,
+    required this.terms,
+    required this.termsAr,
+    required this.termsEn,
+    required this.isActive,
+    this.lastUsedAt,
     required this.tags,
     required this.createdAt,
     this.expiryDate,
@@ -58,6 +81,16 @@ class Coupon {
     final image = _asString(row['image']);
     final web = _asString(row['web']);
 
+    final storeNameAr = _asString(row['store_name_ar'] ?? row['store_name']);
+    final storeNameEn = _asString(row['store_name_en'] ?? row['store_name']);
+    final storeImage = _asString(row['store_image']);
+    final discountPercent = _asString(row['discount_percent']);
+    final couponType = _normalizeCouponType(row['coupon_type']);
+    final termsAr = _asString(row['terms_ar'] ?? row['terms']);
+    final termsEn = _asString(row['terms_en'] ?? row['terms']);
+    final isActive = _parseBool(row['is_active'], fallback: true);
+    final lastUsedAt = _parseDate(row['last_used_at']);
+
     final tags = _parseTags(row['tags']);
 
     final createdAt = _parseDate(row['created_at']);
@@ -71,6 +104,14 @@ class Coupon {
         ? (descAr.isNotEmpty ? descAr : descEn)
         : (descEn.isNotEmpty ? descEn : descAr);
 
+    final displayStoreName = isAr
+        ? (storeNameAr.isNotEmpty ? storeNameAr : storeNameEn)
+        : (storeNameEn.isNotEmpty ? storeNameEn : storeNameAr);
+
+    final displayTerms = isAr
+        ? (termsAr.isNotEmpty ? termsAr : termsEn)
+        : (termsEn.isNotEmpty ? termsEn : termsAr);
+
     return Coupon(
       id: id,
       storeId: storeId,
@@ -83,6 +124,17 @@ class Coupon {
       descriptionEn: descEn,
       image: image,
       web: web,
+      storeName: displayStoreName,
+      storeNameAr: storeNameAr,
+      storeNameEn: storeNameEn,
+      storeImage: storeImage,
+      discountPercent: discountPercent,
+      couponType: couponType,
+      terms: displayTerms,
+      termsAr: termsAr,
+      termsEn: termsEn,
+      isActive: isActive,
+      lastUsedAt: lastUsedAt,
       tags: tags,
       createdAt: createdAt,
       expiryDate: expiryDate,
@@ -113,6 +165,17 @@ class Coupon {
 
       'image': image,
       'web': web,
+      'store_name': storeName,
+      'store_name_ar': storeNameAr,
+      'store_name_en': storeNameEn,
+      'store_image': storeImage,
+      'discount_percent': discountPercent,
+      'coupon_type': couponType,
+      'terms': terms,
+      'terms_ar': termsAr,
+      'terms_en': termsEn,
+      'is_active': isActive,
+      'last_used_at': lastUsedAt?.toIso8601String(),
       'tags': tags, // نخزنها كـ List
       'created_at': createdAt?.toIso8601String(),
       'expiry_date': expiryDate?.toIso8601String(),
@@ -140,6 +203,41 @@ class Coupon {
     } catch (_) {
       return null;
     }
+  }
+
+  static bool _parseBool(dynamic v, {required bool fallback}) {
+    if (v == null) return fallback;
+    if (v is bool) return v;
+    if (v is num) return v != 0;
+
+    final s = v.toString().trim().toLowerCase();
+    if (s.isEmpty) return fallback;
+    if (['true', 't', 'yes', 'y', '1'].contains(s)) return true;
+    if (['false', 'f', 'no', 'n', '0'].contains(s)) return false;
+
+    return fallback;
+  }
+
+  static String _normalizeCouponType(dynamic v) {
+    final value = _asString(v).toLowerCase();
+    if (value == 'رصيد مسترجع' ||
+        value == 'رصيد' ||
+        value == 'cash back' ||
+        value == 'cash-back') {
+      return 'cashback';
+    }
+    if (value == 'عرض' || value == 'offer') return 'offer';
+    if (value == 'خصم إضافي' ||
+        value == 'خصم اضافي' ||
+        value == 'extra discount' ||
+        value == 'extra_discount') {
+      return 'extra_discount';
+    }
+    if (value == 'خصم' || value == 'كوبون خصم') return 'coupon';
+    if (value == 'cashback' || value == 'offer' || value == 'extra_discount') {
+      return value;
+    }
+    return 'coupon';
   }
 
   /// يدعم tags كـ:

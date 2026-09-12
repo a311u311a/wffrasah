@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
-import 'constants.dart';
 import 'models/store.dart';
 import 'providers/locale_provider.dart';
 import 'providers/theme_provider.dart';
@@ -43,12 +42,7 @@ class WebApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'وفرها صح - كوبونات وعروض',
-      theme: themeProvider.getTheme.copyWith(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Constants.primaryColor,
-          brightness: Brightness.light,
-        ),
-      ),
+      theme: themeProvider.getTheme,
       locale: localeProvider.locale,
 
       // ✨ دعم RTL

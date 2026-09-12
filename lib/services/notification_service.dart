@@ -13,9 +13,11 @@ import '../firebase_options.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
   debugPrint("Handling a background message: ${message.messageId}");
 }
 
@@ -24,7 +26,7 @@ class NotificationService {
   static FirebaseMessaging? _firebaseMessaging;
   static StreamSubscription? _subscription;
   static StreamSubscription<String>? _tokenRefreshSubscription;
-  static bool _isFirebaseInitialized = false;
+  static Future<void>? _firebaseInitialization;
   static String? _lastShownId;
   static const String _webVapidKey =
       String.fromEnvironment('FIREBASE_WEB_VAPID_KEY');
@@ -35,16 +37,25 @@ class NotificationService {
 
   /// Initialize Firebase Core and Messaging (System/Background)
   static Future<void> initFirebase() async {
-    try {
-      if (_isFirebaseInitialized) return;
+    final existingInitialization = _firebaseInitialization;
+    if (existingInitialization != null) {
+      await existingInitialization;
+      return;
+    }
 
+    final initialization = _initializeFirebase();
+    _firebaseInitialization = initialization;
+    await initialization;
+  }
+
+  static Future<void> _initializeFirebase() async {
+    try {
       // 0. Initialize Firebase Core
       if (Firebase.apps.isEmpty) {
         await Firebase.initializeApp(
           options: DefaultFirebaseOptions.currentPlatform,
         );
       }
-      _isFirebaseInitialized = true;
       debugPrint('✅ Firebase Initialized');
 
       // 1. Initialize FCM
@@ -69,6 +80,7 @@ class NotificationService {
         }
         if (!await _isNativeMessagingReady()) return;
         await _firebaseMessaging!.subscribeToTopic('all');
+        await _registerNativeToken();
         debugPrint('✅ Subscribed to topic "all" (User Enabled)');
       } else {
         if (kIsWeb) {
@@ -76,6 +88,7 @@ class NotificationService {
           return;
         }
         await _firebaseMessaging!.unsubscribeFromTopic('all');
+        await _setCurrentNativeTokenEnabled(false);
         debugPrint('🔕 Unsubscribed from topic "all" (User Disabled)');
       }
     } catch (e) {
@@ -86,17 +99,45 @@ class NotificationService {
   /// Start Listening to Supabase Realtime (In-App UI)
   /// Should be called after Splash Screen (e.g. in BottomNavBar)
   static void listenToInAppNotifications(BuildContext context) {
-    // Cancel previous subscription to prevent duplicates
-    _subscription?.cancel();
+    if (_subscription != null) {
+      return;
+    }
     _subscription = _initSupabaseRealtime(context);
   }
 
   /// Stop listening to Supabase Realtime
   /// Should be called when app goes to background
   static void stopListening() {
+    if (_subscription == null) {
+      return;
+    }
     _subscription?.cancel();
     _subscription = null;
     debugPrint('🛑 Stopped In-App Notifications stream');
+  }
+
+  static Future<void> registerCurrentDeviceToken() async {
+    try {
+      _firebaseMessaging ??= FirebaseMessaging.instance;
+      if (kIsWeb) {
+        await _registerWebToken();
+        return;
+      }
+      final settings = await _firebaseMessaging!.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      if (settings.authorizationStatus != AuthorizationStatus.authorized &&
+          settings.authorizationStatus != AuthorizationStatus.provisional) {
+        debugPrint('Notifications permission is not granted; token not saved.');
+        return;
+      }
+      if (!await _isNativeMessagingReady()) return;
+      await _registerNativeToken();
+    } catch (e) {
+      debugPrint('Register current device token failed: $e');
+    }
   }
 
   static StreamSubscription? _initSupabaseRealtime(BuildContext context) {
@@ -149,6 +190,10 @@ class NotificationService {
                 _firebaseMessaging!.onTokenRefresh.listen(_saveWebToken);
           } else {
             if (!await _isNativeMessagingReady()) return;
+            await _registerNativeToken();
+            _tokenRefreshSubscription?.cancel();
+            _tokenRefreshSubscription =
+                _firebaseMessaging!.onTokenRefresh.listen(_saveNativeToken);
             await _firebaseMessaging!.subscribeToTopic('all');
           }
           debugPrint('✅ Subscribed to topic "all"');
@@ -210,6 +255,45 @@ class NotificationService {
     }
 
     await _saveWebToken(token);
+  }
+
+  static Future<void> _registerNativeToken() async {
+    if (kIsWeb) return;
+
+    final token = await _firebaseMessaging!.getToken();
+    if (token == null || token.isEmpty) {
+      debugPrint('FCM native token is empty');
+      return;
+    }
+
+    await _saveNativeToken(token);
+  }
+
+  static Future<void> _saveNativeToken(String token) async {
+    final platform = defaultTargetPlatform.name;
+    final userId = _supabase.auth.currentSession?.user.id;
+    if (userId == null || userId.isEmpty) {
+      debugPrint('Native FCM token not saved: no active Supabase session');
+      return;
+    }
+    await _supabase.rpc(
+      'register_fcm_token',
+      params: {
+        'p_token': token,
+        'p_platform': platform,
+      },
+    );
+    debugPrint('Native FCM token registered for user $userId');
+  }
+
+  static Future<void> _setCurrentNativeTokenEnabled(bool isEnabled) async {
+    if (kIsWeb) return;
+    final token = await _firebaseMessaging!.getToken();
+    if (token == null || token.isEmpty) return;
+    await _supabase.from('fcm_tokens').update({
+      'is_enabled': isEnabled,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('token', token);
   }
 
   static Future<void> _saveWebToken(String token) async {
@@ -358,6 +442,58 @@ class NotificationService {
     } catch (e) {
       debugPrint('❌ Error sending push via Edge Function: $e');
       return false;
+    }
+  }
+
+  static Future<PushNotificationResult> notifyFavoriteStoreFollowers({
+    required String couponId,
+    required String storeId,
+    required String storeName,
+    String? imageUrl,
+  }) async {
+    if (storeId.trim().isEmpty) {
+      return const PushNotificationResult(
+        success: false,
+        message: 'storeId is empty',
+      );
+    }
+
+    try {
+      final response = await _supabase.functions.invoke(
+        'notify-favorite-store-followers',
+        body: {
+          'couponId': couponId,
+          'storeId': storeId,
+          'storeName': storeName,
+          if (imageUrl != null && imageUrl.isNotEmpty) 'imageUrl': imageUrl,
+        },
+      );
+      debugPrint(
+        'Favorite store notification result: ${response.status} ${response.data}',
+      );
+      final data = response.data;
+      if (response.status >= 200 &&
+          response.status < 300 &&
+          data is Map &&
+          data['success'] == true) {
+        final sent = data['sent'] ?? 0;
+        final followers = data['followers'] ?? 0;
+        final enabledFollowers = data['enabledFollowers'] ?? 0;
+        final failed = data['failed'] ?? 0;
+        return PushNotificationResult(
+          success: true,
+          message:
+              'followers=$followers enabled=$enabledFollowers sent=$sent failed=$failed',
+        );
+      }
+
+      return PushNotificationResult(
+        success: false,
+        message: 'Status ${response.status}: ${_formatFunctionError(data)}',
+      );
+    } catch (e) {
+      debugPrint('Favorite store notification failed: $e');
+      return PushNotificationResult(success: false, message: e.toString());
     }
   }
 

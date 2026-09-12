@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -16,7 +16,13 @@ import 'app_responsive.dart';
 
 class OffersCard extends StatefulWidget {
   final Offer offer;
-  const OffersCard({super.key, required this.offer});
+  final String? storeImage;
+
+  const OffersCard({
+    super.key,
+    required this.offer,
+    this.storeImage,
+  });
 
   @override
   State<OffersCard> createState() => _OffersCardState();
@@ -58,32 +64,49 @@ class _OffersCardState extends State<OffersCard> {
             : !isEnglish && widget.offer.descriptionAr.trim().isNotEmpty
                 ? widget.offer.descriptionAr.trim()
                 : widget.offer.description;
+    final cardImage = (widget.storeImage?.trim().isNotEmpty ?? false)
+        ? widget.storeImage!.trim()
+        : widget.offer.storeImage.trim().isNotEmpty
+            ? widget.offer.storeImage.trim()
+            : widget.offer.image;
 
     return Card(
-      margin: const EdgeInsets.only(top: 5, left: 15, right: 15, bottom: 15),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      elevation: 2,
+      margin: const EdgeInsets.fromLTRB(16, 6, 16, 16),
+      color: Colors.transparent,
+      shadowColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      elevation: 0,
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(24),
           color: Colors.white,
+          border: Border.all(
+            color: Constants.primaryColor.withValues(alpha: 0.09),
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Constants.primaryColor.withValues(alpha: 0.08),
+              blurRadius: 26,
+              offset: const Offset(0, 14),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.025),
               blurRadius: 10,
-            )
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // =========================
             // HEADER (Image + Icons + Code Pill)
             // =========================
             ClipRRect(
               borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(20)),
+                  const BorderRadius.vertical(top: Radius.circular(24)),
               child: AspectRatio(
                 aspectRatio: _imageAspectRatio,
                 child: Stack(
@@ -91,8 +114,8 @@ class _OffersCardState extends State<OffersCard> {
                   children: [
                     // ✅ صورة واحدة فقط (بدون تكرار) + بدون فراغات
                     Image.network(
-                      widget.offer.image,
-                      fit: BoxFit.fill, // ✅ يملأ بدون فراغات
+                      cardImage,
+                      fit: BoxFit.contain,
                       filterQuality: FilterQuality.high,
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) {
@@ -128,136 +151,107 @@ class _OffersCardState extends State<OffersCard> {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Colors.black12,
                             Colors.transparent,
-                            Colors.black38,
+                            Colors.transparent,
+                            Colors.black45,
                           ],
-                          stops: [0.0, 0.65, 1.0],
+                          stops: [0.0, 0.58, 1.0],
                         ),
                       ),
                     ),
 
-                    // ✅ Code Pill (Bottom Right)
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: _OfferTypeBadge(scale: scale),
+                    ),
                     if (hasCode)
                       Positioned(
-                        right: 10,
-                        bottom: 10,
-                        child: _Pill(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.confirmation_number_outlined,
-                                size: 14 * scale,
-                                color: Colors.white,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                fullCode,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12 * scale,
-                                  letterSpacing: 1.2,
-                                  fontFamily: 'monospace',
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        right: 12,
+                        bottom: 12,
+                        child: _OfferCodeBadge(code: fullCode, scale: scale),
                       ),
-
-                    // ✅ Action Buttons (Bottom Left)
-                    Positioned(
-                      left: 10,
-                      bottom: 10,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Share
-                          _IconActionPill(
-                            onTap: () => _shareOffer(),
-                            child: SvgPicture.asset(
-                              'assets/icon/share.svg',
-                              height: iconSize,
-                              width: iconSize,
-                              colorFilter: const ColorFilter.mode(
-                                  Colors.white, BlendMode.srcIn),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-
-                          // Favorite
-                          _IconActionPill(
-                            onTap: () => favoriteProvider.toggleFavorite(
-                                widget.offer, context),
-                            child: AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 260),
-                              transitionBuilder: (child, anim) =>
-                                  ScaleTransition(scale: anim, child: child),
-                              child: isFavorite
-                                  ? SvgPicture.asset(
-                                      'assets/icon/star_active.svg',
-                                      key: const ValueKey('fav_active'),
-                                      height: iconSize,
-                                      width: iconSize,
-                                      colorFilter: const ColorFilter.mode(
-                                          Color(0xFFFFD700), BlendMode.srcIn),
-                                    )
-                                  : SvgPicture.asset(
-                                      'assets/icon/star.svg',
-                                      key: const ValueKey('fav_inactive'),
-                                      height: iconSize,
-                                      width: iconSize,
-                                      colorFilter: const ColorFilter.mode(
-                                          Colors.white, BlendMode.srcIn),
-                                    ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
               ),
             ),
 
-            // =========================
-            // BODY
-            // =========================
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
                     titleText,
                     style: TextStyle(
-                      fontSize: 15 * scale,
-                      fontWeight: FontWeight.w600,
-                      color: Constants.textColor,
-                      height: 1.5,
+                      fontSize: 16 * scale,
+                      fontWeight: FontWeight.w800,
+                      color: Constants.storeNameColor,
+                      height: 1.35,
+                      fontFamily: 'Tajawal',
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.start,
                   ),
                   if (offerDescription.trim().isNotEmpty) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 7),
                     Text(
                       offerDescription,
                       style: TextStyle(
                         fontSize: 12 * scale,
-                        color: Colors.grey[700],
-                        height: 1.5,
+                        color: const Color(0xFF756F89),
+                        height: 1.45,
                         fontFamily: 'Tajawal',
+                        fontWeight: FontWeight.w500,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.start,
                     ),
                   ],
+                  const SizedBox(height: 13),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _OfferMetaStrip(
+                          hasCode: hasCode,
+                          code: fullCode,
+                          scale: scale,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      _IconActionPill(
+                        onTap: () => favoriteProvider.toggleFavorite(
+                            widget.offer, context),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 220),
+                          transitionBuilder: (child, anim) =>
+                              ScaleTransition(scale: anim, child: child),
+                          child: isFavorite
+                              ? _FavoriteStarIcon(
+                                  key: const ValueKey('fav_active'),
+                                  active: true,
+                                  size: iconSize + 6,
+                                )
+                              : _FavoriteStarIcon(
+                                  key: const ValueKey('fav_inactive'),
+                                  active: false,
+                                  size: iconSize + 6,
+                                ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      _IconActionPill(
+                        onTap: () => _shareOffer(),
+                        child: Icon(
+                          Icons.share_rounded,
+                          color: Constants.primaryColor,
+                          size: iconSize + 6,
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 16),
 
                   // زر النسخ والذهاب للمتجر
@@ -371,7 +365,18 @@ class _OffersCardState extends State<OffersCard> {
   }
 
   Future<void> _shareOffer() async {
-    await SharePlus.instance.share(ShareParams(text: widget.offer.web));
+    final storeName = widget.offer.storeName.trim();
+    final description = widget.offer.description.trim();
+    final code = widget.offer.code.trim();
+    final link = widget.offer.web.trim();
+    final lines = [
+      if (storeName.isNotEmpty) storeName,
+      if (description.isNotEmpty) description,
+      if (code.isNotEmpty) 'كود الخصم: $code',
+      if (link.isNotEmpty) 'الرابط: $link',
+    ];
+
+    await SharePlus.instance.share(ShareParams(text: lines.join('\n')));
   }
 
   Future<void> _onButtonTapped() async {
@@ -436,28 +441,165 @@ class _OffersCardState extends State<OffersCard> {
 // Helper Widgets
 // =========================
 
-class _Pill extends StatelessWidget {
-  final Widget child;
-  final EdgeInsets padding;
-  final BorderRadius? borderRadius;
+class _OfferTypeBadge extends StatelessWidget {
+  final double scale;
 
-  const _Pill({
-    required this.child,
-    this.padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-    this.borderRadius,
+  const _OfferTypeBadge({required this.scale});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding:
+          EdgeInsets.symmetric(horizontal: 12 * scale, vertical: 8 * scale),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: Constants.primaryColor.withValues(alpha: 0.16),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Constants.primaryColor.withValues(alpha: 0.12),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.local_offer_rounded,
+            size: 15 * scale,
+            color: Constants.primaryColor,
+          ),
+          SizedBox(width: 6 * scale),
+          Text(
+            'عرض',
+            style: TextStyle(
+              color: Constants.primaryColor,
+              fontWeight: FontWeight.w800,
+              fontSize: 12 * scale,
+              fontFamily: 'Tajawal',
+              height: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OfferCodeBadge extends StatelessWidget {
+  final String code;
+  final double scale;
+
+  const _OfferCodeBadge({
+    required this.code,
+    required this.scale,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: padding,
+      padding:
+          EdgeInsets.symmetric(horizontal: 12 * scale, vertical: 8 * scale),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.55),
-        borderRadius: borderRadius ?? BorderRadius.circular(30),
-        border:
-            Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1),
+        color: Colors.black.withValues(alpha: 0.58),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.20),
+        ),
       ),
-      child: child,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.confirmation_number_outlined,
+            size: 14 * scale,
+            color: Colors.white,
+          ),
+          SizedBox(width: 6 * scale),
+          Text(
+            code,
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 12 * scale,
+              letterSpacing: 1.1,
+              fontFamily: 'monospace',
+              height: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OfferMetaStrip extends StatelessWidget {
+  final bool hasCode;
+  final String code;
+  final double scale;
+
+  const _OfferMetaStrip({
+    required this.hasCode,
+    required this.code,
+    required this.scale,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 40 * scale,
+      padding: EdgeInsets.symmetric(horizontal: 12 * scale),
+      decoration: BoxDecoration(
+        color: Constants.primaryColor.withValues(alpha: 0.045),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(
+          color: Constants.primaryColor.withValues(alpha: 0.09),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.local_offer_rounded,
+            color: Constants.primaryColor,
+            size: 17 * scale,
+          ),
+          SizedBox(width: 7 * scale),
+          Text(
+            'عرض',
+            style: TextStyle(
+              color: Constants.primaryColor,
+              fontSize: 13.5 * scale,
+              fontWeight: FontWeight.w800,
+              fontFamily: 'Tajawal',
+              height: 1,
+            ),
+          ),
+          if (hasCode) ...[
+            SizedBox(width: 8 * scale),
+            Expanded(
+              child: Text(
+                code,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style: TextStyle(
+                  color: const Color(0xFF242032),
+                  fontSize: 12 * scale,
+                  fontWeight: FontWeight.w800,
+                  fontFamily: 'monospace',
+                  letterSpacing: 1.1,
+                  height: 1,
+                ),
+              ),
+            ),
+          ] else
+            const Spacer(),
+        ],
+      ),
     );
   }
 }
@@ -474,16 +616,51 @@ class _IconActionPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scale = AppResponsive.tabletScale(context);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(30),
-        child: _Pill(
-          padding: EdgeInsets.all(8 * scale),
-          child: child,
+    final side = 40.0 * scale;
+    return SizedBox(
+      width: side,
+      height: side,
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(13),
+        shadowColor: Constants.primaryColor.withValues(alpha: 0.12),
+        elevation: 3,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(13),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(13),
+              border: Border.all(
+                color: Constants.primaryColor.withValues(alpha: 0.18),
+              ),
+            ),
+            child: Center(child: child),
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _FavoriteStarIcon extends StatelessWidget {
+  final bool active;
+  final double size;
+
+  const _FavoriteStarIcon({
+    super.key,
+    required this.active,
+    required this.size,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SvgPicture.asset(
+      active ? 'assets/icon/star_active.svg' : 'assets/icon/star.svg',
+      width: size,
+      height: size,
+      colorFilter:
+          active ? null : const ColorFilter.mode(Colors.white, BlendMode.srcIn),
     );
   }
 }

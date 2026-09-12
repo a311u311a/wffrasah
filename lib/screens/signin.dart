@@ -107,7 +107,12 @@ class _SignInState extends State<SignIn> {
 
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
-        builder: (_) => admin ? const AdminScreen() : const BottomNavBar(),
+        builder: (_) => admin
+            ? const AdminScreen()
+            : const BottomNavBar(
+                initialIndex: 4,
+                openActivityOnStart: true,
+              ),
       ),
       (_) => false,
     );
@@ -283,7 +288,7 @@ class _SignInState extends State<SignIn> {
                     const SizedBox(width: 12),
                     Text(
                       t?.translate('sign_in_google') ?? 'Sign in with Google',
-                      style: const TextStyle(color: Colors.black),
+                      style: const TextStyle(color: Constants.textColor),
                     ),
                   ],
                 ),

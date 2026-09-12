@@ -382,13 +382,19 @@ class _WebOfferCardState extends State<WebOfferCard> {
   }
 
   Future<void> _share() async {
+    final storeName = (widget.storeName ?? widget.offer.storeName).trim();
+    final description = widget.offer.description.trim();
+    final code = widget.offer.code.trim();
+    final link = widget.offer.web.trim();
+    final lines = [
+      if (storeName.isNotEmpty) storeName,
+      if (description.isNotEmpty) description,
+      if (code.isNotEmpty) 'كود الخصم: $code',
+      if (link.isNotEmpty) 'الرابط: $link',
+    ];
+
     await SharePlus.instance.share(
-      ShareParams(
-          text: webText(
-        context,
-        'شاهد هذا العرض المميز: ${widget.offer.name}\n${widget.offer.web}',
-        'Check out this featured offer: ${widget.offer.name}\n${widget.offer.web}',
-      )),
+      ShareParams(text: lines.join('\n')),
     );
   }
 

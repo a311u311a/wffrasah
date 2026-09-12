@@ -264,7 +264,7 @@ class WebMenuScreen extends StatelessWidget {
             ? Colors.red
             : isPrimary
                 ? Colors.white
-                : Colors.black87,
+                : Constants.textColor,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -555,6 +555,7 @@ class WebMenuScreen extends StatelessWidget {
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     fontFamily: 'Tajawal',
+                    color: Constants.textColor,
                   ),
                 ),
               ),
@@ -625,7 +626,7 @@ class WebMenuScreen extends StatelessWidget {
             style: TextStyle(
               fontWeight: FontWeight.w700,
               fontSize: 15,
-              color: isActive ? Colors.white : Colors.grey[600],
+              color: isActive ? Colors.white : Constants.textColor,
               fontFamily: isActive ? 'Tajawal' : null,
             ),
           ),

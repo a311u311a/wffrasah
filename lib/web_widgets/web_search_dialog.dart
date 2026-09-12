@@ -12,6 +12,8 @@ import '../models/store.dart';
 import '../models/coupon.dart';
 import '../models/offers.dart';
 import '../providers/locale_provider.dart';
+import '../services/home_data_service.dart';
+import '../services/unified_search_service.dart';
 import 'web_i18n.dart';
 
 class WebSearchDialog extends StatefulWidget {
@@ -92,17 +94,15 @@ class _WebSearchDialogState extends State<WebSearchDialog> {
 
     final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
     final langCode = localeProvider.locale.languageCode;
-    final term = query.toLowerCase();
 
     try {
-      final storesData = await supabase
-          .from('stores')
-          .select()
-          .or('name_ar.ilike.%$term%,name_en.ilike.%$term%,slug.ilike.%$term%')
-          .order('name_ar', ascending: true)
-          .limit(20);
+      final results = await Future.wait([
+        HomeDataService.fetchStores(),
+        HomeDataService.fetchPublicCoupons(limit: null),
+        HomeDataService.fetchPublicOffers(limit: null),
+      ]);
 
-      final results = (storesData as List)
+      final stores = results[0]
           .where((s) {
             final importSource = (s['import_source'] ?? 'manual').toString();
             final approvalStatus =
@@ -111,24 +111,38 @@ class _WebSearchDialogState extends State<WebSearchDialog> {
           })
           .map((s) => Store.fromSupabase(s, langCode))
           .toList();
+      final storesByKey = _storesByKey(stores);
+      final coupons = results[1].map((c) {
+        final storeId = (c['store_id'] ?? c['storeId'] ?? '').toString().trim();
+        return Coupon.fromSupabase(
+          _withStoreData(c, storesByKey[storeId.toLowerCase()]),
+          langCode,
+        );
+      }).toList();
+      final offers = results[2].map((o) {
+        final storeId = (o['store_id'] ?? o['storeId'] ?? '').toString().trim();
+        return Offer.fromSupabase(
+          _withStoreData(o, storesByKey[storeId.toLowerCase()]),
+          langCode,
+        );
+      }).toList();
+
+      final searchResults = UnifiedSearchService.search(
+        query: query,
+        stores: stores,
+        coupons: coupons,
+        offers: offers,
+      );
 
       if (!mounted) return;
 
       setState(() {
-        storeResults = results;
+        storeResults = searchResults.stores;
+        storeCoupons = searchResults.coupons;
+        storeOffers = searchResults.offers;
+        selectedStore = null;
         isSearchingStores = false;
       });
-
-      // ✅ اختيار أول متجر تلقائيًا (لو موجود)
-      if (results.isNotEmpty) {
-        _selectStore(results.first);
-      } else {
-        setState(() {
-          selectedStore = null;
-          storeCoupons = [];
-          storeOffers = [];
-        });
-      }
     } catch (e) {
       debugPrint('Store search error: $e');
       if (!mounted) return;
@@ -172,8 +186,12 @@ class _WebSearchDialogState extends State<WebSearchDialog> {
       if (!mounted) return;
 
       setState(() {
-        storeCoupons =
-            couponsData.map((c) => Coupon.fromSupabase(c, langCode)).toList();
+        storeCoupons = couponsData
+            .map((c) => Coupon.fromSupabase(
+                  _withStoreData(c as Map<String, dynamic>, store),
+                  langCode,
+                ))
+            .toList();
         storeOffers =
             offersData.map((o) => Offer.fromSupabase(o, langCode)).toList();
         isLoadingStoreContent = false;
@@ -216,6 +234,34 @@ class _WebSearchDialogState extends State<WebSearchDialog> {
         ],
       ),
     );
+  }
+
+  Map<String, Store> _storesByKey(List<Store> stores) {
+    final map = <String, Store>{};
+    for (final store in stores) {
+      for (final key in [
+        store.id,
+        store.slug,
+        store.key,
+        store.name,
+        store.nameAr,
+        store.nameEn,
+      ]) {
+        final normalized = key.trim().toLowerCase();
+        if (normalized.isNotEmpty) map[normalized] = store;
+      }
+    }
+    return map;
+  }
+
+  Map<String, dynamic> _withStoreData(Map<String, dynamic> row, Store? store) {
+    if (store == null) return row;
+    return {
+      ...row,
+      'store_name_ar': store.nameAr,
+      'store_name_en': store.nameEn,
+      'store_image': store.image,
+    };
   }
 
   Widget _searchBox() {
@@ -265,8 +311,8 @@ class _WebSearchDialogState extends State<WebSearchDialog> {
 
   Widget _storesResults() {
     if (_controller.text.trim().isEmpty) {
-      return _hintCard(webText(context, 'اكتب حرفين أو أكثر للبحث عن متجر.',
-          'Type two or more letters to search for a store.'));
+      return _hintCard(webText(context, 'اكتب حرفين أو أكثر للبحث.',
+          'Type two or more letters to search.'));
     }
 
     if (isSearchingStores) {
@@ -369,10 +415,50 @@ class _WebSearchDialogState extends State<WebSearchDialog> {
 
   Widget _storeContent() {
     if (selectedStore == null) {
-      return _hintCard(webText(
-          context,
-          'اختر متجرًا لعرض الكوبونات والعروض الخاصة به.',
-          'Choose a store to view its coupons and offers.'));
+      if (_controller.text.trim().isEmpty) {
+        return _hintCard(webText(
+            context,
+            'ستظهر الكوبونات والعروض هنا بعد البحث.',
+            'Coupons and offers will appear here after searching.'));
+      }
+
+      if (storeCoupons.isEmpty && storeOffers.isEmpty) {
+        return _hintCard(webText(context, 'لا توجد كوبونات أو عروض مطابقة.',
+            'No matching coupons or offers found.'));
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _contentSection(
+            title: webText(context, 'الكوبونات', 'Coupons'),
+            icon: Icons.confirmation_number_rounded,
+            count: storeCoupons.length,
+            child: storeCoupons.isEmpty
+                ? _hintCard(webText(
+                    context, 'لا توجد كوبونات مطابقة.', 'No matching coupons.'))
+                : Column(
+                    children: storeCoupons
+                        .take(12)
+                        .map((c) => _couponRow(c))
+                        .toList(),
+                  ),
+          ),
+          const SizedBox(height: 12),
+          _contentSection(
+            title: webText(context, 'العروض', 'Offers'),
+            icon: Icons.local_offer_rounded,
+            count: storeOffers.length,
+            child: storeOffers.isEmpty
+                ? _hintCard(webText(
+                    context, 'لا توجد عروض مطابقة.', 'No matching offers.'))
+                : Column(
+                    children:
+                        storeOffers.take(12).map((o) => _offerRow(o)).toList(),
+                  ),
+          ),
+        ],
+      );
     }
 
     if (isLoadingStoreContent) {

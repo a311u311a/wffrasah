@@ -1,5 +1,5 @@
 ﻿{
-  "app_name": "كوبونات التخفيضات",
+  "app_name": "وفرها صح",
   "account": "الحساب",
   "login_signup": "تسجيل الدخول/إنشاء حساب",
   "unknown_user": "غير معروف",
@@ -285,6 +285,7 @@
   "version": "الإصدار",
   "admin_overview": "نظرة عامة",
   "admin_manage_stores": "إدارة المتاجر",
+  "admin_coupon_providers": "إدارة موفري الكوبونات",
   "admin_manage_coupons": "إدارة الكوبونات",
   "admin_manage_offers": "إدارة العروض",
   "admin_manage_categories": "إدارة الفئات",
@@ -297,6 +298,7 @@
   "admin_carousel_subtitle": "صور في الشريط",
   "admin_pending_subtitle": "تحتاج مراجعة",
   "admin_notifications_subtitle": "رسائل مرسلة",
+  "admin_coupon_providers_subtitle": "مصادر كوبونات مضافة",
   "admin_content_summary": "ملخص المحتوى حسب القسم",
   "admin_approval_rate": "نسبة الاعتماد",
   "admin_management_distribution": "توزيع الإدارة",

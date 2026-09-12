@@ -22,7 +22,7 @@ class PrivacyScreen extends StatelessWidget {
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
+        iconTheme: const IconThemeData(color: Constants.textColor),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -174,7 +174,7 @@ class PrivacyScreen extends StatelessWidget {
             fontSize: 14,
             fontFamily: 'Tajawal',
             height: 1.6,
-            color: Colors.black87,
+            color: Constants.textColor,
           ),
         ),
         const SizedBox(height: 20),

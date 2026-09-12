@@ -7,6 +7,8 @@ class Offer {
   // ✅ الجديد: ربط العرض بالمتجر (offers.store_id = stores.slug)
   final String storeId;
   final String storeName;
+  final String storeNameAr;
+  final String storeNameEn;
 
   final String name;
   final String description;
@@ -19,6 +21,7 @@ class Offer {
 
   final String web;
   final String image;
+  final String storeImage;
 
   final List<String> tags;
   final DateTime? createdAt;
@@ -32,7 +35,8 @@ class Offer {
     required this.categoryId,
     this.storeId = '', // ✅ لا يكسر الكود القديم
     this.storeName = '',
-
+    this.storeNameAr = '',
+    this.storeNameEn = '',
     required this.name,
     required this.description,
     required this.nameAr,
@@ -41,6 +45,7 @@ class Offer {
     required this.descriptionEn,
     required this.web,
     required this.image,
+    this.storeImage = '',
     required this.tags,
     this.createdAt,
     this.expiryDate,
@@ -65,7 +70,11 @@ class Offer {
 
       // ✅ مهم جدًا: store_id (slug)
       storeId: _asString(data['store_id'] ?? data['storeId']),
-      storeName: _asString(data['store_name'] ?? data['storeName']),
+      storeName: _asString(
+        data['store_display_name'] ?? data['store_name'] ?? data['storeName'],
+      ),
+      storeNameAr: _asString(data['store_name_ar'] ?? data['storeNameAr']),
+      storeNameEn: _asString(data['store_name_en'] ?? data['storeNameEn']),
 
       name: isAr ? (nAr.isNotEmpty ? nAr : nEn) : (nEn.isNotEmpty ? nEn : nAr),
       description:
@@ -76,6 +85,7 @@ class Offer {
       descriptionEn: dEn,
       web: _asString(data['web']),
       image: _asString(data['image']),
+      storeImage: _asString(data['store_image'] ?? data['storeImage']),
       tags: _parseTags(data['tags']),
       createdAt: data['created_at'] != null
           ? DateTime.tryParse(data['created_at'].toString())
@@ -103,6 +113,10 @@ class Offer {
       'storeId': storeId,
       'store_name': storeName,
       'storeName': storeName,
+      'store_name_ar': storeNameAr,
+      'storeNameAr': storeNameAr,
+      'store_name_en': storeNameEn,
+      'storeNameEn': storeNameEn,
 
       'name': name,
       'description': description,
@@ -112,6 +126,8 @@ class Offer {
       'description_en': descriptionEn,
       'web': web,
       'image': image,
+      'store_image': storeImage,
+      'storeImage': storeImage,
       'tags': tags,
       'created_at': createdAt?.toIso8601String(),
       'expiryDate': expiryDate?.toIso8601String(), // For local consistency

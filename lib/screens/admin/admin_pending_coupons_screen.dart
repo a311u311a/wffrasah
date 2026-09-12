@@ -142,6 +142,23 @@ class _AdminPendingCouponsScreenState extends State<AdminPendingCouponsScreen> {
         .toList();
   }
 
+  String _cleanImageUrl(dynamic value) {
+    final text = (value ?? '').toString().trim();
+    if (text.isEmpty) return '';
+    if (text.startsWith('/https://') || text.startsWith('/http://')) {
+      return text.substring(1);
+    }
+    return text;
+  }
+
+  String _firstImageUrl(Iterable<dynamic> values) {
+    for (final value in values) {
+      final imageUrl = _cleanImageUrl(value);
+      if (imageUrl.isNotEmpty) return imageUrl;
+    }
+    return '';
+  }
+
   void _fillEditForm(
       Map<String, dynamic> coupon, Map<String, String> storeInfo) {
     final storeId = (coupon['store_id'] ?? '').toString();
@@ -170,10 +187,14 @@ class _AdminPendingCouponsScreenState extends State<AdminPendingCouponsScreen> {
     if (_selectedCategoryId != null && _selectedCategoryId!.isEmpty) {
       _selectedCategoryId = null;
     }
-    _editingImageUrl = ((storeInfo['image'] ?? '').isNotEmpty
-            ? storeInfo['image']
-            : (coupon['store_image'] ?? coupon['image']))
-        ?.toString();
+    _editingImageUrl = _firstImageUrl([
+      storeInfo['image'],
+      coupon['store_image'],
+      coupon['store_logo'],
+      coupon['logo'],
+      coupon['image_url'],
+      coupon['image'],
+    ]);
     _pickedImage = null;
     _selectedExpiryDate = coupon['expiry_date'] == null
         ? null
@@ -512,7 +533,6 @@ class _AdminPendingCouponsScreenState extends State<AdminPendingCouponsScreen> {
         'source_coupon_id': _sourceCouponIdCtrl.text.trim().isEmpty
             ? null
             : _sourceCouponIdCtrl.text.trim(),
-        'category_id': _selectedCategoryId,
         'expiry_date': _selectedExpiryDate?.toIso8601String(),
         'image': imageUrl,
         'tags': jsonEncode(tags),
@@ -790,10 +810,14 @@ class _AdminPendingCouponsScreenState extends State<AdminPendingCouponsScreen> {
                   final storeName =
                       (storeInfo['name'] ?? coupon['store_name_ar'] ?? storeId)
                           .toString();
-                  final storeImage = (storeInfo['image']?.isNotEmpty ?? false)
-                      ? storeInfo['image']!
-                      : (coupon['store_image'] ?? coupon['image'] ?? '')
-                          .toString();
+                  final storeImage = _firstImageUrl([
+                    storeInfo['image'],
+                    coupon['store_image'],
+                    coupon['store_logo'],
+                    coupon['logo'],
+                    coupon['image_url'],
+                    coupon['image'],
+                  ]);
                   return _PendingCouponCard(
                     coupon: coupon,
                     storeName: storeName,
@@ -870,7 +894,7 @@ class _PendingCouponCard extends StatelessWidget {
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF7F5FF),
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: const Color(0xFFE8E3FF)),
                   ),
@@ -879,7 +903,7 @@ class _PendingCouponCard extends StatelessWidget {
                     child: storeImage.isNotEmpty
                         ? Image.network(
                             storeImage,
-                            fit: BoxFit.contain,
+                            fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Icon(
                               Icons.storefront_rounded,
                               color: Constants.primaryColor,

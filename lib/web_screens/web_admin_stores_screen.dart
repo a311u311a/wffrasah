@@ -41,6 +41,8 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
   // الفئة المختارة
   String? _selectedCategoryId;
   List<Map<String, dynamic>> _categories = [];
+  String? _selectedProviderId;
+  List<Map<String, dynamic>> _providers = [];
 
   // Picker
   final ImagePicker _picker = ImagePicker();
@@ -55,6 +57,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
     super.initState();
     _storesFuture = _fetchStores();
     _loadCategories();
+    _loadProviders();
   }
 
   Future<List<Map<String, dynamic>>> _fetchStores() async {
@@ -82,6 +85,15 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
     } catch (_) {}
   }
 
+  Future<void> _loadProviders() async {
+    try {
+      final data = await _sb.from('coupon_providers').select().order('name');
+      if (mounted) {
+        setState(() => _providers = List<Map<String, dynamic>>.from(data));
+      }
+    } catch (_) {}
+  }
+
   @override
   void dispose() {
     _storeNameArCtrl.dispose();
@@ -102,6 +114,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
     _pickedStoreImageFile = null;
     _pickedImageBytes = null;
     _selectedCategoryId = null;
+    _selectedProviderId = null;
   }
 
   String _toSlug(String input) {
@@ -148,6 +161,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
       _storeDescEnCtrl.text = (store['description_en'] ?? '').toString();
       _editingImageUrl = (store['image'] ?? '').toString();
       _selectedCategoryId = store['category_id']?.toString();
+      _selectedProviderId = store['provider_id']?.toString();
     }
 
     if (!mounted) return;
@@ -218,6 +232,8 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 12),
+                    _providerDropdown(setStateDialog),
 
                     const SizedBox(height: 16),
 
@@ -482,6 +498,29 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
     );
   }
 
+  Widget _providerDropdown(StateSetter setStateDialog) {
+    return DropdownButtonFormField<String>(
+      initialValue:
+          _providers.any((p) => p['id'].toString() == _selectedProviderId)
+              ? _selectedProviderId
+              : null,
+      decoration: InputDecoration(
+        prefixIcon:
+            Icon(Icons.business_center_outlined, color: Constants.primaryColor),
+        labelText: webText(context, 'موفر الكوبون', 'Coupon Provider'),
+        hintText: webText(context, 'اختر موفر الكوبون', 'Choose provider'),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+      items: _providers
+          .map((p) => DropdownMenuItem<String>(
+                value: p['id'].toString(),
+                child: Text((p['name'] ?? '').toString()),
+              ))
+          .toList(),
+      onChanged: (value) => setStateDialog(() => _selectedProviderId = value),
+    );
+  }
+
   Widget _twoColumns({required Widget left, required Widget right}) {
     final isDesktop = ResponsiveLayout.isDesktop(context);
     if (!isDesktop) {
@@ -571,6 +610,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
         'description': _storeDescArCtrl.text.trim(),
         'image': finalImageUrl ?? '',
         'category_id': _selectedCategoryId,
+        'provider_id': _selectedProviderId,
       };
 
       if (_editingId == null) {

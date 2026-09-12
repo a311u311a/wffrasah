@@ -307,7 +307,7 @@ class FavoriteProvider with ChangeNotifier {
                     fontFamily: 'Tajawal',
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Constants.textColor,
                   ),
                   textAlign: TextAlign.center,
                 ),

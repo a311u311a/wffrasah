@@ -24,6 +24,8 @@ class _AdminStoresScreenState extends State<AdminStoresScreen> {
 
   String? _editingId; // primary key (UUID text) في جدول stores
   String? _editingImageUrl;
+  String? _selectedCategoryId;
+  String? _selectedProviderId;
   XFile? _pickedStoreImageFile;
   bool _isSaving = false;
   final ImagePicker _picker = ImagePicker();
@@ -52,6 +54,8 @@ class _AdminStoresScreenState extends State<AdminStoresScreen> {
     _storeDescArCtrl.clear();
     _storeDescEnCtrl.clear();
     _pickedStoreImageFile = null;
+    _selectedCategoryId = null;
+    _selectedProviderId = null;
   }
 
   Future<List<Map<String, dynamic>>> _fetchStores() async {
@@ -113,6 +117,8 @@ class _AdminStoresScreenState extends State<AdminStoresScreen> {
           (store['description_ar'] ?? store['description'] ?? '').toString();
       _storeDescEnCtrl.text = (store['description_en'] ?? '').toString();
       _editingImageUrl = (store['image'] ?? '').toString();
+      _selectedCategoryId = store['category_id']?.toString();
+      _selectedProviderId = store['provider_id']?.toString();
     }
 
     if (!mounted) return;
@@ -213,6 +219,96 @@ class _AdminStoresScreenState extends State<AdminStoresScreen> {
                                 'Store Description (English)',
                                 Icons.description_outlined,
                                 maxLines: 2,
+                              ),
+                              FutureBuilder<List<Map<String, dynamic>>>(
+                                future: _sb
+                                    .from('categories')
+                                    .select('id,name_ar,name_en,name')
+                                    .order('name_ar'),
+                                builder: (context, snapshot) {
+                                  final categories = snapshot.data ?? [];
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 16),
+                                    child: DropdownButtonFormField<String>(
+                                      initialValue: categories.any((category) =>
+                                              category['id'].toString() ==
+                                              _selectedCategoryId)
+                                          ? _selectedCategoryId
+                                          : null,
+                                      decoration: InputDecoration(
+                                        prefixIcon: Icon(
+                                          Icons.category_outlined,
+                                          color: Constants.primaryColor,
+                                        ),
+                                        labelText: 'الفئة',
+                                        filled: true,
+                                        fillColor: Colors.grey[50],
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                      ),
+                                      hint: const Text('اختر فئة المتجر'),
+                                      items: categories
+                                          .map((category) =>
+                                              DropdownMenuItem<String>(
+                                                value:
+                                                    category['id'].toString(),
+                                                child: Text(
+                                                  (category['name_ar'] ??
+                                                          category['name'] ??
+                                                          category['name_en'] ??
+                                                          '')
+                                                      .toString(),
+                                                ),
+                                              ))
+                                          .toList(),
+                                      onChanged: (value) => setStateSheet(
+                                          () => _selectedCategoryId = value),
+                                      validator: (value) => value == null
+                                          ? 'اختر فئة المتجر'
+                                          : null,
+                                    ),
+                                  );
+                                },
+                              ),
+                              FutureBuilder<List<Map<String, dynamic>>>(
+                                future: _sb
+                                    .from('coupon_providers')
+                                    .select()
+                                    .order('name'),
+                                builder: (context, snapshot) {
+                                  final providers = snapshot.data ?? [];
+                                  return DropdownButtonFormField<String>(
+                                    initialValue: providers.any((p) =>
+                                            p['id'].toString() ==
+                                            _selectedProviderId)
+                                        ? _selectedProviderId
+                                        : null,
+                                    decoration: InputDecoration(
+                                      prefixIcon: Icon(
+                                          Icons.business_center_outlined,
+                                          color: Constants.primaryColor),
+                                      labelText: 'موفر الكوبون',
+                                      hintText: 'اختر موفر الكوبون',
+                                      filled: true,
+                                      fillColor: Colors.grey[50],
+                                      border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          borderSide: BorderSide.none),
+                                    ),
+                                    items: providers
+                                        .map((p) => DropdownMenuItem<String>(
+                                              value: p['id'].toString(),
+                                              child: Text(p['name'].toString()),
+                                            ))
+                                        .toList(),
+                                    onChanged: (value) => setStateSheet(
+                                        () => _selectedProviderId = value),
+                                  );
+                                },
                               ),
                             ],
                           ),
@@ -364,6 +460,8 @@ class _AdminStoresScreenState extends State<AdminStoresScreen> {
         'description': _storeDescArCtrl.text.trim(),
 
         'image': finalImageUrl ?? '',
+        'category_id': _selectedCategoryId,
+        'provider_id': _selectedProviderId,
       };
 
       if (_editingId == null) {

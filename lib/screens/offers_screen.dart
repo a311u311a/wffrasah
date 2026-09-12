@@ -9,6 +9,7 @@ import '../models/store.dart';
 import '../widgets/app_responsive.dart';
 import '../widgets/carouse.dart';
 import '../widgets/category_list.dart';
+import '../widgets/loading_indicator.dart';
 import '../widgets/search_widget.dart';
 import 'store_coupons_screen.dart';
 
@@ -25,10 +26,24 @@ class _OffersScreenState extends State<OffersScreen> {
 
   late Future<List<Store>> _offerStoresFuture;
   late Future<List<Map<String, dynamic>>> _offersFuture;
+  String _langCode = 'ar';
+  bool _didLoadLocalizedData = false;
 
   @override
   void initState() {
     super.initState();
+    _offerStoresFuture = Future.value(const <Store>[]);
+    _offersFuture = Future.value(const <Map<String, dynamic>>[]);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final nextLangCode = Localizations.localeOf(context).languageCode;
+    if (_didLoadLocalizedData && _langCode == nextLangCode) return;
+
+    _langCode = nextLangCode;
+    _didLoadLocalizedData = true;
     _offerStoresFuture = _fetchOfferStores();
     _offersFuture = _fetchOffers();
   }
@@ -57,7 +72,7 @@ class _OffersScreenState extends State<OffersScreen> {
 
     final stores = (results[1] as List)
         .cast<Map<String, dynamic>>()
-        .map((row) => Store.fromSupabase(row, 'ar'))
+        .map((row) => Store.fromSupabase(row, _langCode))
         .toList();
 
     final seen = <String>{};
@@ -90,7 +105,8 @@ class _OffersScreenState extends State<OffersScreen> {
     final sb = Supabase.instance.client;
 
     try {
-      final rows = await sb.from('offers').select('''
+      final results = await Future.wait([
+        sb.from('offers').select('''
             id,
             category_id,
             created_at,
@@ -104,9 +120,47 @@ class _OffersScreenState extends State<OffersScreen> {
             web,
             store_id,
             expiry_date
-            ''').order('created_at', ascending: false).limit(100);
+            ''').order('created_at', ascending: false).limit(100),
+        sb.from('stores').select('id, slug, name, name_ar, name_en'),
+      ]);
 
-      return (rows as List).cast<Map<String, dynamic>>();
+      final rows = (results[0] as List).cast<Map<String, dynamic>>();
+      final storeRows = (results[1] as List).cast<Map<String, dynamic>>();
+      final storeNamesByKey = <String, String>{};
+      final storeArabicNamesByKey = <String, String>{};
+      final storeEnglishNamesByKey = <String, String>{};
+
+      for (final row in storeRows) {
+        final store = Store.fromSupabase(row, _langCode);
+        final displayName =
+            _langCode == 'en' ? store.nameEn.trim() : store.nameAr.trim();
+        if (displayName.isEmpty) continue;
+
+        for (final key in [
+          store.id,
+          store.slug,
+          store.name,
+          store.nameAr,
+          store.nameEn,
+        ]) {
+          final normalizedKey = key.trim();
+          if (normalizedKey.isNotEmpty) {
+            storeNamesByKey[normalizedKey] = displayName;
+            storeArabicNamesByKey[normalizedKey] = store.nameAr.trim();
+            storeEnglishNamesByKey[normalizedKey] = store.nameEn.trim();
+          }
+        }
+      }
+
+      return rows.map((offer) {
+        final storeId = (offer['store_id'] ?? '').toString().trim();
+        return {
+          ...offer,
+          'store_display_name': storeNamesByKey[storeId] ?? '',
+          'store_name_ar': storeArabicNamesByKey[storeId] ?? '',
+          'store_name_en': storeEnglishNamesByKey[storeId] ?? '',
+        };
+      }).toList();
     } catch (e) {
       debugPrint('Offers fetch error: $e');
       rethrow;
@@ -177,12 +231,17 @@ class _OffersScreenState extends State<OffersScreen> {
     final nameAr = _firstNonEmpty(offer, ['name_ar', 'nameAr']);
     final name = _firstNonEmpty(offer, ['name', 'title']);
     final nameEn = _firstNonEmpty(offer, ['name_en', 'nameEn']);
+    final storeName = _firstNonEmpty(
+      offer,
+      ['store_display_name', 'store_name', 'storeName'],
+    );
 
     if (nameAr.isNotEmpty) return nameAr;
     if (name.isNotEmpty) return name;
     if (nameEn.isNotEmpty) return nameEn;
+    if (storeName.isNotEmpty) return storeName;
 
-    return 'عرض';
+    return _langCode == 'en' ? 'Offer' : 'عرض';
   }
 
   // ============================================================
@@ -196,8 +255,10 @@ class _OffersScreenState extends State<OffersScreen> {
     final descriptionEn =
         _firstNonEmpty(offer, ['description_en', 'descriptionEn']);
 
-    if (descriptionAr.isNotEmpty) return descriptionAr;
+    if (_langCode == 'en' && descriptionEn.isNotEmpty) return descriptionEn;
+    if (_langCode != 'en' && descriptionAr.isNotEmpty) return descriptionAr;
     if (description.isNotEmpty) return description;
+    if (descriptionAr.isNotEmpty) return descriptionAr;
     if (descriptionEn.isNotEmpty) return descriptionEn;
 
     return '';
@@ -317,14 +378,17 @@ class _OffersScreenState extends State<OffersScreen> {
                 const SliverToBoxAdapter(child: SizedBox(height: 20)),
 
                 // عنوان العروض
-                const SliverToBoxAdapter(
+                SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Align(
                       alignment: Alignment.centerRight,
                       child: Text(
-                        'أحدث العروض',
-                        style: TextStyle(
+                        localizations?.translate('latest_offers') ??
+                            (_langCode == 'en'
+                                ? 'Latest Offers'
+                                : 'أحدث العروض'),
+                        style: const TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Tajawal',
@@ -354,13 +418,15 @@ class _OffersScreenState extends State<OffersScreen> {
   // ============================================================
 
   Widget _buildOfferStoresSection() {
+    final localizations = AppLocalizations.of(context);
+
     return FutureBuilder<List<Store>>(
       future: _offerStoresFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Padding(
+          return const CustomLoadingIndicator(
+            message: 'جاري تحميل المتاجر',
             padding: EdgeInsets.symmetric(vertical: 20),
-            child: Center(child: CircularProgressIndicator()),
           );
         }
 
@@ -373,13 +439,14 @@ class _OffersScreenState extends State<OffersScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Align(
                 alignment: Alignment.centerRight,
                 child: Text(
-                  'المتاجر',
-                  style: TextStyle(
+                  localizations?.translate('stores') ??
+                      (_langCode == 'en' ? 'Stores' : 'المتاجر'),
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'Tajawal',
@@ -407,7 +474,7 @@ class _OffersScreenState extends State<OffersScreen> {
                 itemBuilder: (context, index) {
                   final store = stores[index];
                   final displayName =
-                      store.name.trim().isNotEmpty ? store.name : store.nameAr;
+                      _langCode == 'en' ? store.nameEn : store.nameAr;
 
                   return InkWell(
                     onTap: () {
@@ -492,14 +559,15 @@ class _OffersScreenState extends State<OffersScreen> {
   // ============================================================
 
   Widget _buildOffersSliver() {
+    final localizations = AppLocalizations.of(context);
+
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _offersFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
-              child: Center(child: CircularProgressIndicator()),
+            child: CustomLoadingIndicator(
+              message: 'جاري تحميل العروض',
             ),
           );
         }
@@ -517,9 +585,12 @@ class _OffersScreenState extends State<OffersScreen> {
                       color: Colors.grey,
                     ),
                     const SizedBox(height: 10),
-                    const Text(
-                      'تعذر تحميل العروض',
-                      style: TextStyle(
+                    Text(
+                      localizations?.translate('error_loading_offers') ??
+                          (_langCode == 'en'
+                              ? 'Error loading offers'
+                              : 'تعذر تحميل العروض'),
+                      style: const TextStyle(
                         fontFamily: 'Tajawal',
                         fontSize: 14,
                         color: Colors.grey,
@@ -532,7 +603,10 @@ class _OffersScreenState extends State<OffersScreen> {
                           _offersFuture = _fetchOffers();
                         });
                       },
-                      child: const Text('إعادة المحاولة'),
+                      child: Text(
+                        localizations?.translate('retry') ??
+                            (_langCode == 'en' ? 'Retry' : 'إعادة المحاولة'),
+                      ),
                     ),
                   ],
                 ),
@@ -548,13 +622,16 @@ class _OffersScreenState extends State<OffersScreen> {
         final offers = _latestOfferPerStore(_filterOffers(snapshot.data!));
 
         if (offers.isEmpty) {
-          return const SliverToBoxAdapter(
+          return SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 35, horizontal: 20),
+              padding: const EdgeInsets.symmetric(vertical: 35, horizontal: 20),
               child: Center(
                 child: Text(
-                  'لا توجد عروض حالياً',
-                  style: TextStyle(
+                  localizations?.translate('no_offers_available') ??
+                      (_langCode == 'en'
+                          ? 'No offers available'
+                          : 'لا توجد عروض حالياً'),
+                  style: const TextStyle(
                     fontSize: 14,
                     fontFamily: 'Tajawal',
                     color: Colors.grey,
@@ -607,7 +684,17 @@ class _OffersScreenState extends State<OffersScreen> {
   // ============================================================
 
   Widget _buildOfferCard(Map<String, dynamic> offer) {
-    final name = _offerName(offer);
+    final localizations = AppLocalizations.of(context);
+    final name = _langCode == 'en'
+        ? _firstNonEmpty(
+            offer,
+            ['store_name_en', 'storeNameEn', 'store_id'],
+          )
+        : _firstNonEmpty(
+            offer,
+            ['store_name_ar', 'storeNameAr', 'store_display_name'],
+          );
+    final displayName = name.isNotEmpty ? name : _offerName(offer);
     final description = _offerDescription(offer);
     final image = (offer['image'] ?? '').toString().trim();
     final web = (offer['web'] ?? '').toString().trim();
@@ -654,7 +741,7 @@ class _OffersScreenState extends State<OffersScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        name,
+                        displayName,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.right,
@@ -682,18 +769,21 @@ class _OffersScreenState extends State<OffersScreen> {
                       ],
                       if (web.isNotEmpty) ...[
                         const SizedBox(height: 6),
-                        const Row(
+                        Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.open_in_new_rounded,
                               size: 14,
                               color: Color(0xFF665CFF),
                             ),
-                            SizedBox(width: 4),
+                            const SizedBox(width: 4),
                             Text(
-                              'اذهب للعرض',
-                              style: TextStyle(
+                              localizations?.translate('go_to_offer') ??
+                                  (_langCode == 'en'
+                                      ? 'Go to offer'
+                                      : 'اذهب للعرض'),
+                              style: const TextStyle(
                                 fontFamily: 'Tajawal',
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,

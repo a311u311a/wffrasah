@@ -22,6 +22,7 @@ class _CouponScreenState extends State<CouponScreen> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
+    final storeItemExtent = AppResponsive.isTablet(context) ? 88.0 : 76.0;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -39,10 +40,12 @@ class _CouponScreenState extends State<CouponScreen> {
           child: Column(
             children: [
               SizedBox(
-                height: AppResponsive.isTablet(context) ? 112 : 100,
+                height: storeItemExtent + 16,
                 child: StoresList(
                   selectedStoreId: selectedStoreId,
                   onlyStoresWithCoupons: true,
+                  itemExtent: storeItemExtent,
+                  useBottomSelectionIndicator: true,
                   onStoreSelected: (storeId) {
                     setState(() {
                       selectedStoreId = storeId;

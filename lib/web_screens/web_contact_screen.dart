@@ -19,6 +19,32 @@ class _WebContactScreenState extends State<WebContactScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
 
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  void _clearFields() {
+    _nameController.clear();
+    _emailController.clear();
+    _messageController.clear();
+  }
+
+  void _showSuccessMessage() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          webText(context, 'تم الإرسال بنجاح', 'Message sent successfully'),
+          style: const TextStyle(fontFamily: 'Tajawal'),
+        ),
+        backgroundColor: Constants.primaryColor,
+      ),
+    );
+  }
+
   Future<void> _sendEmail() async {
     final String name = _nameController.text.trim();
     final String email = _emailController.text.trim();
@@ -37,18 +63,20 @@ class _WebContactScreenState extends State<WebContactScreen> {
       return;
     }
 
-    final Uri emailLaunchUri = Uri(
-      scheme: 'mailto',
-      path: 'support@wffrhasah.com',
-      queryParameters: {
-        'subject': webText(context, 'اتصل بنا - $name', 'Contact Us - $name'),
-        'body': message,
-      },
+    final subject = webText(context, 'اتصل بنا - $name', 'Contact Us - $name');
+    final Uri emailLaunchUri = Uri.parse(
+      'mailto:support@wffrhasah.com'
+      '?subject=${Uri.encodeComponent(subject)}'
+      '&body=${Uri.encodeComponent(message)}',
     );
 
     try {
       if (await canLaunchUrl(emailLaunchUri)) {
-        await launchUrl(emailLaunchUri);
+        final launched = await launchUrl(emailLaunchUri);
+        if (launched && mounted) {
+          _clearFields();
+          _showSuccessMessage();
+        }
       } else {
         throw 'Could not launch $emailLaunchUri';
       }
@@ -111,7 +139,7 @@ class _WebContactScreenState extends State<WebContactScreen> {
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Tajawal',
-                                color: Colors.black87),
+                                color: Constants.textColor),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 30),

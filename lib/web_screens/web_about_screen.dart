@@ -114,7 +114,7 @@ class _WebAboutScreenState extends State<WebAboutScreen> {
                             style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.black87,
+                                color: Constants.textColor,
                                 fontFamily: 'Tajawal'),
                           ),
                           const SizedBox(height: 16),
@@ -125,7 +125,7 @@ class _WebAboutScreenState extends State<WebAboutScreen> {
                             style: const TextStyle(
                                 fontSize: 16,
                                 height: 1.8,
-                                color: Colors.black87,
+                                color: Constants.textColor,
                                 fontFamily: 'Tajawal'),
                           ),
                         ],
@@ -282,7 +282,7 @@ class _WebAboutScreenState extends State<WebAboutScreen> {
             child: RichText(
               text: TextSpan(
                 style: const TextStyle(
-                    color: Colors.black87,
+                    color: Constants.textColor,
                     fontFamily: 'Tajawal',
                     height: 1.6,
                     fontSize: 15),

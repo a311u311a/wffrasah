@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../constants.dart';
+
 class CustomCarousel extends StatefulWidget {
   const CustomCarousel({super.key});
 
@@ -47,14 +49,14 @@ class _CustomCarouselState extends State<CustomCarousel> {
 
         return CarouselSlider(
           options: CarouselOptions(
-            height: 180,
+            height: 176,
             autoPlay: true,
             enlargeCenterPage: true,
             aspectRatio: 16 / 9,
             autoPlayCurve: Curves.fastOutSlowIn,
             enableInfiniteScroll: true,
             autoPlayAnimationDuration: const Duration(milliseconds: 800),
-            viewportFraction: 0.9,
+            viewportFraction: 0.99,
           ),
           items: items.map((item) {
             final imageUrl = (item['image'] ?? '').toString();
@@ -72,12 +74,45 @@ class _CustomCarouselState extends State<CustomCarousel> {
               },
               child: Container(
                 width: MediaQuery.of(context).size.width,
-                margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                //margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  image: DecorationImage(
-                    image: CachedNetworkImageProvider(imageUrl),
-                    fit: BoxFit.fill,
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Constants.primaryColor.withValues(alpha: 0.09),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Constants.primaryColor.withValues(alpha: 0.10),
+                      blurRadius: 4,
+                      // offset: const Offset(0, 14),
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.025),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: CachedNetworkImage(
+                  imageUrl: imageUrl,
+                  fit: BoxFit.fill,
+                  placeholder: (context, url) => Container(
+                    color: Constants.primaryColor.withValues(alpha: 0.035),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Constants.primaryColor.withValues(alpha: 0.55),
+                      ),
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    color: Constants.primaryColor.withValues(alpha: 0.035),
+                    child: Icon(
+                      Icons.image_not_supported_outlined,
+                      color: Constants.primaryColor.withValues(alpha: 0.35),
+                    ),
                   ),
                 ),
               ),

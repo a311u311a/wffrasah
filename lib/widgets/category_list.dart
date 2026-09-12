@@ -39,13 +39,13 @@ class _CategoryListState extends State<CategoryList> {
     final supabase = Supabase.instance.client;
     final langCode = AppLocalizations.of(context)?.locale.languageCode ?? 'ar';
     final results = await Future.wait([
-      supabase.from('offers').select(),
+      supabase.from('stores').select('category_id'),
       supabase.from('categories').select(),
     ]).timeout(const Duration(seconds: 12));
 
-    final offerRows = (results[0] as List).cast<Map<String, dynamic>>();
-    final activeCategoryIds = offerRows
-        .map((data) => (data['category_id'] ?? data['categoryId'])?.toString())
+    final storeRows = (results[0] as List).cast<Map<String, dynamic>>();
+    final activeCategoryIds = storeRows
+        .map((data) => data['category_id']?.toString().trim())
         .whereType<String>()
         .where((id) => id.isNotEmpty)
         .toSet();
@@ -76,7 +76,7 @@ class _CategoryListState extends State<CategoryList> {
           final categories = snapshot.data!;
           if (categories.isEmpty) return const SizedBox();
           return Padding(
-            padding: const EdgeInsets.only(top: 8.0, left: 8, right: 8),
+            padding: const EdgeInsets.only(top: 6, left: 1, right: 1),
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: categories.length + 1,
@@ -100,7 +100,7 @@ class _CategoryListState extends State<CategoryList> {
     final isTablet = AppResponsive.isTablet(context);
     final iconSize = isTablet ? 48.0 : 35.0;
     final itemWidth = isTablet ? 88.0 : 68.0;
-    final itemPadding = isTablet ? 13.0 : 12.0;
+    final itemPadding = isTablet ? 13.0 : 11.0;
     final textScale = AppResponsive.tabletScale(context);
     return GestureDetector(
       onTap: () => widget.onCategorySelected(category.id),
@@ -113,13 +113,24 @@ class _CategoryListState extends State<CategoryList> {
               duration: const Duration(milliseconds: 200),
               padding: EdgeInsets.all(itemPadding),
               decoration: BoxDecoration(
-                color: isSelected ? Constants.primaryColor : Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                color: isSelected
+                    ? Constants.primaryColor
+                    : Constants.primaryColor.withValues(alpha: 0.045),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isSelected
                       ? Constants.primaryColor
-                      : Colors.grey.shade300,
+                      : Constants.primaryColor.withValues(alpha: 0.08),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: isSelected
+                        ? Constants.primaryColor.withValues(alpha: 0.18)
+                        : Constants.primaryColor.withValues(alpha: 0.045),
+                    blurRadius: isSelected ? 14 : 10,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
               ),
               child: category.image.isNotEmpty
                   ? ColorFiltered(
@@ -154,8 +165,9 @@ class _CategoryListState extends State<CategoryList> {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 11 * textScale,
-                color: isSelected ? Constants.primaryColor : Colors.black87,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? Constants.primaryColor : Colors.grey[700],
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                fontFamily: 'Tajawal',
               ),
             ),
           ],
@@ -169,7 +181,7 @@ class _CategoryListState extends State<CategoryList> {
     final isTablet = AppResponsive.isTablet(context);
     final iconSize = isTablet ? 48.0 : 35.0;
     final itemWidth = isTablet ? 88.0 : 68.0;
-    final itemPadding = isTablet ? 13.0 : 12.0;
+    final itemPadding = isTablet ? 13.0 : 11.0;
     final textScale = AppResponsive.tabletScale(context);
     return GestureDetector(
       onTap: () => widget.onCategorySelected(null),
@@ -182,13 +194,24 @@ class _CategoryListState extends State<CategoryList> {
               duration: const Duration(milliseconds: 200),
               padding: EdgeInsets.all(itemPadding),
               decoration: BoxDecoration(
-                color: isSelected ? Constants.primaryColor : Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                color: isSelected
+                    ? Constants.primaryColor
+                    : Constants.primaryColor.withValues(alpha: 0.045),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isSelected
                       ? Constants.primaryColor
-                      : Colors.grey.shade300,
+                      : Constants.primaryColor.withValues(alpha: 0.08),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: isSelected
+                        ? Constants.primaryColor.withValues(alpha: 0.18)
+                        : Constants.primaryColor.withValues(alpha: 0.045),
+                    blurRadius: isSelected ? 14 : 10,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
               ),
               child: SvgPicture.asset(
                 'assets/icon/apps.svg',
@@ -206,8 +229,9 @@ class _CategoryListState extends State<CategoryList> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 11 * textScale,
-                color: isSelected ? Constants.primaryColor : Colors.black87,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? Constants.primaryColor : Colors.grey[700],
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                fontFamily: 'Tajawal',
               ),
             ),
           ],

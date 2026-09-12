@@ -8,7 +8,7 @@ class ThemeProvider with ChangeNotifier {
 
   late ThemeData _selectedTheme;
   bool _isDarkMode = false;
-  
+
   // الاحتفاظ باللون الأساسي من Constants
   Color get _primaryColor => Constants.primaryColor;
 

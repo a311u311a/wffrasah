@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../localization/app_localizations.dart';
 import '../models/coupon.dart';
 import '../models/store.dart';
 import '../providers/locale_provider.dart';
+import '../services/home_data_service.dart';
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
@@ -28,12 +28,9 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
   static const Color line = Color(0xFFEDEAFF);
   static const Color ink = Color(0xFF25213B);
   static const Color orange = Color(0xFF6C63FF);
-  static const Color pink = Color(0xFF8B84FF);
-  static const Color yellow = Color(0xFFFF6584);
   static const Color secondary = Color(0xFF68627F);
   static const Color faded = Color(0xFF9B96B6);
 
-  final supabase = Supabase.instance.client;
   final TextEditingController searchController = TextEditingController();
   List<Coupon> coupons = [];
   List<Store> stores = [];
@@ -62,13 +59,14 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
     final langCode = localeProvider.locale.languageCode;
 
     try {
-      // تحميل المتاجر
-      final storesData = await supabase
-          .from('stores')
-          .select()
-          .order('name_ar', ascending: true);
+      final results = await Future.wait([
+        HomeDataService.fetchStores(),
+        HomeDataService.fetchPublicCoupons(limit: null),
+      ]);
+      final storesData = results[0];
+      final couponsData = results[1];
 
-      final loadedStores = (storesData as List)
+      final loadedStores = storesData
           .where((store) {
             final importSource =
                 (store['import_source'] ?? 'manual').toString();
@@ -88,15 +86,11 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
       }
       storesMap = tempMap;
 
-      // تحميل الكوبونات
-      final couponsData = await supabase
-          .from('coupons')
-          .select()
-          .eq('approval_status', 'approved')
-          .order('created_at', ascending: false);
-
-      final loadedCoupons = (couponsData as List)
-          .map((coupon) => Coupon.fromSupabase(coupon, langCode))
+      final loadedCoupons = couponsData
+          .map((coupon) => Coupon.fromSupabase(
+                _withStoreData(coupon),
+                langCode,
+              ))
           .toList();
 
       setState(() {
@@ -118,7 +112,7 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
     if (searchQuery.isEmpty) return coupons;
 
     return coupons.where((coupon) {
-      final store = storesMap[coupon.storeId];
+      final store = storesMap[coupon.storeId.toLowerCase().trim()];
       return coupon.code.toLowerCase().contains(searchQuery.toLowerCase()) ||
           coupon.description
               .toLowerCase()
@@ -126,6 +120,22 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
           (store?.name.toLowerCase().contains(searchQuery.toLowerCase()) ??
               false);
     }).toList();
+  }
+
+  Map<String, dynamic> _withStoreData(Map<String, dynamic> row) {
+    final storeId = (row['store_id'] ?? row['storeId'] ?? '')
+        .toString()
+        .toLowerCase()
+        .trim();
+    final store = storesMap[storeId];
+    if (store == null) return row;
+
+    return {
+      ...row,
+      'store_name_ar': store.nameAr,
+      'store_name_en': store.nameEn,
+      'store_image': store.image,
+    };
   }
 
   @override
@@ -193,36 +203,13 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0EEFF),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: const Color(0xFFD8D4FF)),
-                ),
-                child: Text(
-                  _t('coupons_hero_badge'),
-                  style: GoogleFonts.cairo(
-                    color: ink,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 22),
-              ShaderMask(
-                shaderCallback: (bounds) =>
-                    const LinearGradient(colors: [orange, yellow, pink])
-                        .createShader(bounds),
-                child: Text(
-                  _t('coupons_hero_title'),
-                  style: GoogleFonts.cairo(
-                    color: Colors.white,
-                    fontSize: compact ? 28 : 38,
-                    height: 1.25,
-                    fontWeight: FontWeight.w900,
-                  ),
+              Text(
+                _t('coupons_hero_title'),
+                style: GoogleFonts.cairo(
+                  color: orange,
+                  fontSize: compact ? 28 : 38,
+                  height: 1.25,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
               const SizedBox(height: 14),
@@ -403,8 +390,8 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
           builder: (context, constraints) {
             final width = constraints.maxWidth;
             final columns = width >= 1024
-                ? 4
-                : ResponsiveGrid.columnsForWidth(width, max: 4);
+                ? 3
+                : ResponsiveGrid.columnsForWidth(width, max: 3);
             final spacing = ResponsiveGrid.spacingForWidth(width);
 
             return GridView.builder(
@@ -414,7 +401,7 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
                 crossAxisCount: columns,
                 crossAxisSpacing: spacing,
                 mainAxisSpacing: spacing,
-                childAspectRatio: width >= 1024 ? 0.76 : 0.68,
+                childAspectRatio: width >= 1024 ? 2.5 : 0.68,
               ),
               itemCount: displayCoupons.length,
               itemBuilder: (context, index) {

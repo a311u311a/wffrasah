@@ -302,7 +302,7 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: Colors.black87,
+                      color: Constants.textColor,
                       fontFamily: 'Tajawal',
                     ),
                   ),
@@ -557,7 +557,7 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
-                            color: Colors.black87,
+                            color: Constants.textColor,
                             fontFamily: 'Tajawal',
                           ),
                         ),

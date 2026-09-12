@@ -145,60 +145,66 @@ class _FaqItemState extends State<_FaqItem> {
               ]
             : null,
       ),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          title: Row(
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            tilePadding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Constants.primaryColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.help_rounded,
+                    color: Constants.primaryColor,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    widget.question,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color:
+                          isExpanded ? Constants.primaryColor : Colors.black87,
+                      fontFamily: 'Tajawal',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            trailing: Icon(
+              isExpanded ? Icons.remove : Icons.add,
+              color: Constants.primaryColor,
+            ),
+            onExpansionChanged: (value) {
+              setState(() => isExpanded = value);
+            },
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Constants.primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.help_rounded,
-                  color: Constants.primaryColor,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                 child: Text(
-                  widget.question,
+                  widget.answer,
+                  textAlign: TextAlign.justify,
                   style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: isExpanded ? Constants.primaryColor : Colors.black87,
+                    fontSize: 15,
+                    color: Colors.grey[700],
+                    height: 1.6,
                     fontFamily: 'Tajawal',
                   ),
                 ),
               ),
             ],
           ),
-          trailing: Icon(
-            isExpanded ? Icons.remove : Icons.add,
-            color: Constants.primaryColor,
-          ),
-          onExpansionChanged: (value) {
-            setState(() => isExpanded = value);
-          },
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              child: Text(
-                widget.answer,
-                textAlign: TextAlign.justify,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Colors.grey[700],
-                  height: 1.6,
-                  fontFamily: 'Tajawal',
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );

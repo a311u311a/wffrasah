@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../localization/app_localizations.dart';
 import '../models/offers.dart';
 import '../models/store.dart';
 import '../providers/locale_provider.dart';
+import '../services/home_data_service.dart';
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
@@ -28,12 +28,9 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
   static const Color line = Color(0xFFEDEAFF);
   static const Color ink = Color(0xFF25213B);
   static const Color orange = Color(0xFF6C63FF);
-  static const Color pink = Color(0xFF8B84FF);
-  static const Color yellow = Color(0xFFFF6584);
   static const Color secondary = Color(0xFF68627F);
   static const Color faded = Color(0xFF9B96B6);
 
-  final supabase = Supabase.instance.client;
   final TextEditingController searchController = TextEditingController();
   List<Offer> offers = [];
   List<Offer> allOffers = [];
@@ -62,10 +59,14 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
     final langCode = localeProvider.locale.languageCode;
 
     try {
-      // Load stores first
-      final storesData = await supabase.from('stores').select();
+      final results = await Future.wait([
+        HomeDataService.fetchStores(),
+        HomeDataService.fetchPublicOffers(limit: null),
+      ]);
+      final storesData = results[0];
+      final offersData = results[1];
 
-      final loadedStores = (storesData as List)
+      final loadedStores = storesData
           .map((store) => Store.fromSupabase(store, langCode))
           .toList();
 
@@ -79,13 +80,7 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
       }
       storesMap = tempMap;
 
-      // Load offers
-      final offersData = await supabase
-          .from('offers')
-          .select()
-          .order('created_at', ascending: false);
-
-      final loadedOffers = (offersData as List)
+      final loadedOffers = offersData
           .map((offer) => Offer.fromSupabase(offer, langCode))
           .toList();
 
@@ -209,36 +204,13 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0EEFF),
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: const Color(0xFFD8D4FF)),
-                ),
-                child: Text(
-                  _t('offers_hero_badge'),
-                  style: GoogleFonts.cairo(
-                    color: ink,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 22),
-              ShaderMask(
-                shaderCallback: (bounds) =>
-                    const LinearGradient(colors: [orange, yellow, pink])
-                        .createShader(bounds),
-                child: Text(
-                  _t('offers_hero_title'),
-                  style: GoogleFonts.cairo(
-                    color: Colors.white,
-                    fontSize: compact ? 28 : 38,
-                    height: 1.25,
-                    fontWeight: FontWeight.w900,
-                  ),
+              Text(
+                _t('offers_hero_title'),
+                style: GoogleFonts.cairo(
+                  color: orange,
+                  fontSize: compact ? 28 : 38,
+                  height: 1.25,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
               const SizedBox(height: 14),

@@ -123,7 +123,7 @@ class _WebStoreCardState extends State<WebStoreCard> {
         style: const TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w700,
-          color: Colors.black87,
+          color: Constants.textColor,
           fontFamily: 'Tajawal',
         ),
         maxLines: 1,

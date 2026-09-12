@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/store.dart';
+import '../widgets/loading_indicator.dart';
 
 class StoreOffersScreen extends StatelessWidget {
   final Store store;
@@ -28,7 +29,9 @@ class StoreOffersScreen extends StatelessWidget {
       future: _resolveStoreId(sb),
       builder: (context, idSnap) {
         if (idSnap.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const CustomLoadingIndicator(
+            message: 'جاري تحميل عروض المتجر',
+          );
         }
 
         final storeId = idSnap.data;
@@ -45,7 +48,9 @@ class StoreOffersScreen extends StatelessWidget {
           builder: (context, snap) {
             if (!snap.hasData &&
                 snap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return const CustomLoadingIndicator(
+                message: 'جاري تحميل عروض المتجر',
+              );
             }
             if (snap.hasError) {
               return Center(child: Text('Error: ${snap.error}'));

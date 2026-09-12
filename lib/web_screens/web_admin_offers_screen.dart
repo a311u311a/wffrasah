@@ -858,7 +858,9 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
   Uint8List? _pickedImageBytes;
   String? _selectedCategoryId;
   String? _selectedStoreId;
+  String? _selectedProviderId;
   List<Map<String, dynamic>> _stores = [];
+  List<Map<String, dynamic>> _providers = [];
   DateTime? _expiryDate;
   bool _saving = false;
 
@@ -878,10 +880,35 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
         .trim();
   }
 
+  String get _selectedProviderName {
+    if (_selectedProviderId == null || _selectedProviderId!.isEmpty) return '';
+    final selectedProvider =
+        _providers.cast<Map<String, dynamic>?>().firstWhere(
+              (provider) =>
+                  (provider?['id'] ?? '').toString() == _selectedProviderId,
+              orElse: () => null,
+            );
+    return (selectedProvider?['name'] ?? '').toString().trim();
+  }
+
+  String _categoryName(List<Map<String, dynamic>> categories) {
+    if (_selectedCategoryId == null || _selectedCategoryId!.isEmpty) return '';
+    final selectedCategory =
+        categories.cast<Map<String, dynamic>?>().firstWhere(
+              (category) =>
+                  (category?['id'] ?? '').toString() == _selectedCategoryId,
+              orElse: () => null,
+            );
+    return (selectedCategory?['name_ar'] ?? selectedCategory?['name'] ?? '')
+        .toString()
+        .trim();
+  }
+
   @override
   void initState() {
     super.initState();
     _fetchStores();
+    _fetchProviders();
 
     if (_isEdit) {
       final o = widget.offer!;
@@ -893,6 +920,7 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
       _selectedCategoryId = o.categoryId.isNotEmpty ? o.categoryId : null;
       _selectedStoreId = o.storeId.isNotEmpty ? o.storeId : null;
       _expiryDate = o.expiryDate;
+      _bootstrapOfferProviderId(o.id);
 
       // ✅ استرجاع كود الخصم من أول وسم (كما في AdminOfferScreen)
       if (o.tags.isNotEmpty) {
@@ -921,6 +949,498 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
     } catch (e) {
       debugPrint('Error fetching stores: $e');
     }
+  }
+
+  Future<void> _fetchProviders() async {
+    try {
+      final res =
+          await _sb.from('coupon_providers').select('id,name').order('name');
+      if (mounted) {
+        setState(() {
+          _providers = List<Map<String, dynamic>>.from(res);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching providers: $e');
+    }
+  }
+
+  Future<void> _bootstrapOfferProviderId(String offerId) async {
+    try {
+      final row = await _sb
+          .from('offers')
+          .select('provider_id')
+          .eq('id', offerId)
+          .maybeSingle();
+      final providerId = row?['provider_id']?.toString().trim();
+      if (!mounted || providerId == null || providerId.isEmpty) return;
+      setState(() => _selectedProviderId = providerId);
+    } catch (_) {}
+  }
+
+  Widget _buildProviderPicker() {
+    final selectedName = _selectedProviderName;
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: _showProviderPickerDialog,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Constants.primaryColor.withValues(alpha: 0.045),
+          borderRadius: BorderRadius.circular(16),
+          border:
+              Border.all(color: Constants.primaryColor.withValues(alpha: 0.10)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.business_center_outlined, color: Constants.primaryColor),
+            const SizedBox(width: 15),
+            Expanded(
+              child: Text(
+                _selectedProviderId != null
+                    ? webText(
+                        context,
+                        'تم اختيار الموفر: ${selectedName.isEmpty ? _selectedProviderId : selectedName}',
+                        'Selected provider: ${selectedName.isEmpty ? _selectedProviderId : selectedName}',
+                      )
+                    : webText(context, 'اضغط لاختيار موفر العروض',
+                        'Tap to choose offer provider'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontWeight: FontWeight.normal,
+                  fontSize: 13,
+                  color: Colors.black54,
+                  fontFamily: _font,
+                ),
+              ),
+            ),
+            const Icon(Icons.keyboard_arrow_down),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStorePicker() {
+    final selectedName = _selectedStoreName;
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: _showStorePickerDialog,
+      child: _selectionField(
+        icon: Icons.storefront_rounded,
+        text: _selectedStoreId != null
+            ? webText(
+                context,
+                'تم اختيار المتجر: ${selectedName.isEmpty ? _selectedStoreId : selectedName}',
+                'Selected store: ${selectedName.isEmpty ? _selectedStoreId : selectedName}',
+              )
+            : webText(context, 'اضغط لاختيار المتجر', 'Tap to choose store'),
+      ),
+    );
+  }
+
+  Widget _buildCategoryPicker(List<Map<String, dynamic>> categories) {
+    final selectedName = _categoryName(categories);
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () => _showCategoryPickerDialog(categories),
+      child: _selectionField(
+        icon: Icons.category_rounded,
+        text: _selectedCategoryId != null
+            ? webText(
+                context,
+                'تم اختيار الفئة: ${selectedName.isEmpty ? _selectedCategoryId : selectedName}',
+                'Selected category: ${selectedName.isEmpty ? _selectedCategoryId : selectedName}',
+              )
+            : webText(context, 'اضغط لاختيار فئة العرض',
+                'Tap to choose offer category'),
+      ),
+    );
+  }
+
+  Widget _selectionField({
+    required IconData icon,
+    required String text,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Constants.primaryColor.withValues(alpha: 0.045),
+        borderRadius: BorderRadius.circular(16),
+        border:
+            Border.all(color: Constants.primaryColor.withValues(alpha: 0.10)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: Constants.primaryColor),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontWeight: FontWeight.normal,
+                fontSize: 13,
+                color: Colors.black54,
+                fontFamily: _font,
+              ),
+            ),
+          ),
+          const Icon(Icons.keyboard_arrow_down),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showStorePickerDialog() async {
+    final searchCtrl = TextEditingController();
+    var query = '';
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setStatePicker) {
+          final filteredStores = _stores.where((store) {
+            final text = [
+              store['name'],
+              store['name_ar'],
+              store['name_en'],
+              store['slug'],
+            ].whereType<Object>().join(' ').toLowerCase();
+            return text.contains(query.toLowerCase().trim());
+          }).toList();
+
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+            title: Text(
+              webText(context, 'اختر المتجر المرتبط', 'Choose linked store'),
+              style: TextStyle(
+                color: Constants.primaryColor,
+                fontFamily: _font,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            content: SizedBox(
+              width: 520,
+              height: 520,
+              child: Column(
+                children: [
+                  _pickerSearchField(
+                    controller: searchCtrl,
+                    hint:
+                        webText(context, 'ابحث عن اسم المتجر', 'Search stores'),
+                    onChanged: (value) => setStatePicker(() => query = value),
+                  ),
+                  const SizedBox(height: 14),
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: filteredStores.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (context, i) {
+                        final store = filteredStores[i];
+                        final name = (store['name_ar'] ??
+                                store['name'] ??
+                                webText(context, 'متجر', 'Store'))
+                            .toString();
+                        final slug = (store['slug'] ?? '').toString().trim();
+                        final image = (store['image'] ?? '').toString();
+                        return _providerOptionTile(
+                          title: name,
+                          icon: Icons.storefront_rounded,
+                          imageUrl: image,
+                          onTap: () {
+                            if (slug.isEmpty) {
+                              showSnackBar(
+                                context,
+                                webText(
+                                  context,
+                                  'هذا المتجر لا يحتوي slug. يرجى تعديل المتجر أولاً.',
+                                  'This store has no slug. Please edit the store first.',
+                                ),
+                                isError: true,
+                              );
+                              return;
+                            }
+                            setState(() => _selectedStoreId = slug);
+                            Navigator.pop(ctx);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+
+    searchCtrl.dispose();
+  }
+
+  Future<void> _showCategoryPickerDialog(
+      List<Map<String, dynamic>> categories) async {
+    final searchCtrl = TextEditingController();
+    var query = '';
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setStatePicker) {
+          final filteredCategories = categories.where((category) {
+            final text = [
+              category['name'],
+              category['name_ar'],
+              category['name_en'],
+            ].whereType<Object>().join(' ').toLowerCase();
+            return text.contains(query.toLowerCase().trim());
+          }).toList();
+
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+            title: Text(
+              webText(context, 'اختر فئة العرض', 'Choose offer category'),
+              style: TextStyle(
+                color: Constants.primaryColor,
+                fontFamily: _font,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            content: SizedBox(
+              width: 520,
+              height: 520,
+              child: Column(
+                children: [
+                  _pickerSearchField(
+                    controller: searchCtrl,
+                    hint: webText(
+                        context, 'ابحث عن اسم الفئة', 'Search categories'),
+                    onChanged: (value) => setStatePicker(() => query = value),
+                  ),
+                  const SizedBox(height: 14),
+                  _providerOptionTile(
+                    title: webText(context, 'بدون فئة', 'No category'),
+                    icon: Icons.close_rounded,
+                    onTap: () {
+                      setState(() => _selectedCategoryId = null);
+                      Navigator.pop(ctx);
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: filteredCategories.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (context, i) {
+                        final category = filteredCategories[i];
+                        final name =
+                            (category['name_ar'] ?? category['name'] ?? '')
+                                .toString();
+                        return _providerOptionTile(
+                          title: name.isEmpty
+                              ? webText(context, 'فئة بدون اسم', 'Category')
+                              : name,
+                          icon: Icons.category_rounded,
+                          imageUrl: (category['image'] ?? '').toString(),
+                          onTap: () {
+                            setState(() {
+                              _selectedCategoryId = category['id'].toString();
+                            });
+                            Navigator.pop(ctx);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+
+    searchCtrl.dispose();
+  }
+
+  Widget _pickerSearchField({
+    required TextEditingController controller,
+    required String hint,
+    required ValueChanged<String> onChanged,
+  }) {
+    return TextField(
+      controller: controller,
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        hintText: hint,
+        prefixIcon: Icon(Icons.search_rounded, color: Constants.primaryColor),
+        filled: true,
+        fillColor: Constants.primaryColor.withValues(alpha: 0.045),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Constants.primaryColor, width: 1.4),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showProviderPickerDialog() async {
+    final searchCtrl = TextEditingController();
+    var query = '';
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setStatePicker) {
+          final filteredProviders = _providers.where((provider) {
+            final text =
+                [provider['name']].whereType<Object>().join(' ').toLowerCase();
+            return text.contains(query.toLowerCase().trim());
+          }).toList();
+
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+            title: Text(
+              webText(context, 'اختر موفر العروض', 'Choose offer provider'),
+              style: TextStyle(
+                color: Constants.primaryColor,
+                fontFamily: _font,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            content: SizedBox(
+              width: 520,
+              height: 520,
+              child: Column(
+                children: [
+                  TextField(
+                    controller: searchCtrl,
+                    onChanged: (value) => setStatePicker(() => query = value),
+                    decoration: InputDecoration(
+                      hintText: webText(
+                          context, 'ابحث عن اسم الموفر', 'Search providers'),
+                      prefixIcon: Icon(Icons.search_rounded,
+                          color: Constants.primaryColor),
+                      filled: true,
+                      fillColor:
+                          Constants.primaryColor.withValues(alpha: 0.045),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: Constants.primaryColor,
+                          width: 1.4,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: filteredProviders.length + 1,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (context, i) {
+                        if (i == 0) {
+                          return _providerOptionTile(
+                            title: webText(context, 'بدون موفر', 'No provider'),
+                            icon: Icons.close_rounded,
+                            onTap: () {
+                              setState(() => _selectedProviderId = null);
+                              Navigator.pop(ctx);
+                            },
+                          );
+                        }
+
+                        final provider = filteredProviders[i - 1];
+                        final name = (provider['name'] ?? '').toString().trim();
+                        return _providerOptionTile(
+                          title: name.isEmpty
+                              ? webText(context, 'موفر بدون اسم', 'Provider')
+                              : name,
+                          icon: Icons.business_center_outlined,
+                          onTap: () {
+                            setState(() {
+                              _selectedProviderId = provider['id'].toString();
+                            });
+                            Navigator.pop(ctx);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+
+    searchCtrl.dispose();
+  }
+
+  Widget _providerOptionTile({
+    required String title,
+    required IconData icon,
+    required VoidCallback onTap,
+    String? imageUrl,
+  }) {
+    return Material(
+      color: Constants.primaryColor.withValues(alpha: 0.035),
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundImage: imageUrl != null && imageUrl.isNotEmpty
+                    ? NetworkImage(imageUrl)
+                    : null,
+                backgroundColor: Constants.primaryColor.withValues(alpha: 0.08),
+                child: imageUrl != null && imageUrl.isNotEmpty
+                    ? null
+                    : Icon(icon, color: Constants.primaryColor, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontFamily: _font,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(Icons.chevron_right_rounded, color: Constants.primaryColor),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -1027,6 +1547,7 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
         'category_id': _selectedCategoryId,
         'store_id': _selectedStoreId,
         'store_name': _selectedStoreName,
+        'provider_id': _selectedProviderId,
         'expiry_date': _expiryDate?.toIso8601String(),
       };
 
@@ -1128,43 +1649,13 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                   _buildSectionTitle(
                       webText(context, 'اختر المتجر', 'Choose Store')),
                   const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.grey[300]!),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _selectedStoreId,
-                        hint: Text(
-                            webText(context, 'اختر المتجر', 'Choose Store'),
-                            style: TextStyle(
-                                fontFamily: _font, color: Colors.grey[500])),
-                        isExpanded: true,
-                        items: [
-                          DropdownMenuItem<String>(
-                            value: null,
-                            child: Text(
-                                webText(context, 'اختر المتجر', 'Choose Store'),
-                                style: TextStyle(fontFamily: _font)),
-                          ),
-                          ..._stores.map((s) {
-                            final name =
-                                (s['name_ar'] ?? s['name'] ?? '').toString();
-                            final slug = (s['slug'] ?? '').toString();
-                            return DropdownMenuItem<String>(
-                              value: slug,
-                              child: Text(name,
-                                  style: const TextStyle(fontFamily: _font)),
-                            );
-                          }),
-                        ],
-                        onChanged: (v) => setState(() => _selectedStoreId = v),
-                      ),
-                    ),
-                  ),
+                  _buildStorePicker(),
+                  const SizedBox(height: 24),
+
+                  _buildSectionTitle(
+                      webText(context, 'موفر العروض', 'Offer Provider')),
+                  const SizedBox(height: 10),
+                  _buildProviderPicker(),
                   const SizedBox(height: 24),
 
                   // 3) فئة العرض
@@ -1178,45 +1669,7 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                         return const Center(child: CircularProgressIndicator());
                       }
                       final categories = snapshot.data!;
-                      return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _selectedCategoryId,
-                            hint: Text(
-                                webText(
-                                    context, 'اختر الفئة', 'Choose Category'),
-                                style: TextStyle(
-                                    fontFamily: _font,
-                                    color: Colors.grey[500])),
-                            isExpanded: true,
-                            items: [
-                              DropdownMenuItem<String>(
-                                value: null,
-                                child: Text(
-                                    webText(context, 'بدون فئة', 'No Category'),
-                                    style: TextStyle(fontFamily: _font)),
-                              ),
-                              ...categories.map((cat) =>
-                                  DropdownMenuItem<String>(
-                                    value: cat['id'].toString(),
-                                    child: Text(
-                                      (cat['name_ar'] ?? cat['name'] ?? '')
-                                          .toString(),
-                                      style: const TextStyle(fontFamily: _font),
-                                    ),
-                                  )),
-                            ],
-                            onChanged: (v) =>
-                                setState(() => _selectedCategoryId = v),
-                          ),
-                        ),
-                      );
+                      return _buildCategoryPicker(categories);
                     },
                   ),
                   const SizedBox(height: 24),
@@ -1353,7 +1806,7 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                           fontFamily: _font,
                           fontWeight: FontWeight.w900,
                           fontSize: 16,
-                          color: Colors.black87,
+                          color: Constants.textColor,
                         ),
                       ),
                     ),

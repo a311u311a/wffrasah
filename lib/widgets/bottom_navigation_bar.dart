@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:custom_navigation_bar/custom_navigation_bar.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../constants.dart';
 import '../screens/coupon_screen.dart';
-import '../screens/offers_screen.dart';
+import '../screens/home_screen.dart';
 import '../screens/stores_screen.dart';
 import '../screens/favorites_screen.dart';
 import '../screens/menu_screen.dart';
@@ -14,8 +15,13 @@ import 'app_responsive.dart';
 
 class BottomNavBar extends StatefulWidget {
   final int initialIndex;
+  final bool openActivityOnStart;
 
-  const BottomNavBar({super.key, this.initialIndex = 0});
+  const BottomNavBar({
+    super.key,
+    this.initialIndex = 0,
+    this.openActivityOnStart = false,
+  });
 
   @override
   State<BottomNavBar> createState() => _BottomNavBarState();
@@ -25,13 +31,7 @@ class _BottomNavBarState extends State<BottomNavBar>
     with WidgetsBindingObserver {
   late int _selectedIndex;
 
-  final List<Widget> _pages = const [
-    StoresScreen(),
-    CouponScreen(),
-    OffersScreen(),
-    FavoritesScreen(),
-    MenuScreen(),
-  ];
+  late final List<Widget> _pages;
 
   final List<Map<String, String>> _icons = [
     {'active': 'assets/icon/grid.svg', 'inactive': 'assets/icon/grid.svg'},
@@ -45,7 +45,7 @@ class _BottomNavBarState extends State<BottomNavBar>
     },
     {
       'active': 'assets/icon/star.svg',
-      'inactive': 'assets/icon/star_active.svg'
+      'inactive': 'assets/icon/star_nav_outline_thick.svg'
     },
     {
       'active': 'assets/icon/apps.svg',
@@ -57,12 +57,22 @@ class _BottomNavBarState extends State<BottomNavBar>
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+    _pages = [
+      const StoresScreen(),
+      const CouponScreen(),
+      const HomeScreen(),
+      const FavoritesScreen(),
+      MenuScreen(openActivityOnStart: widget.openActivityOnStart),
+    ];
     WidgetsBinding.instance.addObserver(this);
 
     // Start after the first frame so Provider/context are fully mounted.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         NotificationService.listenToInAppNotifications(context);
+        if (Supabase.instance.client.auth.currentUser != null) {
+          NotificationService.registerCurrentDeviceToken();
+        }
       }
     });
   }
@@ -98,85 +108,88 @@ class _BottomNavBarState extends State<BottomNavBar>
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: false, // لمنع رفع شريط التنقل عند ظهور الكيبورد
       body: _pages[_selectedIndex],
-      bottomNavigationBar: SafeArea(
-        minimum: EdgeInsets.only(bottom: isTablet ? 14 : 8),
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          heightFactor: 1,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: isTablet ? 580 : double.infinity,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                height: 60 * scale, // ارتفاع مناسب لجميع الشاشات
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Constants.primaryColor,
-                      Constants.primaryColor.withValues(alpha: 0.9),
+      bottomNavigationBar: Container(
+        color: Colors.white,
+        child: SafeArea(
+          minimum: EdgeInsets.only(bottom: isTablet ? 14 : 8),
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            heightFactor: 1,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: isTablet ? 580 : double.infinity,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(
+                  height: 60 * scale, // ارتفاع مناسب لجميع الشاشات
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Constants.primaryColor,
+                        Constants.primaryColor.withValues(alpha: 0.9),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(32),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 18,
+                        offset: const Offset(0, 6),
+                      ),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(32),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 18,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: CustomNavigationBar(
-                  elevation: 0,
-                  backgroundColor: Colors.transparent,
-                  strokeColor: Colors.transparent,
-                  borderRadius: const Radius.circular(32),
-                  selectedColor: Colors.white,
-                  unSelectedColor: Colors.white70,
-                  currentIndex: _selectedIndex,
-                  items: List.generate(
-                    _icons.length,
-                    (index) => CustomNavigationBarItem(
-                      icon: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Flexible(
-                            child: SvgPicture.asset(
-                              _selectedIndex == index
-                                  ? _icons[index]['active']!
-                                  : _icons[index]['inactive']!,
-                              height: 22 * scale,
-                              width: 22 * scale,
-                              colorFilter: const ColorFilter.mode(
-                                Colors.white,
-                                BlendMode.srcIn,
+                  child: CustomNavigationBar(
+                    elevation: 0,
+                    backgroundColor: Colors.transparent,
+                    strokeColor: Colors.transparent,
+                    borderRadius: const Radius.circular(32),
+                    selectedColor: Colors.white,
+                    unSelectedColor: Colors.white70,
+                    currentIndex: _selectedIndex,
+                    items: List.generate(
+                      _icons.length,
+                      (index) => CustomNavigationBarItem(
+                        icon: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Flexible(
+                              child: SvgPicture.asset(
+                                _selectedIndex == index
+                                    ? _icons[index]['active']!
+                                    : _icons[index]['inactive']!,
+                                height: index == 3 ? 26 * scale : 22 * scale,
+                                width: index == 3 ? 26 * scale : 22 * scale,
+                                colorFilter: const ColorFilter.mode(
+                                  Colors.white,
+                                  BlendMode.srcIn,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(
-                              height: 2), // تقليل المسافة لتجنب Overflow
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            height: 3,
-                            width: _selectedIndex == index ? 14 : 0,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
+                            const SizedBox(
+                                height: 2), // تقليل المسافة لتجنب Overflow
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              height: 3,
+                              width: _selectedIndex == index ? 14 : 0,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
+                    onTap: (index) {
+                      setState(() {
+                        _selectedIndex = index;
+                      });
+                    },
                   ),
-                  onTap: (index) {
-                    setState(() {
-                      _selectedIndex = index;
-                    });
-                  },
                 ),
               ),
             ),

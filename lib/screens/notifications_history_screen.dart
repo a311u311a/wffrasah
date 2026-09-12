@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart' as intl;
 import '../constants.dart';
 import '../localization/app_localizations.dart';
+import '../widgets/loading_indicator.dart';
 
 class NotificationsHistoryScreen extends StatelessWidget {
   const NotificationsHistoryScreen({super.key});
@@ -47,7 +48,9 @@ class NotificationsHistoryScreen extends StatelessWidget {
                 }).toList()),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const CustomLoadingIndicator(
+              message: 'جاري تحميل الإشعارات',
+            );
           }
 
           if (snapshot.hasError) {

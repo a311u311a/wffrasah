@@ -11,10 +11,50 @@ class ContactUsScreen extends StatefulWidget {
   State<ContactUsScreen> createState() => _ContactUsScreenState();
 }
 
-class _ContactUsScreenState extends State<ContactUsScreen> {
+class _ContactUsScreenState extends State<ContactUsScreen>
+    with WidgetsBindingObserver {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
+  bool _showEmailSentMessageOnResume = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _nameController.dispose();
+    _emailController.dispose();
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed ||
+        !_showEmailSentMessageOnResume ||
+        !mounted) {
+      return;
+    }
+
+    _showEmailSentMessageOnResume = false;
+    _clearFields();
+    final localizations = AppLocalizations.of(context);
+    showSnackBar(
+      context,
+      localizations?.translate('email_sent_success') ?? 'Message sent',
+    );
+  }
+
+  void _clearFields() {
+    _nameController.clear();
+    _emailController.clear();
+    _messageController.clear();
+  }
 
   Future<void> _sendEmail() async {
     final localizations = AppLocalizations.of(context);
@@ -31,18 +71,22 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
       return;
     }
 
-    final Uri emailLaunchUri = Uri(
-      scheme: 'mailto',
-      path: 'support@wffrhasah.com',
-      queryParameters: {
-        'subject': '${localizations?.translate('contact_us')} - $name',
-        'body': message,
-      },
+    final subject = '${localizations?.translate('contact_us')} - $name';
+    final Uri emailLaunchUri = Uri.parse(
+      'mailto:support@wffrhasah.com'
+      '?subject=${Uri.encodeComponent(subject)}'
+      '&body=${Uri.encodeComponent(message)}',
     );
 
     try {
       if (await canLaunchUrl(emailLaunchUri)) {
-        await launchUrl(emailLaunchUri);
+        final launched = await launchUrl(
+          emailLaunchUri,
+          mode: LaunchMode.externalApplication,
+        );
+        if (launched) {
+          _showEmailSentMessageOnResume = true;
+        }
       } else {
         throw 'Could not launch $emailLaunchUri';
       }

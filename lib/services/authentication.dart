@@ -109,11 +109,11 @@ class AuthMethod {
         redirectTo: _webRedirectUrl,
       );
     } else {
-      // على التطبيق: استخدام inAppWebView للبقاء داخل التطبيق
+      // Google OAuth on iOS should use the system browser/auth session.
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: mobileRedirectUrl,
-        authScreenLaunchMode: LaunchMode.inAppWebView,
+        authScreenLaunchMode: LaunchMode.externalApplication,
       );
     }
   }
@@ -213,11 +213,11 @@ class AuthMethods {
         redirectTo: _webRedirectUrl,
       );
     } else {
-      // على التطبيق: استخدام inAppWebView للبقاء داخل التطبيق
+      // Google OAuth on iOS should use the system browser/auth session.
       await _supabase.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: _mobileRedirectUrl,
-        authScreenLaunchMode: LaunchMode.inAppWebView,
+        authScreenLaunchMode: LaunchMode.externalApplication,
       );
     }
   }

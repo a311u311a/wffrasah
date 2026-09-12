@@ -16,6 +16,12 @@ verify_jwt = true
 import_map = "./functions/send-push-notification/deno.json"
 entrypoint = "./functions/send-push-notification/index.ts"
 
+[functions.notify-favorite-store-followers]
+enabled = true
+verify_jwt = true
+import_map = "./functions/notify-favorite-store-followers/deno.json"
+entrypoint = "./functions/notify-favorite-store-followers/index.ts"
+
 [functions.admitad-coupons-import]
 enabled = true
 verify_jwt = true

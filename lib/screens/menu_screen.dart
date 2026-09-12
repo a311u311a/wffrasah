@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:app_settings/app_settings.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../screens/login_signup/widgets/edit_profile_page.dart';
 import '../constants.dart';
@@ -20,8 +20,7 @@ import 'terms_screen.dart';
 import 'privacy_screen.dart';
 import 'faq_screen.dart';
 import 'notifications_history_screen.dart';
-
-import 'package:permission_handler/permission_handler.dart'; // ✅ Re-added for Permission check
+import 'my_activity_screen.dart';
 
 bool get _supportsNotificationPermissionCheck =>
     !kIsWeb &&
@@ -29,7 +28,9 @@ bool get _supportsNotificationPermissionCheck =>
         defaultTargetPlatform == TargetPlatform.iOS);
 
 class MenuScreen extends StatefulWidget {
-  const MenuScreen({super.key});
+  final bool openActivityOnStart;
+
+  const MenuScreen({super.key, this.openActivityOnStart = false});
 
   @override
   State<MenuScreen> createState() => _MenuScreenState();
@@ -103,6 +104,17 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    if (widget.openActivityOnStart) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final user = Supabase.instance.client.auth.currentUser;
+        if (user == null) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const MyActivityScreen()),
+        );
+      });
+    }
   }
 
   @override
@@ -177,7 +189,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     final user = Supabase.instance.client.auth.currentUser;
     final localizations = AppLocalizations.of(context);
-    final topContentPadding = MediaQuery.of(context).padding.top + 96;
+    final topContentPadding = MediaQuery.of(context).padding.top + 60;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -225,10 +237,6 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                       else
                         _buildUserCard(context, user, localizations),
                       const SizedBox(height: 10),
-                      _buildLanguageSwitcher(context),
-                      const SizedBox(height: 10),
-                      _buildNotificationCenterTile(context),
-                      const SizedBox(height: 10),
                     ],
                   ),
                 ),
@@ -254,6 +262,12 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                             borderRadius: BorderRadius.circular(12),
                             child: Column(
                               children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(8),
+                                  child: _buildLanguageSwitcher(context),
+                                ),
+                                _buildDivider(),
+                                _buildNotificationCenterTile(context),
                                 if (user != null) ...[
                                   _buildDivider(),
                                   Consumer<UserProvider>(
@@ -480,10 +494,45 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
                   ),
                 ],
               ),
+              const SizedBox(height: 14),
+              _buildMyActivityButton(context, localizations),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildMyActivityButton(BuildContext context, var localizations) {
+    final isArabic = AppLocalizations.of(context)?.locale.languageCode != 'en';
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton.icon(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const MyActivityScreen()),
+          );
+        },
+        icon: const Icon(Icons.insights_rounded, color: Colors.white),
+        label: Text(
+          isArabic ? 'نشاطي' : 'My Activity',
+          style: const TextStyle(
+            fontFamily: 'Tajawal',
+            fontSize: 16,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Constants.primaryColor,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+      ),
     );
   }
 
@@ -545,7 +594,11 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
         child: Icon(icon, color: Constants.primaryColor, size: 22),
       ),
       title: Text(title,
-          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15)),
+          style: const TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 15,
+            color: Constants.textColor,
+          )),
       trailing:
           const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
       onTap: onTap,
@@ -601,7 +654,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
           child: Text(title,
               style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: isActive ? Colors.black87 : Colors.grey[600])),
+                  color: isActive ? Constants.textColor : Colors.grey[600])),
         ),
       ),
     );
@@ -610,59 +663,51 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
   Widget _buildNotificationCenterTile(BuildContext context) {
     return Consumer<NotificationProvider>(
       builder: (context, provider, child) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(15),
-            boxShadow: [
-              BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(15),
-            child: InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const NotificationsHistoryScreen(),
-                  ),
-                );
-              },
-              borderRadius: BorderRadius.circular(15),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  children: [
-                    Icon(
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationsHistoryScreen(),
+                ),
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
                       provider.isNotificationsEnabled
                           ? Icons.notifications_active_rounded
                           : Icons.notifications_off_rounded,
                       color: Constants.primaryColor,
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        AppLocalizations.of(context)
-                                ?.translate('notification_center') ??
-                            'Notification Center',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      AppLocalizations.of(context)
+                              ?.translate('notification_center') ??
+                          'Notification Center',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    Switch(
-                      value: provider.isNotificationsEnabled,
-                      activeTrackColor: Constants.primaryColor,
-                      onChanged: (value) async {
-                        // فتح إعدادات الإشعارات الفرعية مباشرة
-                        await AppSettings.openAppSettings(
-                            type: AppSettingsType.notification);
-                      },
-                    ),
-                  ],
-                ),
+                  ),
+                  Switch(
+                    value: provider.isNotificationsEnabled,
+                    activeTrackColor: Constants.primaryColor,
+                    onChanged: (value) async {
+                      await openAppSettings();
+                    },
+                  ),
+                ],
               ),
             ),
           ),

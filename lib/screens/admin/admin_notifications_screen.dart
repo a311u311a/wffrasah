@@ -21,8 +21,39 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
   final _bodyController = TextEditingController();
 
   bool _isLoading = false;
+  bool _isSmartLoading = false;
+  bool _storesLoading = true;
   XFile? _pickedImage;
+  String? _selectedStoreId;
   final ImagePicker _picker = ImagePicker();
+  final List<Map<String, dynamic>> _stores = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStores();
+  }
+
+  Future<void> _loadStores() async {
+    try {
+      final rows = await Supabase.instance.client
+          .from('stores')
+          .select('id, slug, name, name_ar, name_en, image')
+          .eq('approval_status', 'approved')
+          .order('name_ar');
+      if (!mounted) return;
+      setState(() {
+        _stores
+          ..clear()
+          ..addAll(List<Map<String, dynamic>>.from(rows));
+        _selectedStoreId = _stores.isEmpty ? null : _storeKey(_stores.first);
+        _storesLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading stores for smart notifications: $e');
+      if (mounted) setState(() => _storesLoading = false);
+    }
+  }
 
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(
@@ -175,10 +206,83 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
     }
   }
 
+  Future<void> _sendFavoriteStoreAlert() async {
+    final store = _selectedStore;
+    if (store == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('اختر متجرًا أولاً'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSmartLoading = true);
+
+    try {
+      final storeName = _storeName(store);
+      final result = await NotificationService.notifyFavoriteStoreFollowers(
+        couponId: 'manual-${DateTime.now().millisecondsSinceEpoch}',
+        storeId: _storeKey(store),
+        storeName: storeName,
+        imageUrl: _storeImage(store),
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result.success
+                ? 'تم إرسال تنبيه $storeName: ${result.message ?? ''}'
+                : 'فشل إرسال تنبيه $storeName: ${result.message ?? ''}',
+          ),
+          backgroundColor: result.success ? Colors.green : Colors.red,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('فشل إرسال تنبيه المتجر: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isSmartLoading = false);
+    }
+  }
+
   void _postSendCleanup() {
     _titleController.clear();
     _bodyController.clear();
     setState(() => _pickedImage = null);
+  }
+
+  Map<String, dynamic>? get _selectedStore {
+    for (final store in _stores) {
+      if (_storeKey(store) == _selectedStoreId) return store;
+    }
+    return null;
+  }
+
+  String _storeKey(Map<String, dynamic> store) {
+    final slug = (store['slug'] ?? '').toString().trim();
+    if (slug.isNotEmpty) return slug;
+    return (store['id'] ?? '').toString().trim();
+  }
+
+  String _storeName(Map<String, dynamic> store) {
+    final ar = (store['name_ar'] ?? '').toString().trim();
+    if (ar.isNotEmpty) return ar;
+    final name = (store['name'] ?? '').toString().trim();
+    if (name.isNotEmpty) return name;
+    return (store['name_en'] ?? 'متجر').toString().trim();
+  }
+
+  String? _storeImage(Map<String, dynamic> store) {
+    final image = (store['image'] ?? '').toString().trim();
+    return image.isEmpty ? null : image;
   }
 
   @override
@@ -240,11 +344,22 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
                         children: [
                           Expanded(flex: 7, child: _composerCard()),
                           const SizedBox(width: 16),
-                          Expanded(flex: 5, child: _previewCard()),
+                          Expanded(
+                            flex: 5,
+                            child: Column(
+                              children: [
+                                _smartStoreAlertsCard(),
+                                const SizedBox(height: 16),
+                                _previewCard(),
+                              ],
+                            ),
+                          ),
                         ],
                       )
                     else ...[
                       _composerCard(),
+                      const SizedBox(height: 16),
+                      _smartStoreAlertsCard(),
                       const SizedBox(height: 16),
                       _previewCard(),
                     ],
@@ -396,6 +511,106 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
             'خارج التطبيق',
             'يرسل Push Notification ثم يحفظ نسخة داخل التطبيق.',
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _smartStoreAlertsCard() {
+    final store = _selectedStore;
+    return _panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _sectionTitle(
+            Icons.notifications_active_rounded,
+            'تنبيهات المتاجر المفضلة',
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'إرسال تنبيه لمتابعي متجر محدد عند توفر كوبون أو عرض مهم.',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 14),
+          if (_storesLoading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else if (_stores.isEmpty)
+            _infoTile(
+              Icons.storefront_rounded,
+              'لا توجد متاجر',
+              'أضف متجرًا معتمدًا أولاً لاستخدام هذه الميزة.',
+            )
+          else ...[
+            DropdownButtonFormField<String>(
+              initialValue: _selectedStoreId,
+              decoration: InputDecoration(
+                labelText: 'اختر المتجر',
+                prefixIcon: Icon(Icons.storefront_rounded,
+                    color: Constants.primaryColor),
+                filled: true,
+                fillColor: const Color(0xFFF8F9FD),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: Colors.grey.shade200),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide:
+                      BorderSide(color: Constants.primaryColor, width: 1.5),
+                ),
+              ),
+              items: _stores
+                  .map(
+                    (store) => DropdownMenuItem<String>(
+                      value: _storeKey(store),
+                      child: Text(
+                        _storeName(store),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  )
+                  .toList(),
+              onChanged: _isSmartLoading
+                  ? null
+                  : (value) => setState(() => _selectedStoreId = value),
+            ),
+            const SizedBox(height: 12),
+            if (store != null)
+              _infoTile(
+                Icons.favorite_rounded,
+                'الإرسال مخصص',
+                'سيصل فقط للمستخدمين الذين أضافوا ${_storeName(store)} إلى المتاجر المفضلة.',
+              ),
+            const SizedBox(height: 12),
+            _sendButton(
+              label: 'إرسال لمتابعي المتجر',
+              icon: Icons.send_rounded,
+              color: Constants.primaryColor,
+              onPressed: _isSmartLoading ? null : _sendFavoriteStoreAlert,
+              loading: _isSmartLoading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : null,
+            ),
+          ],
         ],
       ),
     );

@@ -10,6 +10,7 @@ import 'admin_carousel_screen.dart';
 import 'admin_categories_screen.dart';
 import 'admin_notifications_screen.dart';
 import 'admin_pending_coupons_screen.dart';
+import 'admin_coupon_providers_screen.dart';
 
 class AdminScreen extends StatefulWidget {
   const AdminScreen({super.key});
@@ -206,6 +207,16 @@ class _AdminScreenState extends State<AdminScreen> {
                       color: Colors.redAccent,
                       destination: const AdminNotificationsScreen(),
                       countFuture: _countRows('notifications'),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildAdminButton(
+                      context,
+                      title: 'إدارة موفري الكوبونات',
+                      subtitle: 'إضافة موفر كوبونات مع الموقع وإدارته',
+                      icon: Icons.business_center_outlined,
+                      color: Colors.green,
+                      destination: const AdminCouponProvidersScreen(),
+                      countFuture: _countRows('coupon_providers'),
                     ),
                     const SizedBox(height: 16),
                   ],

@@ -2,7 +2,7 @@ name: wffrhasah
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.6+7
+version: 1.0.9+10
 
 environment:
   sdk: ^3.6.1
@@ -16,8 +16,6 @@ dependencies:
     sdk: flutter
 
   intl: any
-  cupertino_icons: ^1.0.8
-
   # Supabase
   supabase_flutter: ^2.10.1
   sign_in_with_apple: ^8.1.0
@@ -30,25 +28,18 @@ dependencies:
   smooth_page_indicator: ^2.0.1
   google_fonts: ^8.0.0
   custom_navigation_bar: ^0.8.2
-  quickalert: ^1.1.0
 
   # State Management & Storage
   provider: ^6.1.2
   shared_preferences: ^2.5.3
 
   # Utilities
-  share_plus: ^12.0.1
+  share_plus: ^13.3.0
   url_launcher: ^6.3.2
-  http: ^1.3.0
   crypto: ^3.0.6
   image_picker: ^1.2.0
-  random_string: ^2.3.1
-  package_info_plus: ^9.0.1
+  package_info_plus: ^10.2.1
   permission_handler: ^12.0.1
-  app_settings: ^9.0.0
-
-  # ✅ FIX: needed by import in web_coupon_card.dart
-  vector_math: ^2.1.4
 
   # Firebase
   firebase_core: ^4.4.0
@@ -75,6 +66,8 @@ flutter:
     - assets/animations/coupon_animation.json
     - assets/image/
     - assets/icon/
+    - assets/icon/like.png
+    - assets/icon/nolike.png
     - assets/lang/ar.json
     - assets/lang/en.json
 

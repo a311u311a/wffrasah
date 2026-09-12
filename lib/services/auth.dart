@@ -104,7 +104,12 @@ class _SignInState extends State<SignIn> {
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
-        builder: (_) => admin ? const AdminScreen() : const BottomNavBar(),
+        builder: (_) => admin
+            ? const AdminScreen()
+            : const BottomNavBar(
+                initialIndex: 4,
+                openActivityOnStart: true,
+              ),
       ),
       (_) => false,
     );
@@ -154,11 +159,11 @@ class _SignInState extends State<SignIn> {
           redirectTo: _webRedirectUrl,
         );
       } else {
-        // ✅ للجوال: استخدام inAppWebView للبقاء داخل التطبيق
+        // Google OAuth on iOS should use the system browser/auth session.
         await _supabase.auth.signInWithOAuth(
           OAuthProvider.google,
           redirectTo: _mobileRedirectUrl,
-          authScreenLaunchMode: LaunchMode.inAppWebView,
+          authScreenLaunchMode: LaunchMode.externalApplication,
         );
       }
       // ✅ لا نعمل navigate هنا، لأن Google يرجع عن طريق onAuthStateChange
@@ -271,7 +276,7 @@ class _SignInState extends State<SignIn> {
                     const SizedBox(width: 12),
                     Text(
                       t?.translate('sign_in_google') ?? 'Sign in with Google',
-                      style: const TextStyle(color: Colors.black),
+                      style: const TextStyle(color: Constants.textColor),
                     ),
                   ],
                 ),

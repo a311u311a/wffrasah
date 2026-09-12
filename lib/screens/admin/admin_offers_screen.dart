@@ -160,7 +160,6 @@ class _AdminOfferScreenState extends State<AdminOfferScreen> {
             ),
           ),
         ),
-
         Expanded(
           child: FutureBuilder<List<Map<String, dynamic>>>(
             key: ValueKey(_refreshTick),
@@ -246,114 +245,121 @@ class _AdminOfferScreenState extends State<AdminOfferScreen> {
           ),
         ],
       ),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          leading: Container(
-            width: 55,
-            height: 55,
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[100]!),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            tilePadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            leading: Container(
+              width: 55,
+              height: 55,
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[100]!),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: offer.image.isNotEmpty
+                    ? Image.network(
+                        offer.image,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.broken_image),
+                      )
+                    : Icon(Icons.local_offer_outlined,
+                        color: Constants.primaryColor),
+              ),
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: offer.image.isNotEmpty
-                  ? Image.network(
-                      offer.image,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) =>
-                          const Icon(Icons.broken_image),
-                    )
-                  : Icon(Icons.local_offer_outlined,
-                      color: Constants.primaryColor),
+            title: Text(
+              offer.name,
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-          ),
-          title: Text(
-            offer.name,
-            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (offer.tags.isNotEmpty)
+                  Text(
+                    '#${offer.tags.join(" #")}',
+                    style:
+                        TextStyle(fontSize: 11, color: Constants.primaryColor),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                if (offer.expiryDate != null) ...[
+                  const SizedBox(height: 4),
+                  Builder(builder: (context) {
+                    final daysLeft =
+                        offer.expiryDate!.difference(DateTime.now()).inDays;
+                    final isExpiringSoon = daysLeft <= 5;
+                    return Text(
+                      daysLeft < 0
+                          ? 'منتهي منذ ${daysLeft.abs()} يوم'
+                          : 'باقي $daysLeft يوم',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isExpiringSoon ? Colors.red : Colors.grey[600],
+                        fontWeight: isExpiringSoon
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    );
+                  }),
+                ]
+              ],
+            ),
+            trailing: isAdmin
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.edit_note_rounded,
+                            color: Colors.blueGrey[400]),
+                        onPressed: () => _showOfferForm(context, offer: offer),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_sweep_outlined,
+                            color: Colors.redAccent),
+                        onPressed: () => _deleteOffer(docId),
+                      ),
+                      const Icon(Icons.expand_circle_down_outlined,
+                          size: 20, color: Colors.grey),
+                    ],
+                  )
+                : const Icon(Icons.expand_circle_down_outlined,
+                    size: 20, color: Colors.grey),
             children: [
-              if (offer.tags.isNotEmpty)
-                Text(
-                  '#${offer.tags.join(" #")}',
-                  style: TextStyle(fontSize: 11, color: Constants.primaryColor),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              if (offer.expiryDate != null) ...[
-                const SizedBox(height: 4),
-                Builder(builder: (context) {
-                  final daysLeft =
-                      offer.expiryDate!.difference(DateTime.now()).inDays;
-                  final isExpiringSoon = daysLeft <= 5;
-                  return Text(
-                    daysLeft < 0
-                        ? 'منتهي منذ ${daysLeft.abs()} يوم'
-                        : 'باقي $daysLeft يوم',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: isExpiringSoon ? Colors.red : Colors.grey[600],
-                      fontWeight:
-                          isExpiringSoon ? FontWeight.bold : FontWeight.normal,
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                color: Colors.grey[50],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'تفاصيل العرض:',
+                      style: TextStyle(
+                        color: Constants.primaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  );
-                }),
-              ]
+                    const SizedBox(height: 8),
+                    Text('• الوصف: ${offer.description}',
+                        style: TextStyle(color: Colors.grey[700], height: 1.4)),
+                    const SizedBox(height: 5),
+                    if (offer.web.isNotEmpty)
+                      Text('• الرابط: ${offer.web}',
+                          style: TextStyle(color: Colors.blue[700])),
+                  ],
+                ),
+              )
             ],
           ),
-          trailing: isAdmin
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.edit_note_rounded,
-                          color: Colors.blueGrey[400]),
-                      onPressed: () => _showOfferForm(context, offer: offer),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_sweep_outlined,
-                          color: Colors.redAccent),
-                      onPressed: () => _deleteOffer(docId),
-                    ),
-                    const Icon(Icons.expand_circle_down_outlined,
-                        size: 20, color: Colors.grey),
-                  ],
-                )
-              : const Icon(Icons.expand_circle_down_outlined,
-                  size: 20, color: Colors.grey),
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              color: Colors.grey[50],
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'تفاصيل العرض:',
-                    style: TextStyle(
-                      color: Constants.primaryColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text('• الوصف: ${offer.description}',
-                      style: TextStyle(color: Colors.grey[700], height: 1.4)),
-                  const SizedBox(height: 5),
-                  if (offer.web.isNotEmpty)
-                    Text('• الرابط: ${offer.web}',
-                        style: TextStyle(color: Colors.blue[700])),
-                ],
-              ),
-            )
-          ],
         ),
       ),
     );
@@ -384,6 +390,13 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
   String? _selectedStoreId;
   String? _selectedStoreName;
   String? _selectedStoreImage;
+  String? _selectedProviderId;
+  String? _selectedProviderName;
+  List<Map<String, dynamic>> _storeOptions = [];
+  List<Map<String, dynamic>> _providerOptions = [];
+  List<Map<String, dynamic>> _categoryOptions = [];
+  bool _isLoadingOptions = true;
+  String? _optionsError;
 
   bool _isSaving = false;
   XFile? _pickedOfferImage;
@@ -407,9 +420,11 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
     _webCtrl = TextEditingController(text: widget.offer?.web ?? '');
 
     _selectedCategoryId = widget.offer?.categoryId;
+    _loadPickerOptions();
 
     if (widget.offer != null) {
       _bootstrapOfferStoreId(widget.offer!.id);
+      _bootstrapOfferProviderId(widget.offer!.id);
     }
 
     if (_selectedCategoryId != null && _selectedCategoryId!.isNotEmpty) {
@@ -453,6 +468,34 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
     } catch (_) {}
   }
 
+  Future<void> _bootstrapOfferProviderId(String offerId) async {
+    try {
+      final row = await _supabase
+          .from('offers')
+          .select('provider_id')
+          .eq('id', offerId)
+          .maybeSingle();
+      final providerId = row?['provider_id']?.toString().trim();
+      if (!mounted || providerId == null || providerId.isEmpty) return;
+      setState(() => _selectedProviderId = providerId);
+      await _loadProviderById(providerId);
+    } catch (_) {}
+  }
+
+  Future<void> _loadProviderById(String providerId) async {
+    try {
+      final row = await _supabase
+          .from('coupon_providers')
+          .select('name')
+          .eq('id', providerId)
+          .maybeSingle();
+      if (!mounted || row == null) return;
+      setState(() {
+        _selectedProviderName = (row['name'] ?? '').toString();
+      });
+    } catch (_) {}
+  }
+
   Future<void> _loadStoreBySlug(String slug) async {
     try {
       final s = await _supabase
@@ -484,151 +527,524 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
     } catch (_) {}
   }
 
+  Future<void> _loadPickerOptions() async {
+    try {
+      final results = await Future.wait([
+        _supabase
+            .from('stores')
+            .select('id,slug,name,name_ar,name_en,image')
+            .eq('approval_status', 'approved')
+            .order('created_at', ascending: false)
+            .timeout(const Duration(seconds: 12)),
+        _supabase
+            .from('coupon_providers')
+            .select('id,name')
+            .order('name')
+            .timeout(const Duration(seconds: 12)),
+        _supabase
+            .from('categories')
+            .select('id,name,name_ar,name_en,image')
+            .order('name')
+            .timeout(const Duration(seconds: 12)),
+      ]);
+
+      if (!mounted) return;
+      setState(() {
+        _storeOptions = List<Map<String, dynamic>>.from(results[0] as List);
+        _providerOptions = List<Map<String, dynamic>>.from(results[1] as List);
+        _categoryOptions = List<Map<String, dynamic>>.from(results[2] as List);
+        _isLoadingOptions = false;
+        _optionsError = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingOptions = false;
+        _optionsError = e.toString();
+      });
+    }
+  }
+
+  bool _ensureOptionsReady() {
+    if (_isLoadingOptions) {
+      showSnackBar(context, 'جاري تحميل القوائم، حاول بعد لحظة', isError: true);
+      return false;
+    }
+    if (_optionsError != null) {
+      showSnackBar(context, 'تعذر تحميل القوائم: $_optionsError',
+          isError: true);
+      return false;
+    }
+    return true;
+  }
+
   void _showStorePicker(BuildContext context) {
+    if (!_ensureOptionsReady()) return;
+    final searchCtrl = TextEditingController();
+    var query = '';
+
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
-        return StreamBuilder<List<Map<String, dynamic>>>(
-          stream: _supabase
-              .from('stores')
-              .stream(primaryKey: ['id'])
-              .eq('approval_status', 'approved')
-              .order('created_at', ascending: false),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              return const Center(child: CircularProgressIndicator());
-            }
+        return StatefulBuilder(
+          builder: (context, setStatePicker) {
+            final filteredStores = _storeOptions.where((store) {
+              final text = [
+                store['name'],
+                store['name_ar'],
+                store['name_en'],
+                store['slug'],
+              ].whereType<Object>().join(' ').toLowerCase();
+              return text.contains(query.toLowerCase().trim());
+            }).toList();
 
-            final docs = snapshot.data!;
-            return Column(
-              children: [
-                const SizedBox(height: 15),
-                Text('اختر المتجر',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: Constants.primaryColor)),
-                const Divider(),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: docs.length,
-                    itemBuilder: (context, index) {
-                      final data = docs[index];
-                      final name = (data['name_ar'] ?? data['name'] ?? 'متجر')
-                          .toString();
-                      final slug = (data['slug'] ?? '').toString().trim();
-                      final img = (data['image'] ?? '').toString();
+            return _pickerSheet(
+              context: ctx,
+              title: 'اختر المتجر',
+              searchController: searchCtrl,
+              searchHint: 'ابحث عن اسم المتجر',
+              onSearchChanged: (value) => setStatePicker(() => query = value),
+              child: ListView.separated(
+                itemCount: filteredStores.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (context, index) {
+                  final data = filteredStores[index];
+                  final name =
+                      (data['name_ar'] ?? data['name'] ?? 'متجر').toString();
+                  final slug = (data['slug'] ?? '').toString().trim();
+                  final img = (data['image'] ?? '').toString();
 
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundImage:
-                              (img.isNotEmpty) ? NetworkImage(img) : null,
-                          child: img.isEmpty ? const Icon(Icons.store) : null,
-                        ),
-                        title: Text(
-                          name,
-                          style: const TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.normal),
-                        ),
-                        subtitle: slug.isNotEmpty
-                            ? Text('slug: $slug',
-                                style: const TextStyle(
-                                    fontSize: 12, color: Colors.black54))
-                            : null,
-                        onTap: () {
-                          if (slug.isEmpty) {
-                            showSnackBar(
-                              context,
-                              'هذا المتجر لا يحتوي slug. عدّلي المتجر وخليه يولد slug.',
-                              isError: true,
-                            );
-                            return;
-                          }
-                          setState(() {
-                            _selectedStoreId = slug;
-                            _selectedStoreName = name;
-                            _selectedStoreImage = img;
-                          });
-                          Navigator.pop(context);
-                        },
-                      );
+                  return _pickerOptionTile(
+                    title: name,
+                    icon: Icons.storefront_rounded,
+                    imageUrl: img,
+                    onTap: () {
+                      if (slug.isEmpty) {
+                        showSnackBar(
+                          context,
+                          'هذا المتجر لا يحتوي slug. عدّلي المتجر وخليه يولد slug.',
+                          isError: true,
+                        );
+                        return;
+                      }
+                      setState(() {
+                        _selectedStoreId = slug;
+                        _selectedStoreName = name;
+                        _selectedStoreImage = img;
+                      });
+                      Navigator.pop(context);
                     },
-                  ),
-                ),
-              ],
+                  );
+                },
+              ),
             );
           },
         );
       },
-    );
+    ).whenComplete(searchCtrl.dispose);
+  }
+
+  void _showProviderPicker(BuildContext context) {
+    if (!_ensureOptionsReady()) return;
+    final searchCtrl = TextEditingController();
+    var query = '';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setStatePicker) {
+            final filteredProviders = _providerOptions.where((provider) {
+              final text = [provider['name']]
+                  .whereType<Object>()
+                  .join(' ')
+                  .toLowerCase();
+              return text.contains(query.toLowerCase().trim());
+            }).toList();
+
+            return Container(
+              height: MediaQuery.of(ctx).size.height * 0.70,
+              padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Constants.primaryColor.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'اختر موفر العروض',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                      color: Constants.primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: searchCtrl,
+                    onChanged: (value) => setStatePicker(() => query = value),
+                    decoration: InputDecoration(
+                      hintText: 'ابحث عن اسم الموفر',
+                      prefixIcon: Icon(Icons.search_rounded,
+                          color: Constants.primaryColor),
+                      filled: true,
+                      fillColor:
+                          Constants.primaryColor.withValues(alpha: 0.045),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Material(
+                      color: Constants.primaryColor.withValues(alpha: 0.035),
+                      borderRadius: BorderRadius.circular(16),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () {
+                          setState(() {
+                            _selectedProviderId = null;
+                            _selectedProviderName = null;
+                          });
+                          Navigator.pop(context);
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 12),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 18,
+                                backgroundColor: Constants.primaryColor
+                                    .withValues(alpha: 0.08),
+                                child: Icon(Icons.close_rounded,
+                                    color: Constants.primaryColor, size: 18),
+                              ),
+                              const SizedBox(width: 12),
+                              const Expanded(
+                                child: Text(
+                                  'بدون موفر',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(Icons.chevron_right_rounded,
+                                  color: Constants.primaryColor),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: filteredProviders.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        final data = filteredProviders[index];
+                        final name =
+                            (data['name'] ?? 'موفر بدون اسم').toString();
+
+                        return Material(
+                          color:
+                              Constants.primaryColor.withValues(alpha: 0.035),
+                          borderRadius: BorderRadius.circular(16),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _selectedProviderId = data['id'].toString();
+                                _selectedProviderName = name;
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 12),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 18,
+                                    backgroundColor: Constants.primaryColor
+                                        .withValues(alpha: 0.08),
+                                    child: Icon(Icons.business_center_outlined,
+                                        color: Constants.primaryColor,
+                                        size: 18),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Icon(Icons.chevron_right_rounded,
+                                      color: Constants.primaryColor),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    ).whenComplete(searchCtrl.dispose);
   }
 
   void _showCategoryPicker(BuildContext context) {
+    if (!_ensureOptionsReady()) return;
+    final searchCtrl = TextEditingController();
+    var query = '';
+
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) {
-        return StreamBuilder<List<Map<String, dynamic>>>(
-          stream: _supabase.from('categories').stream(primaryKey: ['id']),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              return const Center(child: CircularProgressIndicator());
-            }
+        return StatefulBuilder(
+          builder: (context, setStatePicker) {
+            final filteredCategories = _categoryOptions.where((category) {
+              final text = [
+                category['name'],
+                category['name_ar'],
+                category['name_en'],
+              ].whereType<Object>().join(' ').toLowerCase();
+              return text.contains(query.toLowerCase().trim());
+            }).toList();
 
-            final docs = snapshot.data!;
-            return Column(
-              children: [
-                const SizedBox(height: 15),
-                Text('اختر الفئة',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: Constants.primaryColor)),
-                const Divider(),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: docs.length,
-                    itemBuilder: (context, index) {
-                      final data = docs[index];
-                      return ListTile(
-                        leading: (data['image'] != null &&
-                                data['image'].toString().isNotEmpty)
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  data['image'],
-                                  width: 40,
-                                  height: 40,
-                                  fit: BoxFit.cover,
-                                ),
-                              )
-                            : const Icon(Icons.category_outlined),
-                        title: Text(
-                          (data['name'] ?? '').toString(),
-                          style: const TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.normal),
-                        ),
-                        onTap: () {
-                          setState(() {
-                            _selectedCategoryId = data['id'].toString();
-                            _selectedCategoryName =
-                                (data['name'] ?? '').toString();
-                          });
-                          Navigator.pop(context);
-                        },
-                      );
+            return _pickerSheet(
+              context: ctx,
+              title: 'اختر فئة العرض',
+              searchController: searchCtrl,
+              searchHint: 'ابحث عن اسم الفئة',
+              onSearchChanged: (value) => setStatePicker(() => query = value),
+              child: Column(
+                children: [
+                  _pickerOptionTile(
+                    title: 'بدون فئة',
+                    icon: Icons.close_rounded,
+                    onTap: () {
+                      setState(() {
+                        _selectedCategoryId = null;
+                        _selectedCategoryName = null;
+                      });
+                      Navigator.pop(context);
                     },
                   ),
-                ),
-              ],
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: filteredCategories.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        final data = filteredCategories[index];
+                        final name =
+                            (data['name_ar'] ?? data['name'] ?? '').toString();
+                        return _pickerOptionTile(
+                          title: name.isEmpty ? 'فئة بدون اسم' : name,
+                          icon: Icons.category_rounded,
+                          imageUrl: (data['image'] ?? '').toString(),
+                          onTap: () {
+                            setState(() {
+                              _selectedCategoryId = data['id'].toString();
+                              _selectedCategoryName = name;
+                            });
+                            Navigator.pop(context);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
             );
           },
         );
       },
+    ).whenComplete(searchCtrl.dispose);
+  }
+
+  Widget _pickerSheet({
+    required BuildContext context,
+    required String title,
+    required TextEditingController searchController,
+    required String searchHint,
+    required ValueChanged<String> onSearchChanged,
+    required Widget child,
+  }) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.70,
+      padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 42,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Constants.primaryColor.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 18,
+              color: Constants.primaryColor,
+            ),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: searchController,
+            onChanged: onSearchChanged,
+            decoration: InputDecoration(
+              hintText: searchHint,
+              prefixIcon:
+                  Icon(Icons.search_rounded, color: Constants.primaryColor),
+              filled: true,
+              fillColor: Constants.primaryColor.withValues(alpha: 0.045),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Expanded(child: child),
+        ],
+      ),
+    );
+  }
+
+  Widget _pickerOptionTile({
+    required String title,
+    required IconData icon,
+    required VoidCallback onTap,
+    String? imageUrl,
+  }) {
+    return Material(
+      color: Constants.primaryColor.withValues(alpha: 0.035),
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundImage: imageUrl != null && imageUrl.isNotEmpty
+                    ? NetworkImage(imageUrl)
+                    : null,
+                backgroundColor: Constants.primaryColor.withValues(alpha: 0.08),
+                child: imageUrl != null && imageUrl.isNotEmpty
+                    ? null
+                    : Icon(icon, color: Constants.primaryColor, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(Icons.chevron_right_rounded, color: Constants.primaryColor),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _selectionField({
+    required IconData icon,
+    required String text,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Constants.primaryColor.withValues(alpha: 0.045),
+          borderRadius: BorderRadius.circular(16),
+          border:
+              Border.all(color: Constants.primaryColor.withValues(alpha: 0.10)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: Constants.primaryColor),
+            const SizedBox(width: 15),
+            Expanded(
+              child: Text(
+                text,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.black54,
+                  fontSize: 13,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
+            ),
+            const Icon(Icons.keyboard_arrow_down),
+          ],
+        ),
+      ),
     );
   }
 
@@ -659,10 +1075,19 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
         ),
         prefixIcon: Icon(icon, color: Constants.primaryColor),
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: Constants.primaryColor.withValues(alpha: 0.045),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide:
+              BorderSide(color: Constants.primaryColor.withValues(alpha: 0.10)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Constants.primaryColor, width: 1.4),
         ),
       ),
       validator: isRequired
@@ -798,84 +1223,34 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                       const SizedBox(height: 25),
 
                       // ✅ اختيار المتجر (يحفظ slug)
-                      InkWell(
+                      _selectionField(
+                        icon: Icons.storefront_rounded,
+                        text: (_selectedStoreId == null ||
+                                _selectedStoreId!.isEmpty)
+                            ? 'اختر المتجر'
+                            : (_selectedStoreName ?? _selectedStoreId!),
                         onTap: () => _showStorePicker(context),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 15),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey[200]!),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.storefront_rounded,
-                                  color: Constants.primaryColor),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  (_selectedStoreId == null ||
-                                          _selectedStoreId!.isEmpty)
-                                      ? 'اختر المتجر'
-                                      : (_selectedStoreName ??
-                                          _selectedStoreId!),
-                                  style: TextStyle(
-                                    color: (_selectedStoreId == null ||
-                                            _selectedStoreId!.isEmpty)
-                                        ? Colors.black54
-                                        : Colors.black54,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.normal,
-                                  ),
-                                ),
-                              ),
-                              const Icon(Icons.keyboard_arrow_down,
-                                  color: Colors.grey),
-                            ],
-                          ),
-                        ),
+                      ),
+
+                      const SizedBox(height: 15),
+                      _selectionField(
+                        icon: Icons.business_center_outlined,
+                        text: (_selectedProviderId == null ||
+                                _selectedProviderId!.isEmpty)
+                            ? 'اختر موفر العروض'
+                            : (_selectedProviderName ?? _selectedProviderId!),
+                        onTap: () => _showProviderPicker(context),
                       ),
 
                       const SizedBox(height: 15),
                       // اختيار الفئة
-                      InkWell(
+                      _selectionField(
+                        icon: Icons.category_rounded,
+                        text: (_selectedCategoryId == null ||
+                                _selectedCategoryId!.isEmpty)
+                            ? 'اختر فئة العرض'
+                            : (_selectedCategoryName ?? _selectedCategoryId!),
                         onTap: () => _showCategoryPicker(context),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 15),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey[200]!),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.category_outlined,
-                                  color: Constants.primaryColor),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  (_selectedCategoryId == null ||
-                                          _selectedCategoryId!.isEmpty)
-                                      ? 'اختر الفئة'
-                                      : (_selectedCategoryName ??
-                                          _selectedCategoryId!),
-                                  style: TextStyle(
-                                    color: (_selectedCategoryId == null ||
-                                            _selectedCategoryId!.isEmpty)
-                                        ? Colors.black54
-                                        : Colors.black54,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.normal,
-                                  ),
-                                ),
-                              ),
-                              const Icon(Icons.keyboard_arrow_down,
-                                  color: Colors.grey),
-                            ],
-                          ),
-                        ),
                       ),
 
                       const SizedBox(height: 25),
@@ -984,7 +1359,8 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                                             fileOptions: const FileOptions(
                                               contentType: 'image/jpeg',
                                             ),
-                                          );
+                                          )
+                                          .timeout(const Duration(seconds: 20));
                                       imageUrl = _supabase.storage
                                           .from('images')
                                           .getPublicUrl(fileName);
@@ -1017,6 +1393,7 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                                     'web': _webCtrl.text.trim(),
                                     'store_id': _selectedStoreId,
                                     'store_name': _selectedStoreName ?? '',
+                                    'provider_id': _selectedProviderId,
                                     // Should be slug
                                     'category_id': _selectedCategoryId,
                                     'tags': tagsList,
@@ -1030,13 +1407,11 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
 
                                   try {
                                     if (widget.offer == null) {
-                                      await _supabase
-                                          .from('offers')
-                                          .insert({
+                                      await _supabase.from('offers').insert({
                                         ...offerData,
                                         'created_at':
                                             DateTime.now().toIso8601String(),
-                                      });
+                                      }).timeout(const Duration(seconds: 20));
                                       if (context.mounted) {
                                         Navigator.pop(context);
                                         showSnackBar(
@@ -1046,7 +1421,8 @@ class _OfferFormSheetState extends State<_OfferFormSheet> {
                                       await _supabase
                                           .from('offers')
                                           .update(offerData)
-                                          .eq('id', widget.offer!.id);
+                                          .eq('id', widget.offer!.id)
+                                          .timeout(const Duration(seconds: 20));
                                       if (context.mounted) {
                                         Navigator.pop(context);
                                         showSnackBar(

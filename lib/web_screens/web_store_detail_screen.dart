@@ -8,6 +8,7 @@ import '../models/coupon.dart';
 import '../models/offers.dart';
 import '../constants.dart';
 import '../providers/locale_provider.dart';
+import '../services/home_data_service.dart';
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
@@ -81,6 +82,23 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
         if (widget.store.nameAr.isNotEmpty) widget.store.nameAr,
       }.where((e) => e.trim().isNotEmpty).toList();
 
+      final cachedData = await HomeDataService.fetchStoreDetailData(
+        searchKeys: searchKeys,
+      );
+      if (!mounted) return;
+      setState(() {
+        _coupons = cachedData.coupons
+            .map((e) => Coupon.fromSupabase(
+                  _withCurrentStore(e),
+                  langCode,
+                ))
+            .toList();
+        _offers = cachedData.offers
+            .map((e) => Offer.fromSupabase(e, langCode))
+            .toList();
+        _isLoading = false;
+      });
+
       // Coupons Stream
       _couponsSub = _supabase
           .from('coupons')
@@ -91,8 +109,12 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
           .listen((data) {
             if (!mounted) return;
             setState(() {
-              _coupons =
-                  data.map((e) => Coupon.fromSupabase(e, langCode)).toList();
+              _coupons = data
+                  .map((e) => Coupon.fromSupabase(
+                        _withCurrentStore(e),
+                        langCode,
+                      ))
+                  .toList();
               _isLoading = false;
             });
           }, onError: (e) {
@@ -536,5 +558,14 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
         ),
       ),
     );
+  }
+
+  Map<String, dynamic> _withCurrentStore(Map<String, dynamic> row) {
+    return {
+      ...row,
+      'store_name_ar': widget.store.nameAr,
+      'store_name_en': widget.store.nameEn,
+      'store_image': widget.store.image,
+    };
   }
 }

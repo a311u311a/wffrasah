@@ -32,6 +32,7 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
+    final appName = localizations?.translate('app_name') ?? _appName;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
@@ -48,7 +49,7 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
+        iconTheme: const IconThemeData(color: Constants.textColor),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -85,7 +86,7 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
               const SizedBox(height: 15),
 
               Text(
-                _appName,
+                appName,
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -114,18 +115,21 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                       style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: Constants.textColor,
                           fontFamily: 'Tajawal'),
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      localizations?.translate('about_app_intro_body') ??
-                          'في وفرها صح، نؤمن بأن التسوق الممتع لا ينبغي أن يكون باهظ الثمن...',
+                      _t(
+                        localizations,
+                        'about_app_intro_body',
+                        'في وفرها صح، نؤمن بأن التسوق الممتع لا ينبغي أن يكون باهظ الثمن...',
+                      ),
                       textAlign: TextAlign.justify,
                       style: const TextStyle(
                           fontSize: 14,
                           height: 1.6,
-                          color: Colors.black87,
+                          color: Constants.textColor,
                           fontFamily: 'Tajawal'),
                     ),
                   ],
@@ -152,8 +156,11 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                     ),
                     const SizedBox(height: 15),
                     Text(
-                      localizations?.translate('why_us_intro') ??
-                          'Because we ensure you get a discount code that works from the first time...',
+                      _t(
+                        localizations,
+                        'why_us_intro',
+                        'Because we ensure you get a discount code that works from the first time...',
+                      ),
                       textAlign: TextAlign.justify,
                       style: const TextStyle(
                           fontSize: 14, height: 1.5, fontFamily: 'Tajawal'),
@@ -169,9 +176,11 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                         localizations
                                 ?.translate('feature_exclusive_offers_title') ??
                             'Exclusive Offers',
-                        localizations
-                                ?.translate('feature_exclusive_offers_desc') ??
-                            'Special discount codes for wffrasah users only...'),
+                        _t(
+                          localizations,
+                          'feature_exclusive_offers_desc',
+                          'Special discount codes for wffrhasah users only...',
+                        )),
                     _buildFeatureItem(
                         localizations
                                 ?.translate('feature_smart_alerts_title') ??
@@ -240,6 +249,17 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
     );
   }
 
+  String _t(
+    AppLocalizations? localizations,
+    String key,
+    String fallback,
+  ) {
+    return (localizations?.translate(key) ?? fallback).replaceAll(
+      '{appName}',
+      localizations?.translate('app_name') ?? _appName,
+    );
+  }
+
   Widget _buildSectionContainer({required Widget child}) {
     return Container(
       width: double.infinity,
@@ -268,7 +288,9 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
             child: RichText(
               text: TextSpan(
                 style: const TextStyle(
-                    color: Colors.black87, fontFamily: 'Tajawal', height: 1.5),
+                    color: Constants.textColor,
+                    fontFamily: 'Tajawal',
+                    height: 1.5),
                 children: [
                   TextSpan(
                       text: '$title: ',

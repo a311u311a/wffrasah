@@ -6,9 +6,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../localization/app_localizations.dart';
 import '../models/coupon.dart';
+import '../models/store.dart';
 import 'app_responsive.dart';
 import 'coupon_card.dart';
 import 'error_message.dart';
+import 'loading_indicator.dart';
 
 class CouponsList extends StatefulWidget {
   final String? selectedStoreId;
@@ -55,7 +57,9 @@ class _CouponsListState extends State<CouponsList> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const CustomLoadingIndicator(
+            message: 'جاري تحميل الكوبونات',
+          );
         }
 
         if (snapshot.hasError) {
@@ -70,6 +74,7 @@ class _CouponsListState extends State<CouponsList> {
         final coupons = normalizedRows
             .map((row) => Coupon.fromSupabase(row, langCode))
             .toList();
+        final storeNames = _storeNamesByCouponId(normalizedRows, langCode);
 
         final filtered = coupons.where((c) {
           final qRaw = widget.searchQuery.trim();
@@ -103,19 +108,30 @@ class _CouponsListState extends State<CouponsList> {
             });
             await _future;
           },
-          child: _buildCouponsView(filtered),
+          child: _buildCouponsView(filtered, storeNames),
         );
       },
     );
   }
 
-  Widget _buildCouponsView(List<Coupon> coupons) {
+  Widget _buildCouponsView(
+    List<Coupon> coupons,
+    Map<String, String> storeNames,
+  ) {
+    final isIPad = !kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.iOS &&
+        AppResponsive.isTablet(context);
+
     if (!_useMacGrid && !AppResponsive.isTablet(context)) {
       return ListView.builder(
         padding: const EdgeInsets.only(bottom: 16),
         itemCount: coupons.length,
         itemBuilder: (context, index) {
-          return CouponCard(coupon: coupons[index]);
+          final coupon = coupons[index];
+          return CouponCard(
+            coupon: coupon,
+            storeName: storeNames[coupon.id],
+          );
         },
       );
     }
@@ -127,16 +143,25 @@ class _CouponsListState extends State<CouponsList> {
         AppResponsive.isTablet(context) ? 28 : 24,
         24,
       ),
-      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: AppResponsive.isTablet(context) ? 380 : 420,
-        mainAxisExtent: AppResponsive.isTablet(context) ? 245 : 255,
-        crossAxisSpacing: 18,
-        mainAxisSpacing: 18,
-      ),
+      gridDelegate: isIPad
+          ? const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisExtent: 165,
+              crossAxisSpacing: 18,
+              mainAxisSpacing: 18,
+            )
+          : SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: AppResponsive.isTablet(context) ? 380 : 420,
+              mainAxisExtent: AppResponsive.isTablet(context) ? 245 : 255,
+              crossAxisSpacing: 18,
+              mainAxisSpacing: 18,
+            ),
       itemCount: coupons.length,
       itemBuilder: (context, index) {
+        final coupon = coupons[index];
         return CouponCard(
-          coupon: coupons[index],
+          coupon: coupon,
+          storeName: storeNames[coupon.id],
           margin: EdgeInsets.zero,
         );
       },
@@ -149,21 +174,101 @@ class _CouponsListState extends State<CouponsList> {
   Future<List<Map<String, dynamic>>> _fetchCoupons() async {
     final supabase = Supabase.instance.client;
 
-    final res = await supabase
-        .from('coupons')
-        .select('*')
-        .eq('approval_status', 'approved');
-    final rows = (res as List).cast<Map<String, dynamic>>();
+    final results = await Future.wait([
+      supabase.from('coupons').select('*').eq('approval_status', 'approved'),
+      supabase.from('offers').select('*'),
+      supabase.from('stores').select(),
+    ]);
+    final rows = (results[0] as List).cast<Map<String, dynamic>>();
+    final offerRows = (results[1] as List).cast<Map<String, dynamic>>();
+    final stores = (results[2] as List).cast<Map<String, dynamic>>();
+    final storesByKey = <String, Map<String, dynamic>>{};
+
+    for (final store in stores) {
+      final model = Store.fromSupabase(store, 'ar');
+      for (final key in [
+        model.id,
+        model.slug,
+        model.nameAr,
+        model.nameEn,
+      ]) {
+        final normalizedKey = key.trim();
+        if (normalizedKey.isNotEmpty) {
+          storesByKey[normalizedKey] = store;
+        }
+      }
+    }
+
+    final allRows = [
+      ...rows,
+      ...offerRows.map(_offerRowAsCouponRow),
+    ]..sort((a, b) {
+        final aDate = DateTime.tryParse((a['created_at'] ?? '').toString());
+        final bDate = DateTime.tryParse((b['created_at'] ?? '').toString());
+        if (aDate == null && bDate == null) return 0;
+        if (aDate == null) return 1;
+        if (bDate == null) return -1;
+        return bDate.compareTo(aDate);
+      });
 
     final storeId = widget.selectedStoreId?.trim();
     if (storeId == null || storeId.isEmpty) {
-      return rows;
+      return allRows.map((row) => _withStoreNames(row, storesByKey)).toList();
     }
 
-    return rows.where((row) {
-      final rowStoreId = (row['store_id'] ?? row['storeId'])?.toString().trim();
-      return rowStoreId == storeId;
-    }).toList();
+    return allRows
+        .where((row) {
+          final rowStoreId =
+              (row['store_id'] ?? row['storeId'])?.toString().trim();
+          return rowStoreId == storeId;
+        })
+        .map((row) => _withStoreNames(row, storesByKey))
+        .toList();
+  }
+
+  Map<String, dynamic> _offerRowAsCouponRow(Map<String, dynamic> row) {
+    final tags = _parseTags(row['tags']);
+    return {
+      ...row,
+      'code': tags.isNotEmpty ? tags.first : '',
+      'coupon_type': 'offer',
+      'discount_percent': null,
+      'terms': '',
+      'terms_ar': '',
+      'terms_en': '',
+      'is_active': true,
+      'last_used_at': null,
+      'tags': tags,
+    };
+  }
+
+  Map<String, dynamic> _withStoreNames(
+    Map<String, dynamic> row,
+    Map<String, Map<String, dynamic>> storesByKey,
+  ) {
+    final storeId = (row['store_id'] ?? row['storeId'] ?? '').toString().trim();
+    final store = storesByKey[storeId];
+    if (store == null) return row;
+
+    return {
+      ...row,
+      'store_name_ar': (store['name_ar'] ?? store['name'] ?? '').toString(),
+      'store_name_en': (store['name_en'] ?? '').toString(),
+      'store_image': (store['image'] ?? '').toString(),
+    };
+  }
+
+  Map<String, String> _storeNamesByCouponId(
+    List<Map<String, dynamic>> rows,
+    String langCode,
+  ) {
+    return {
+      for (final row in rows)
+        (row['id'] ?? '').toString(): (langCode == 'en'
+                ? (row['store_name_en'] ?? '').toString().trim()
+                : (row['store_name_ar'] ?? '').toString().trim())
+            .trim(),
+    };
   }
 
   // ---------------------------

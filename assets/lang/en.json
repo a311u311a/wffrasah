@@ -1,5 +1,5 @@
 ﻿{
-  "app_name": "Discount Coupons",
+  "app_name": "wffrhasah",
   "account": "Account",
   "login_signup": "Login / Sign Up",
   "unknown_user": "Unknown",
@@ -283,6 +283,7 @@
   "version": "Version",
   "admin_overview": "Overview",
   "admin_manage_stores": "Manage Stores",
+  "admin_coupon_providers": "Manage Coupon Providers",
   "admin_manage_coupons": "Manage Coupons",
   "admin_manage_offers": "Manage Offers",
   "admin_manage_categories": "Manage Categories",
@@ -295,6 +296,7 @@
   "admin_carousel_subtitle": "Images in the slider",
   "admin_pending_subtitle": "Needs review",
   "admin_notifications_subtitle": "Sent messages",
+  "admin_coupon_providers_subtitle": "Added coupon sources",
   "admin_content_summary": "Content Summary by Section",
   "admin_approval_rate": "Approval Rate",
   "admin_management_distribution": "Management Distribution",

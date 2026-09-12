@@ -173,7 +173,6 @@ class _SplashScreenState extends State<SplashScreen>
                     padding: const EdgeInsets.only(bottom: 34),
                     child: Column(
                       children: [
-                        
                         const SizedBox(height: 14),
                         Text(
                           'جاري التحميل...',

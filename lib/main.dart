@@ -65,9 +65,7 @@ Future<void> main() async {
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future<void>.delayed(const Duration(seconds: 3), () {
-        unawaited(NotificationService.initFirebase());
-      });
+      unawaited(NotificationService.initFirebase());
     });
   } catch (e, st) {
     debugPrint('App bootstrap failed: $e\n$st');
@@ -122,6 +120,15 @@ class _MyAppState extends State<MyApp> {
           (route) => false,
         );
         return;
+      }
+
+      if (!kIsWeb &&
+          data.session != null &&
+          (event == AuthChangeEvent.signedIn ||
+              event == AuthChangeEvent.initialSession)) {
+        unawaited(NotificationService.initFirebase().then(
+          (_) => NotificationService.registerCurrentDeviceToken(),
+        ));
       }
 
       if (!kIsWeb &&

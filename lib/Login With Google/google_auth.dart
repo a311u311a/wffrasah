@@ -28,6 +28,7 @@ class GoogleAuthService {
     await _sb.auth.signInWithOAuth(
       OAuthProvider.google,
       redirectTo: _mobileRedirectUrl,
+      authScreenLaunchMode: LaunchMode.externalApplication,
     );
   }
 

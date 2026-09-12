@@ -30,6 +30,9 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
   final _couponDescArCtrl = TextEditingController();
   final _couponDescEnCtrl = TextEditingController();
   final _couponWebCtrl = TextEditingController();
+  final _discountPercentCtrl = TextEditingController();
+  final _termsArCtrl = TextEditingController();
+  final _termsEnCtrl = TextEditingController();
 
   final List<TextEditingController> _tagCtrls =
       List.generate(6, (_) => TextEditingController());
@@ -39,6 +42,10 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
   String? _selectedStoreId;
   String? _selectedStoreImageUrl;
   String? _selectedStoreName;
+  String? _selectedProviderId;
+  String? _selectedProviderName;
+  String _selectedCouponType = 'coupon';
+  bool _selectedIsActive = true;
   DateTime? _selectedExpiryDate;
 
   String? _editingId;
@@ -83,6 +90,9 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
     _couponDescArCtrl.dispose();
     _couponDescEnCtrl.dispose();
     _couponWebCtrl.dispose();
+    _discountPercentCtrl.dispose();
+    _termsArCtrl.dispose();
+    _termsEnCtrl.dispose();
     _searchCtrl.dispose();
     for (final c in _tagCtrls) {
       c.dispose();
@@ -98,6 +108,9 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
     _couponDescArCtrl.clear();
     _couponDescEnCtrl.clear();
     _couponWebCtrl.clear();
+    _discountPercentCtrl.clear();
+    _termsArCtrl.clear();
+    _termsEnCtrl.clear();
 
     for (var c in _tagCtrls) {
       c.clear();
@@ -109,6 +122,10 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
     _selectedStoreId = null;
     _selectedStoreImageUrl = null;
     _selectedStoreName = null;
+    _selectedProviderId = null;
+    _selectedProviderName = null;
+    _selectedCouponType = 'coupon';
+    _selectedIsActive = true;
     _selectedExpiryDate = null;
   }
 
@@ -141,6 +158,11 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
         .select('id,slug,name,name_ar,name_en,image')
         .eq('approval_status', 'approved');
     final stores = List<Map<String, dynamic>>.from(storeRes);
+    final providerRes = await _sb
+        .from('coupon_providers')
+        .select('id,name')
+        .order('name');
+    final providers = List<Map<String, dynamic>>.from(providerRes);
 
     if (coupon != null) {
       _editingId = coupon['id'].toString();
@@ -148,7 +170,13 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
       _couponDescArCtrl.text = (coupon['description_ar'] ?? '').toString();
       _couponDescEnCtrl.text = (coupon['description_en'] ?? '').toString();
       _couponWebCtrl.text = (coupon['web'] ?? '').toString();
+      _discountPercentCtrl.text = (coupon['discount_percent'] ?? '').toString();
+      _termsArCtrl.text = (coupon['terms_ar'] ?? '').toString();
+      _termsEnCtrl.text = (coupon['terms_en'] ?? '').toString();
+      _selectedCouponType = _normalizeCouponType(coupon['coupon_type']);
+      _selectedIsActive = _parseBool(coupon['is_active'], fallback: true);
       _selectedStoreId = (coupon['store_id'] ?? '').toString();
+      _selectedProviderId = coupon['provider_id']?.toString();
       _editingImageUrl = (coupon['image'] ?? '').toString();
 
       final matchingStore = stores.firstWhere(
@@ -161,6 +189,14 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
         _selectedStoreName =
             (matchingStore['name_ar'] ?? matchingStore['name'] ?? '')
                 .toString();
+      }
+
+      final matchingProvider = providers.firstWhere(
+        (p) => p['id'].toString() == _selectedProviderId,
+        orElse: () => {},
+      );
+      if (matchingProvider.isNotEmpty) {
+        _selectedProviderName = (matchingProvider['name'] ?? '').toString();
       }
 
       final tagsRaw = coupon['tags'];
@@ -257,6 +293,41 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                         webText(
                             context, 'رابط الموقع (Web Link)', 'Website Link'),
                         Icons.language_outlined),
+                    _buildCouponTypePicker(setStateDialog),
+                    if (_selectedCouponType != 'offer')
+                      _inputField(
+                        _discountPercentCtrl,
+                        _selectedCouponType == 'cashback'
+                            ? webText(
+                                context,
+                                'نسبة الرصيد المسترجع - مثال: 5 - 10',
+                                'Cashback percent - example: 5 - 10')
+                            : _selectedCouponType == 'extra_discount'
+                                ? webText(
+                                    context,
+                                    'مبلغ الخصم الإضافي بالريال - اكتب الرقم فقط',
+                                    'Extra discount amount in SAR - number only')
+                                : webText(context, 'نسبة الخصم - مثال: 5 - 10',
+                                    'Discount percent - example: 5 - 10'),
+                        _selectedCouponType == 'extra_discount'
+                            ? Icons.currency_exchange_rounded
+                            : Icons.percent_rounded,
+                        keyboardType: TextInputType.number,
+                      ),
+                    _buildActiveSwitch(setStateDialog),
+                    _inputField(
+                      _termsArCtrl,
+                      webText(context, 'شروط الاستخدام (بالعربي)',
+                          'Usage terms (Arabic)'),
+                      Icons.rule_rounded,
+                      maxLines: 3,
+                    ),
+                    _inputField(
+                      _termsEnCtrl,
+                      'Usage terms (English)',
+                      Icons.rule_folder_rounded,
+                      maxLines: 3,
+                    ),
 
                     const SizedBox(height: 15),
                     _buildSectionTitle(
@@ -321,6 +392,8 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                     _buildSectionTitle(
                         webText(context, 'ربط المتجر', 'Link Store')),
                     _buildStorePicker(stores, setStateDialog),
+                    const SizedBox(height: 12),
+                    _buildProviderPicker(providers, setStateDialog),
 
                     const SizedBox(height: 20),
                     _buildSectionTitle(
@@ -418,13 +491,16 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
 
   Widget _buildStorePicker(
       List<Map<String, dynamic>> stores, StateSetter setStateDialog) {
-    return PopupMenuButton<String>(
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () => _showStorePickerDialog(stores, setStateDialog),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
+          color: Constants.primaryColor.withValues(alpha: 0.045),
+          borderRadius: BorderRadius.circular(16),
+          border:
+              Border.all(color: Constants.primaryColor.withValues(alpha: 0.10)),
         ),
         child: Row(
           children: [
@@ -452,7 +528,7 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                         context, 'اضغط لاختيار المتجر', 'Tap to choose store'),
                 style: const TextStyle(
                   fontWeight: FontWeight.normal,
-                  fontSize: 14,
+                  fontSize: 13,
                   color: Colors.black54,
                   fontFamily: _font,
                 ),
@@ -462,48 +538,493 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
           ],
         ),
       ),
-      itemBuilder: (context) {
-        return stores.map((store) {
-          final storeName = store['name_ar'] ??
-              store['name'] ??
-              webText(context, 'متجر', 'Store');
-          final slug = (store['slug'] ?? '').toString();
-          final img = store['image'];
+    );
+  }
 
-          return PopupMenuItem<String>(
-            value: slug,
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundImage: (img != null && img.isNotEmpty)
-                      ? NetworkImage(img)
-                      : null,
-                  backgroundColor: Colors.grey[200],
-                  child: (img == null || img.isEmpty)
-                      ? Icon(Icons.store,
-                          color: Constants.primaryColor, size: 16)
-                      : null,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    storeName.toString(),
-                    style: const TextStyle(fontSize: 14, fontFamily: _font),
-                  ),
-                ),
-              ],
+  Future<void> _showStorePickerDialog(
+      List<Map<String, dynamic>> stores, StateSetter setStateDialog) async {
+    final searchCtrl = TextEditingController();
+    var query = '';
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setStatePicker) {
+          final filteredStores = stores.where((store) {
+            final name = [
+              store['name'],
+              store['name_ar'],
+              store['name_en'],
+              store['slug'],
+            ].whereType<Object>().join(' ').toLowerCase();
+            return name.contains(query.toLowerCase().trim());
+          }).toList();
+
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+            title: Text(
+              webText(context, 'اختر المتجر المرتبط', 'Choose linked store'),
+              style: TextStyle(
+                color: Constants.primaryColor,
+                fontFamily: _font,
+                fontWeight: FontWeight.w800,
+              ),
             ),
-            onTap: () {
-              setStateDialog(() {
-                _selectedStoreId = slug;
-                _selectedStoreImageUrl = img?.toString() ?? '';
-                _selectedStoreName = storeName.toString();
-              });
-            },
+            content: SizedBox(
+              width: 520,
+              height: 520,
+              child: Column(
+                children: [
+                  TextField(
+                    controller: searchCtrl,
+                    onChanged: (value) => setStatePicker(() => query = value),
+                    decoration: InputDecoration(
+                      hintText: webText(
+                          context, 'ابحث عن اسم المتجر', 'Search stores'),
+                      prefixIcon: Icon(Icons.search_rounded,
+                          color: Constants.primaryColor),
+                      filled: true,
+                      fillColor:
+                          Constants.primaryColor.withValues(alpha: 0.045),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: Constants.primaryColor,
+                          width: 1.4,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: filteredStores.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (context, i) {
+                        final store = filteredStores[i];
+                        final storeName = store['name_ar'] ??
+                            store['name'] ??
+                            webText(context, 'متجر', 'Store');
+                        final slug = (store['slug'] ?? '').toString();
+                        final img = store['image'];
+
+                        return Material(
+                          color:
+                              Constants.primaryColor.withValues(alpha: 0.035),
+                          borderRadius: BorderRadius.circular(16),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: () {
+                              setStateDialog(() {
+                                _selectedStoreId =
+                                    (store['slug'] ?? store['id']).toString();
+                                _selectedStoreImageUrl = img?.toString() ?? '';
+                                _selectedStoreName = storeName.toString();
+                              });
+                              Navigator.pop(ctx);
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 18,
+                                    backgroundImage:
+                                        (img != null && img.isNotEmpty)
+                                            ? NetworkImage(img)
+                                            : null,
+                                    backgroundColor: Constants.primaryColor
+                                        .withValues(alpha: 0.08),
+                                    child: (img == null || img.isEmpty)
+                                        ? Icon(Icons.store,
+                                            color: Constants.primaryColor,
+                                            size: 18)
+                                        : null,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          storeName.toString(),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            fontFamily: _font,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                        if (slug.isNotEmpty) ...[
+                                          const SizedBox(height: 3),
+                                          Text(
+                                            'ID: $slug',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontFamily: _font,
+                                              color: Colors.black45,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Icon(Icons.chevron_right_rounded,
+                                      color: Constants.primaryColor),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
           );
-        }).toList();
-      },
+        },
+      ),
+    );
+
+    searchCtrl.dispose();
+  }
+
+  Widget _buildProviderPicker(
+      List<Map<String, dynamic>> providers, StateSetter setStateDialog) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () => _showProviderPickerDialog(providers, setStateDialog),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Constants.primaryColor.withValues(alpha: 0.045),
+          borderRadius: BorderRadius.circular(16),
+          border:
+              Border.all(color: Constants.primaryColor.withValues(alpha: 0.10)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.business_center_outlined, color: Constants.primaryColor),
+            const SizedBox(width: 15),
+            Expanded(
+              child: Text(
+                _selectedProviderId != null
+                    ? webText(
+                        context,
+                        'تم اختيار الموفر: ${_selectedProviderName ?? _selectedProviderId}',
+                        'Selected provider: ${_selectedProviderName ?? _selectedProviderId}')
+                    : webText(context, 'اضغط لاختيار موفر الكوبونات',
+                        'Tap to choose coupon provider'),
+                style: const TextStyle(
+                  fontWeight: FontWeight.normal,
+                  fontSize: 13,
+                  color: Colors.black54,
+                  fontFamily: _font,
+                ),
+              ),
+            ),
+            const Icon(Icons.keyboard_arrow_down),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showProviderPickerDialog(
+      List<Map<String, dynamic>> providers, StateSetter setStateDialog) async {
+    final searchCtrl = TextEditingController();
+    var query = '';
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setStatePicker) {
+          final filteredProviders = providers.where((provider) {
+            final text = [
+              provider['name'],
+            ].whereType<Object>().join(' ').toLowerCase();
+            return text.contains(query.toLowerCase().trim());
+          }).toList();
+
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+            title: Text(
+              webText(context, 'اختر موفر الكوبونات', 'Choose coupon provider'),
+              style: TextStyle(
+                color: Constants.primaryColor,
+                fontFamily: _font,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            content: SizedBox(
+              width: 520,
+              height: 520,
+              child: Column(
+                children: [
+                  TextField(
+                    controller: searchCtrl,
+                    onChanged: (value) => setStatePicker(() => query = value),
+                    decoration: InputDecoration(
+                      hintText: webText(
+                          context, 'ابحث عن اسم الموفر', 'Search providers'),
+                      prefixIcon: Icon(Icons.search_rounded,
+                          color: Constants.primaryColor),
+                      filled: true,
+                      fillColor:
+                          Constants.primaryColor.withValues(alpha: 0.045),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Expanded(
+                    child: ListView.separated(
+                      itemCount: filteredProviders.length + 1,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (context, i) {
+                      if (i == 0) {
+                          return Material(
+                            color:
+                                Constants.primaryColor.withValues(alpha: 0.035),
+                            borderRadius: BorderRadius.circular(16),
+                            clipBehavior: Clip.antiAlias,
+                            child: InkWell(
+                              onTap: () {
+                                setStateDialog(() {
+                                  _selectedProviderId = null;
+                                  _selectedProviderName = null;
+                                });
+                                Navigator.pop(ctx);
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 12),
+                                child: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 18,
+                                      backgroundColor: Constants.primaryColor
+                                          .withValues(alpha: 0.08),
+                                      child: Icon(Icons.close_rounded,
+                                          color: Constants.primaryColor,
+                                          size: 18),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        webText(
+                                            context, 'بدون موفر', 'No provider'),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontFamily: _font,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Icon(Icons.chevron_right_rounded,
+                                        color: Constants.primaryColor),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+
+                        final provider = filteredProviders[i - 1];
+                        final name = (provider['name'] ?? '').toString().trim();
+                        return Material(
+                          color:
+                              Constants.primaryColor.withValues(alpha: 0.035),
+                          borderRadius: BorderRadius.circular(16),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: () {
+                              setStateDialog(() {
+                                _selectedProviderId = provider['id'].toString();
+                                _selectedProviderName = name;
+                              });
+                              Navigator.pop(ctx);
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 12),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 18,
+                                    backgroundColor: Constants.primaryColor
+                                        .withValues(alpha: 0.08),
+                                    child: Icon(
+                                      Icons.business_center_outlined,
+                                      color: Constants.primaryColor,
+                                      size: 18,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      name.isEmpty
+                                          ? webText(
+                                              context, 'موفر بدون اسم', 'Provider')
+                                          : name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontFamily: _font,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Icon(Icons.chevron_right_rounded,
+                                      color: Constants.primaryColor),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+
+    searchCtrl.dispose();
+  }
+
+  Widget _buildCouponTypePicker(StateSetter setStateDialog) {
+    final items = {
+      'coupon': webText(context, 'كوبون خصم', 'Discount coupon'),
+      'cashback': webText(context, 'رصيد مسترجع', 'Cashback'),
+      'offer': webText(context, 'عرض', 'Offer'),
+      'extra_discount': webText(context, 'خصم إضافي', 'Extra discount'),
+    };
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: DropdownButtonFormField<String>(
+        initialValue: _selectedCouponType,
+        borderRadius: BorderRadius.circular(16),
+        dropdownColor: Colors.white,
+        icon: Icon(Icons.keyboard_arrow_down_rounded,
+            color: Constants.primaryColor),
+        decoration: InputDecoration(
+          prefixIcon:
+              Icon(Icons.local_offer_rounded, color: Constants.primaryColor),
+          labelText: webText(context, 'نوع العنصر', 'Item type'),
+          labelStyle: const TextStyle(
+            fontSize: 14,
+            color: Colors.black54,
+            fontWeight: FontWeight.normal,
+            fontFamily: _font,
+          ),
+          filled: true,
+          fillColor: Constants.primaryColor.withValues(alpha: 0.045),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(
+              color: Constants.primaryColor.withValues(alpha: 0.10),
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(
+              color: Constants.primaryColor,
+              width: 1.4,
+            ),
+          ),
+        ),
+        items: items.entries
+            .map(
+              (entry) => DropdownMenuItem<String>(
+                value: entry.key,
+                child: Text(
+                  entry.value,
+                  style: const TextStyle(fontFamily: _font),
+                ),
+              ),
+            )
+            .toList(),
+        onChanged: (value) {
+          if (value == null) return;
+          setStateDialog(() {
+            _selectedCouponType = value;
+            if (value == 'offer') _discountPercentCtrl.clear();
+          });
+        },
+      ),
+    );
+  }
+
+  Widget _buildActiveSwitch(StateSetter setStateDialog) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            _selectedIsActive
+                ? Icons.verified_rounded
+                : Icons.error_outline_rounded,
+            color: _selectedIsActive ? Colors.green : Colors.grey[500],
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              _selectedIsActive
+                  ? webText(context, 'الحالة: فعال', 'Status: active')
+                  : webText(context, 'الحالة: غير فعال', 'Status: inactive'),
+              style: const TextStyle(
+                fontFamily: _font,
+                fontWeight: FontWeight.w700,
+                color: Colors.black54,
+              ),
+            ),
+          ),
+          Switch(
+            value: _selectedIsActive,
+            activeThumbColor: Constants.primaryColor,
+            onChanged: (value) {
+              setStateDialog(() => _selectedIsActive = value);
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -560,12 +1081,13 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
   }
 
   Widget _inputField(TextEditingController ctrl, String hint, IconData icon,
-      {int? maxLines = 1}) {
+      {int? maxLines = 1, TextInputType? keyboardType}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextFormField(
         controller: ctrl,
         maxLines: maxLines,
+        keyboardType: keyboardType,
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: Constants.primaryColor, size: 20),
           hintText: hint,
@@ -589,9 +1111,7 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
           fontWeight: FontWeight.normal,
           fontFamily: _font,
         ),
-        validator: (v) => (v == null || v.trim().isEmpty)
-            ? webText(context, 'هذا الحقل مطلوب', 'This field is required')
-            : null,
+        validator: (_) => null,
       ),
     );
   }
@@ -623,6 +1143,9 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
           .map((c) => c.text.trim())
           .where((t) => t.isNotEmpty)
           .toList();
+      final discountPercent = _selectedCouponType == 'offer'
+          ? null
+          : _normalizeNumberText(_discountPercentCtrl.text);
 
       final payload = {
         'code': _couponCodeCtrl.text.trim(),
@@ -636,7 +1159,15 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
         'description': _couponDescArCtrl.text.trim(),
         'web': _couponWebCtrl.text.trim(),
         'store_id': _selectedStoreId,
+        'provider_id': _selectedProviderId,
         'image': finalImageUrl,
+        'discount_percent': discountPercent,
+        'coupon_type': _selectedCouponType,
+        'terms_ar': _termsArCtrl.text.trim(),
+        'terms_en': _termsEnCtrl.text.trim().isEmpty
+            ? _termsArCtrl.text.trim()
+            : _termsEnCtrl.text.trim(),
+        'is_active': _selectedIsActive,
         'tags': jsonEncode(tags),
         'expiry_date': _selectedExpiryDate?.toIso8601String(),
       };
@@ -657,8 +1188,27 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
               : webText(context, 'تم التحديث بنجاح ✅', 'Updated successfully'));
     } catch (e) {
       if (mounted) {
-        showSnackBar(context, webText(context, 'خطأ: $e', 'Error: $e'),
-            isError: true);
+        final isTypeConstraintError =
+            e.toString().contains('coupons_coupon_type_check');
+        final isNumericRangeError =
+            e.toString().contains('invalid input syntax for type numeric');
+        showSnackBar(
+          context,
+          isTypeConstraintError
+              ? webText(
+                  context,
+                  'يرجى تشغيل ملف add_extra_discount_coupon_type.sql في Supabase أولاً',
+                  'Run add_extra_discount_coupon_type.sql in Supabase first',
+                )
+              : isNumericRangeError
+                  ? webText(
+                      context,
+                      'يرجى تشغيل ملف allow_discount_ranges.sql في Supabase للسماح بالنطاق مثل 5 - 20',
+                      'Run allow_discount_ranges.sql in Supabase to allow ranges such as 5 - 20',
+                    )
+                  : webText(context, 'خطأ: $e', 'Error: $e'),
+          isError: true,
+        );
       }
     } finally {
       if (mounted) {
@@ -706,6 +1256,78 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
         }
       }
     }
+  }
+
+  String _normalizeCouponType(dynamic value) {
+    final text = (value ?? '').toString().trim().toLowerCase();
+    if (text == 'رصيد مسترجع' ||
+        text == 'رصيد' ||
+        text == 'cash back' ||
+        text == 'cash-back') {
+      return 'cashback';
+    }
+    if (text == 'عرض' || text == 'offer') return 'offer';
+    if (text == 'خصم إضافي' ||
+        text == 'خصم اضافي' ||
+        text == 'extra discount' ||
+        text == 'extra_discount') {
+      return 'extra_discount';
+    }
+    if (text == 'خصم' || text == 'كوبون خصم') return 'coupon';
+    if (text == 'cashback' || text == 'offer' || text == 'extra_discount') {
+      return text;
+    }
+    return 'coupon';
+  }
+
+  String _normalizeNumberText(String value) {
+    const digits = {
+      '٠': '0',
+      '١': '1',
+      '٢': '2',
+      '٣': '3',
+      '٤': '4',
+      '٥': '5',
+      '٦': '6',
+      '٧': '7',
+      '٨': '8',
+      '٩': '9',
+      '۰': '0',
+      '۱': '1',
+      '۲': '2',
+      '۳': '3',
+      '۴': '4',
+      '۵': '5',
+      '۶': '6',
+      '۷': '7',
+      '۸': '8',
+      '۹': '9',
+    };
+
+    final buffer = StringBuffer();
+    for (final rune in value.trim().runes) {
+      final char = String.fromCharCode(rune);
+      buffer.write(digits[char] ?? char);
+    }
+
+    return buffer
+        .toString()
+        .replaceAll('٪', '')
+        .replaceAll('%', '')
+        .replaceAll('٫', '.')
+        .replaceAll(',', '.')
+        .trim();
+  }
+
+  bool _parseBool(dynamic value, {required bool fallback}) {
+    if (value == null) return fallback;
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+
+    final text = value.toString().trim().toLowerCase();
+    if (['true', 't', 'yes', 'y', '1'].contains(text)) return true;
+    if (['false', 'f', 'no', 'n', '0'].contains(text)) return false;
+    return fallback;
   }
 
   /// ✅ جلب أسماء المتاجر مرة واحدة بناءً على slugs الموجودة في الكوبونات
@@ -1058,7 +1680,8 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
         crossAxisCount: crossAxisCount,
         crossAxisSpacing: 14,
         mainAxisSpacing: 14,
-        mainAxisExtent: 205, // ✅ زيادة الارتفاع لاستيعاب الـ Divider
+        mainAxisExtent:
+            245, // ✅ ارتفاع كافٍ لاستيعاب الصورة + البادجات + الوصف + الـ footer
       ),
       itemBuilder: (context, i) {
         final coupon = items[i];
@@ -1071,6 +1694,9 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
         final storeId = (coupon['store_id'] ?? '').toString();
         final storeName = storesMap[storeId] ?? storeId;
         final expiryDateString = coupon['expiry_date'];
+        final discountPercent = (coupon['discount_percent'] ?? '').toString();
+        final couponType = _normalizeCouponType(coupon['coupon_type']);
+        final isActive = _parseBool(coupon['is_active'], fallback: true);
 
         DateTime? expiryDate;
         if (expiryDateString != null) {
@@ -1084,6 +1710,9 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
           description: description,
           image: (image ?? '').toString(),
           storeName: storeName,
+          discountPercent: discountPercent,
+          couponType: couponType,
+          isActive: isActive,
           expiryDate: expiryDate,
         );
       },
@@ -1097,9 +1726,13 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
     required String description,
     required String image,
     required String storeName,
+    required String discountPercent,
+    required String couponType,
+    required bool isActive,
     required DateTime? expiryDate,
   }) {
     return Container(
+      constraints: const BoxConstraints(minHeight: 250),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
@@ -1115,23 +1748,27 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
               children: [
                 // Coupon Image
                 Container(
-                  width: 54,
-                  height: 54,
+                  width: 82,
+                  height: 82,
                   decoration: BoxDecoration(
                     color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(18),
                     border: Border.all(color: Colors.grey[200]!),
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(18),
                     child: image.isNotEmpty
                         ? Image.network(
                             image,
+                            width: 82,
+                            height: 82,
                             fit: BoxFit.contain,
                             errorBuilder: (_, __, ___) => Icon(
                               Icons.broken_image,
@@ -1194,23 +1831,66 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
               ],
             ),
             const SizedBox(height: 12),
-
-            // Description
-            Align(
-              alignment: Alignment.centerRight, // ✅ يبدأ من اليمين للعربية
-              child: Text(
-                description.isEmpty
-                    ? webText(context, 'بدون وصف', 'No description')
-                    : description,
-                style: TextStyle(
-                  fontFamily: _font,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.grey[600],
-                  fontSize: 12,
-                  height: 1.3,
+            Row(
+              children: [
+                Expanded(
+                  child: _adminInfoBadge(_couponTypeLabel(couponType)),
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _adminInfoBadge(
+                    discountPercent.trim().isEmpty
+                        ? webText(
+                            context,
+                            couponType == 'extra_discount'
+                                ? 'المبلغ غير محدد'
+                                : 'خصم غير محدد',
+                            couponType == 'extra_discount'
+                                ? 'Amount not set'
+                                : 'Discount not set')
+                        : webText(
+                            context,
+                            couponType == 'extra_discount'
+                                ? 'خصم $discountPercent ر.س'
+                                : 'خصم $discountPercent%',
+                            couponType == 'extra_discount'
+                                ? '$discountPercent SAR discount'
+                                : '$discountPercent% discount'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _adminInfoBadge(
+                    isActive
+                        ? webText(context, 'فعال', 'Active')
+                        : webText(context, 'غير فعال', 'Inactive'),
+                    color: isActive ? Colors.green : Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // Description - لا يلتف ولا يرفع ارتفاع البطاقة عند النص الطويل
+            Align(
+              alignment: Alignment.centerRight,
+              child: SizedBox(
+                height: 18,
+                child: Text(
+                  description.isEmpty
+                      ? webText(context, 'بدون وصف', 'No description')
+                      : description,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: _font,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                    height: 1.3,
+                  ),
+                ),
               ),
             ),
 
@@ -1334,5 +2014,71 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
         ],
       ),
     );
+  }
+
+  Widget _adminInfoBadge(String text, {Color? color}) {
+    final effectiveColor = color ?? Constants.primaryColor;
+    final isAccent = color == null;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      height: 34,
+      decoration: BoxDecoration(
+        gradient: isAccent
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFFB5B3FF),
+                  Color(0xFF6D5DF6),
+                ],
+              )
+            : null,
+        color: isAccent ? null : effectiveColor.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isAccent
+              ? const Color(0xFF7C6BFF).withValues(alpha: 0.30)
+              : effectiveColor.withValues(alpha: 0.18),
+        ),
+        boxShadow: isAccent
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF6D5DF6).withValues(alpha: 0.12),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ]
+            : null,
+      ),
+      child: Center(
+        child: Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: _font,
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+            color: isAccent ? Colors.white : effectiveColor,
+            height: 1,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _couponTypeLabel(String type) {
+    switch (type) {
+      case 'cashback':
+        return webText(context, 'رصيد مسترجع', 'Cashback');
+      case 'offer':
+        return webText(context, 'عرض', 'Offer');
+      case 'extra_discount':
+        return webText(context, 'خصم إضافي', 'Extra discount');
+      default:
+        return webText(context, 'كوبون خصم', 'Discount coupon');
+    }
   }
 }

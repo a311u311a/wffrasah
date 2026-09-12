@@ -99,34 +99,38 @@ class FaqItem extends StatelessWidget {
           ),
         ],
       ),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          title: Text(
-            question,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Tajawal',
-              color: Constants
-                  .primaryColor, // Changed to primaryColor for consistency
-            ),
-          ),
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                answer,
-                textAlign: TextAlign.justify,
-                style: const TextStyle(
-                  fontSize: 13,
-                  height: 1.5,
-                  fontFamily: 'Tajawal',
-                  color: Colors.grey,
-                ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(15),
+        child: Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            title: Text(
+              question,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Tajawal',
+                color: Constants
+                    .primaryColor, // Changed to primaryColor for consistency
               ),
             ),
-          ],
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  answer,
+                  textAlign: TextAlign.justify,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    height: 1.5,
+                    fontFamily: 'Tajawal',
+                    color: Colors.grey,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
