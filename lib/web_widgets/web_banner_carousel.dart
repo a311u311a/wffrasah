@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -126,18 +128,7 @@ class _WebBannerCarouselState extends State<WebBannerCarousel> {
         fit: StackFit.expand,
         children: [
           // الصورة
-          CachedNetworkImage(
-            imageUrl: item.image,
-            fit: BoxFit.cover,
-            placeholder: (context, url) => Container(
-              color: Colors.grey[900],
-            ),
-            errorWidget: (context, url, error) => Container(
-              color: Colors.grey[900],
-              child: const Icon(Icons.broken_image,
-                  color: Colors.white24, size: 50),
-            ),
-          ),
+          _RetryingWebBannerImage(imageUrl: item.image),
 
           // تدرج لوني قوي (Cinematic Gradient)
           Container(
@@ -253,6 +244,96 @@ class _WebBannerCarouselState extends State<WebBannerCarousel> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _RetryingWebBannerImage extends StatefulWidget {
+  final String imageUrl;
+
+  const _RetryingWebBannerImage({required this.imageUrl});
+
+  @override
+  State<_RetryingWebBannerImage> createState() =>
+      _RetryingWebBannerImageState();
+}
+
+class _RetryingWebBannerImageState extends State<_RetryingWebBannerImage> {
+  static const int _maxRetries = 3;
+  int _retryAttempt = 0;
+  Timer? _retryTimer;
+
+  @override
+  void didUpdateWidget(covariant _RetryingWebBannerImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.imageUrl != widget.imageUrl) {
+      _retryTimer?.cancel();
+      _retryAttempt = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _retryTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final imageUrl = widget.imageUrl.trim();
+
+    return CachedNetworkImage(
+      key: ValueKey('$imageUrl-$_retryAttempt'),
+      imageUrl: _imageUrlForAttempt(imageUrl),
+      cacheKey: imageUrl,
+      fit: BoxFit.cover,
+      placeholder: (context, url) => _bannerImageFallback(showLoader: true),
+      errorWidget: (context, url, error) {
+        _scheduleRetry();
+        return _bannerImageFallback(showLoader: _retryAttempt < _maxRetries);
+      },
+    );
+  }
+
+  String _imageUrlForAttempt(String imageUrl) {
+    if (_retryAttempt == 0) return imageUrl;
+
+    final uri = Uri.tryParse(imageUrl);
+    if (uri == null || !uri.hasScheme) return imageUrl;
+
+    return uri.replace(queryParameters: {
+      ...uri.queryParameters,
+      '_wffr_web_retry': _retryAttempt.toString(),
+    }).toString();
+  }
+
+  void _scheduleRetry() {
+    if (_retryAttempt >= _maxRetries || _retryTimer?.isActive == true) return;
+
+    final attempt = _retryAttempt + 1;
+    final delay = Duration(milliseconds: 600 * attempt);
+    _retryTimer = Timer(delay, () {
+      if (!mounted) return;
+      setState(() {
+        _retryAttempt = attempt;
+      });
+    });
+  }
+
+  Widget _bannerImageFallback({required bool showLoader}) {
+    return Container(
+      color: Colors.grey[900],
+      alignment: Alignment.center,
+      child: showLoader
+          ? SizedBox(
+              width: 28,
+              height: 28,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: Colors.white.withValues(alpha: 0.32),
+              ),
+            )
+          : const Icon(Icons.broken_image, color: Colors.white24, size: 50),
     );
   }
 }
