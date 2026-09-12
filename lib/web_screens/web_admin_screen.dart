@@ -2728,14 +2728,17 @@ class _CouponPerformanceSectionState extends State<_CouponPerformanceSection> {
                 : width < 1180
                     ? 2
                     : 3;
-            return GridView.count(
-              crossAxisCount: columns,
+            return GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: width < 760 ? 1.55 : 1.25,
-              children: panels,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: columns,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                mainAxisExtent: width < 760 ? 270 : 238,
+              ),
+              itemCount: panels.length,
+              itemBuilder: (context, index) => panels[index],
             );
           },
         ),
@@ -2768,18 +2771,17 @@ class _CouponPerformanceListPanel extends StatelessWidget {
               icon: Icons.confirmation_number_outlined,
               text: emptyText,
             )
-          : Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                for (var index = 0; index < items.length; index++) ...[
-                  if (index > 0) const SizedBox(height: 6),
-                  _CompactCouponPerformanceRow(
-                    item: items[index],
-                    actionLabel: actionLabel,
-                    onItemAction: onItemAction,
-                  ),
-                ],
-              ],
+          : ListView.separated(
+              padding: EdgeInsets.zero,
+              itemCount: items.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 6),
+              itemBuilder: (context, index) {
+                return _CompactCouponPerformanceRow(
+                  item: items[index],
+                  actionLabel: actionLabel,
+                  onItemAction: onItemAction,
+                );
+              },
             ),
     );
   }
@@ -2799,60 +2801,66 @@ class _CompactCouponPerformanceRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final action = onItemAction;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Row(
-              children: [
-                Flexible(
-                  child: Text(
-                    item.storeName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w900,
-                      fontFamily: 'Tajawal',
-                      color: Color(0xFF111827),
+    return SizedBox(
+      height: 40,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF9FAFB),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  Flexible(
+                    flex: 2,
+                    child: Text(
+                      item.storeName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        fontFamily: 'Tajawal',
+                        color: Color(0xFF111827),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  item.code,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    fontFamily: 'Tajawal',
-                    color: Color(0xFF6B7280),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      item.code,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        fontFamily: 'Tajawal',
+                        color: Color(0xFF6B7280),
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                _SmallValueBadge.compact(
-                  value: item.value,
-                  label: item.subtitle,
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          if (action != null && actionLabel != null) ...[
             const SizedBox(width: 8),
-            _CouponReportActionButton(
-              label: actionLabel!,
-              couponId: item.couponId,
-              onPressed: action,
+            _SmallValueBadge.compact(
+              value: item.value,
+              label: item.subtitle,
             ),
+            if (action != null && actionLabel != null) ...[
+              const SizedBox(width: 8),
+              _CouponReportActionButton(
+                label: actionLabel!,
+                couponId: item.couponId,
+                onPressed: action,
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
