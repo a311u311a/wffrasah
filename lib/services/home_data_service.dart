@@ -231,6 +231,124 @@ class HomeDataService {
     return rows;
   }
 
+  static Future<List<Map<String, dynamic>>> fetchCouponOfTheDay({
+    int limit = 1,
+  }) async {
+    try {
+      final events = await _loadRows(_supabase
+          .from('analytics_events')
+          .select('item_id')
+          .eq('event_type', 'store_click')
+          .eq('item_type', 'coupon'));
+      final counts = <String, int>{};
+      for (final event in events) {
+        final id = (event['item_id'] ?? '').toString().trim();
+        if (id.isNotEmpty) counts[id] = (counts[id] ?? 0) + 1;
+      }
+      final ids = counts.keys.toList()
+        ..sort((a, b) => (counts[b] ?? 0).compareTo(counts[a] ?? 0));
+      if (ids.isEmpty) {
+        return _withCouponStoreNames(
+            (await fetchPublicCoupons(limit: limit)).take(limit).toList());
+      }
+      final rows = await _loadRows(_supabase
+          .from('coupons')
+          .select()
+          .eq('approval_status', 'approved')
+          .inFilter('id', ids.take(20).toList()));
+      rows.sort((a, b) => (counts[(b['id'] ?? '').toString()] ?? 0)
+          .compareTo(counts[(a['id'] ?? '').toString()] ?? 0));
+      return _withCouponStoreNames(rows.take(limit).toList());
+    } catch (_) {
+      return _withCouponStoreNames(
+          (await fetchPublicCoupons(limit: limit)).take(limit).toList());
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> _withCouponStoreNames(
+    List<Map<String, dynamic>> rows,
+  ) async {
+    if (rows.isEmpty) return rows;
+    try {
+      final stores = await fetchStores();
+      final storesByKey = <String, Map<String, dynamic>>{};
+      for (final store in stores) {
+        for (final field in ['id', 'slug', 'name_ar', 'name_en']) {
+          final key = (store[field] ?? '').toString().trim();
+          if (key.isNotEmpty) storesByKey[key] = store;
+        }
+      }
+      return rows.map((row) {
+        final key = (row['store_id'] ?? row['storeId'] ?? '').toString().trim();
+        final store = storesByKey[key];
+        if (store == null) return row;
+        return {
+          ...row,
+          'store_name_ar': store['name_ar'] ?? store['name'] ?? '',
+          'store_name_en': store['name_en'] ?? '',
+          'store_image': store['image'] ?? '',
+        };
+      }).toList();
+    } catch (_) {
+      return rows;
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchPersonalizedCoupons({
+    int limit = 6,
+  }) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return const [];
+    try {
+      final events = await _loadRows(_supabase
+          .from('analytics_events')
+          .select('item_id,created_at')
+          .eq('user_id', userId)
+          .eq('event_type', 'coupon_copy')
+          .eq('item_type', 'coupon')
+          .order('created_at', ascending: false)
+          .limit(30));
+      final copiedIds = events
+          .map((row) => (row['item_id'] ?? '').toString().trim())
+          .where((id) => id.isNotEmpty)
+          .toSet();
+      if (copiedIds.isEmpty) return const [];
+      final copied = await _loadRows(_supabase
+          .from('coupons')
+          .select()
+          .eq('approval_status', 'approved')
+          .inFilter('id', copiedIds.toList()));
+      final categoryIds = copied
+          .expand((row) => [row['category_id'], row['category']])
+          .map((value) => value?.toString().trim() ?? '')
+          .where((value) => value.isNotEmpty)
+          .toSet();
+      if (categoryIds.isEmpty) return const [];
+      final candidates = await _loadRows(_supabase
+          .from('coupons')
+          .select()
+          .eq('approval_status', 'approved')
+          .inFilter('category_id', categoryIds.toList())
+          .order('created_at', ascending: false)
+          .limit(limit * 3));
+      return candidates
+          .where((row) => !copiedIds.contains((row['id'] ?? '').toString()))
+          .take(limit)
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> fetchPersonalizedCouponsForHome() async {
+    var rows = await fetchPersonalizedCoupons();
+    if (rows.length < 3) {
+      final fallbackRows = await fetchMostUsedCoupons(limit: 6);
+      if (rows.isEmpty) rows = fallbackRows;
+    }
+    return _withCouponStoreNames(rows);
+  }
+
   static Future<List<Map<String, dynamic>>> _fetchMostCopiedCouponsByRpc(
     int limit,
   ) async {

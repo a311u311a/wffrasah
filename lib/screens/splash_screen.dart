@@ -89,7 +89,7 @@ class _SplashScreenState extends State<SplashScreen>
             padding: const EdgeInsets.symmetric(horizontal: 28),
             child: Column(
               children: [
-                SizedBox(height: size.height * 0.2),
+                SizedBox(height: size.height * 0.18),
 
                 AnimatedOpacity(
                   duration: const Duration(milliseconds: 900),
@@ -144,7 +144,7 @@ class _SplashScreenState extends State<SplashScreen>
                           fontFamily: 'Tajawal',
                         ),
                       ),
-                      const SizedBox(height: 100),
+                      const SizedBox(height: 80),
                       SizedBox(
                         width: animationSize,
                         height: animationSize,

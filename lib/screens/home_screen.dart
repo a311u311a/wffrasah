@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../constants.dart';
@@ -13,7 +15,6 @@ import '../services/home_data_service.dart';
 import '../services/unified_search_service.dart';
 import '../widgets/coupon_card.dart';
 import '../widgets/loading_indicator.dart';
-import '../widgets/bottom_navigation_bar.dart';
 import '../widgets/search_widget.dart';
 import 'coupon_screen.dart';
 import 'stores_screen.dart';
@@ -26,18 +27,40 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  static const Color _homeBg = Color(0xFFF8F8FD);
+  static const Color _homeBg = Colors.white;
   static const Color _ink = Color.fromARGB(255, 62, 57, 156);
 
   String? selectedStoreId;
   String? selectedCategoryId;
   String searchQuery = ''; // نص البحث
   _HomeSearchFilter selectedSearchFilter = _HomeSearchFilter.all;
+  bool _isSignedIn = false;
+  StreamSubscription<AuthState>? _authSubscription;
+  final ScrollController _homeScrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _isSignedIn = Supabase.instance.client.auth.currentUser != null;
+    _authSubscription =
+        Supabase.instance.client.auth.onAuthStateChange.listen((state) {
+      if (!mounted) return;
+      final next = state.session?.user != null;
+      if (next != _isSignedIn) setState(() => _isSignedIn = next);
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    _homeScrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
-    final storeItemExtent = AppResponsive.isTablet(context) ? 88.0 : 76.0;
+    final storeItemExtent = AppResponsive.isTablet(context) ? 74.0 : 57.0;
 
     return Scaffold(
       resizeToAvoidBottomInset: false, // يمنع انضغاط الواجهة عند ظهور الكيبورد
@@ -89,84 +112,95 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             children: [
               Expanded(
-                child: ListView(
+                child: SingleChildScrollView(
+                  controller: _homeScrollController,
+                  primary: false,
+                  physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics(),
+                  ),
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.fromLTRB(16, 2, 10, 8),
-                  children: searchQuery.trim().isNotEmpty
-                      ? [
-                          _HomeUnifiedSearchResults(
-                            selectedCategoryId: selectedCategoryId,
-                            searchQuery: searchQuery,
-                            selectedFilter: selectedSearchFilter,
-                            onFilterSelected: (filter) {
-                              setState(() => selectedSearchFilter = filter);
-                            },
-                          ),
-                          const SizedBox(height: 132),
-                        ]
-                      : [
-                          const CustomCarousel(),
-                          const SizedBox(height: 18),
-                          SizedBox(
-                            height: CategoryList.preferredHeight(context),
-                            child: CategoryList(
+                  // Keep the finite async sections mounted: recreating sections
+                  // above the viewport changes their height during a drag.
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: searchQuery.trim().isNotEmpty
+                        ? [
+                            _HomeUnifiedSearchResults(
                               selectedCategoryId: selectedCategoryId,
-                              onCategorySelected: (categoryId) {
-                                setState(() {
-                                  selectedCategoryId = categoryId;
-                                  selectedStoreId = null;
-                                });
+                              searchQuery: searchQuery,
+                              selectedFilter: selectedSearchFilter,
+                              onFilterSelected: (filter) {
+                                setState(() => selectedSearchFilter = filter);
                               },
                             ),
-                          ),
-                          const SizedBox(height: 18),
-                          _HomeSectionHeader(
-                            title: 'المتاجر',
-                            icon: Icons.storefront_rounded,
-                            actionText: 'عرض الكل',
-                            onActionTap: () => _openPage(
-                              const BottomNavBar(initialIndex: 0),
+                            const SizedBox(height: 132),
+                          ]
+                        : [
+                            const CustomCarousel(),
+                            const SizedBox(height: 18),
+                            const _CouponOfTheDaySection(),
+                            const SizedBox(height: 22),
+                            SizedBox(
+                              height: CategoryList.preferredHeight(context),
+                              child: CategoryList(
+                                selectedCategoryId: selectedCategoryId,
+                                onCategorySelected: (categoryId) {
+                                  setState(() {
+                                    selectedCategoryId = categoryId;
+                                    selectedStoreId = null;
+                                  });
+                                },
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            height: storeItemExtent + 16,
-                            child: StoresList(
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              height: storeItemExtent + 16,
+                              child: StoresList(
+                                selectedStoreId: selectedStoreId,
+                                selectedCategoryId: selectedCategoryId,
+                                itemExtent: storeItemExtent,
+                                useBottomSelectionIndicator: true,
+                                onStoreSelected: (storeId) {
+                                  setState(() {
+                                    selectedStoreId = storeId;
+                                    selectedCategoryId = null;
+                                  });
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 22),
+                            _HomeSectionHeader(
+                              title: 'أحدث الكوبونات والعروض',
+                              icon: Icons.confirmation_number_rounded,
+                              actionText: null,
+                              onActionTap: () =>
+                                  _openPage(const CouponScreen()),
+                            ),
+                            const SizedBox(height: 12),
+                            _HomeDealsList(
+                              selectedCategoryId: selectedCategoryId,
                               selectedStoreId: selectedStoreId,
-                              selectedCategoryId: selectedCategoryId,
-                              itemExtent: storeItemExtent,
-                              useBottomSelectionIndicator: true,
-                              onStoreSelected: (storeId) {
-                                setState(() {
-                                  selectedStoreId = storeId;
-                                  selectedCategoryId = null;
-                                });
-                              },
+                              searchQuery: searchQuery,
                             ),
-                          ),
-                          const SizedBox(height: 22),
-                          _HomeSectionHeader(
-                            title: 'أحدث الكوبونات والعروض',
-                            icon: Icons.confirmation_number_rounded,
-                            actionText: null,
-                            onActionTap: () => _openPage(const CouponScreen()),
-                          ),
-                          const SizedBox(height: 12),
-                          _HomeDealsList(
-                            selectedCategoryId: selectedCategoryId,
-                            selectedStoreId: selectedStoreId,
-                            searchQuery: searchQuery,
-                          ),
-                          const SizedBox(height: 22),
-                          _HomeSectionHeader(
-                            title: 'الأكثر استخدامًا',
-                            icon: Icons.trending_up_rounded,
-                            actionText: null,
-                            onActionTap: null,
-                          ),
-                          const SizedBox(height: 10),
-                          const _MostUsedCouponsList(),
-                          const SizedBox(height: 132),
-                        ],
+                            const SizedBox(height: 22),
+                            _HomeSectionHeader(
+                              title: 'الأكثر استخدامًا',
+                              icon: Icons.trending_up_rounded,
+                              actionText: null,
+                              onActionTap: null,
+                            ),
+                            const SizedBox(height: 10),
+                            const _MostUsedCouponsList(),
+                            if (_isSignedIn)
+                              const Padding(
+                                padding: EdgeInsets.only(top: 22),
+                                child: _PersonalizedCouponsSection(),
+                              ),
+                            const SizedBox(height: 132),
+                          ],
+                  ),
                 ),
               ),
             ],
@@ -193,6 +227,92 @@ class _HomeDeal {
 
   const _HomeDeal.coupon(this.coupon, this.createdAt) : offer = null;
   const _HomeDeal.offer(this.offer, this.createdAt) : coupon = null;
+}
+
+class _CouponOfTheDaySection extends StatelessWidget {
+  const _CouponOfTheDaySection();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: HomeDataService.fetchCouponOfTheDay(),
+      builder: (context, snapshot) {
+        final rows = snapshot.data ?? const [];
+        if (rows.isEmpty) return const SizedBox.shrink();
+        final coupon = Coupon.fromSupabase(
+            rows.first, Localizations.localeOf(context).languageCode);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const _HomeSectionHeader(
+              title: 'كوبون اليوم',
+              icon: Icons.wb_sunny_rounded,
+              actionText: null,
+              onActionTap: null,
+            ),
+            const SizedBox(height: 10),
+            CouponCard(
+              coupon: coupon,
+              margin: EdgeInsets.zero,
+              storeName: 'كوبون اليوم',
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _PersonalizedCouponsSection extends StatelessWidget {
+  const _PersonalizedCouponsSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: HomeDataService.fetchPersonalizedCouponsForHome(),
+      builder: (context, snapshot) {
+        return _build(context, snapshot.data ?? const []);
+      },
+    );
+  }
+
+  Widget _build(BuildContext context, List<Map<String, dynamic>> rows) {
+    if (rows.isEmpty) return const SizedBox.shrink();
+    final langCode = Localizations.localeOf(context).languageCode;
+    final coupons = rows
+        .map((row) {
+          try {
+            return Coupon.fromSupabase(row, langCode);
+          } catch (_) {
+            return null;
+          }
+        })
+        .whereType<Coupon>()
+        .toList();
+    if (coupons.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const _HomeSectionHeader(
+          title: 'عروض مخصصة لك',
+          icon: Icons.auto_awesome_rounded,
+          actionText: null,
+          onActionTap: null,
+        ),
+        const SizedBox(height: 10),
+        ...coupons.take(6).map(
+              (coupon) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: CouponCard(
+                  coupon: coupon,
+                  margin: EdgeInsets.zero,
+                  storeName: 'متجر',
+                ),
+              ),
+            ),
+      ],
+    );
+  }
 }
 
 class _MostUsedCouponsList extends StatefulWidget {
@@ -248,6 +368,7 @@ class _MostUsedCouponsListState extends State<_MostUsedCouponsList> {
           child: SizedBox(
             height: (cardHeight * 2) + 14,
             child: GridView.builder(
+              primary: false,
               scrollDirection: Axis.horizontal,
               clipBehavior: Clip.none,
               padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
@@ -889,6 +1010,7 @@ class _SearchDealsGrid extends StatelessWidget {
     return SizedBox(
       height: gridHeight,
       child: GridView.builder(
+        primary: false,
         scrollDirection: Axis.horizontal,
         clipBehavior: Clip.none,
         itemCount: itemCount,
@@ -1092,6 +1214,7 @@ class _HomeDealsListState extends State<_HomeDealsList> {
           child: SizedBox(
             height: (cardHeight * 2) + 14,
             child: GridView.builder(
+              primary: false,
               scrollDirection: Axis.horizontal,
               clipBehavior: Clip.none,
               padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),

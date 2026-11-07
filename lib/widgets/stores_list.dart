@@ -170,7 +170,7 @@ class _StoresListState extends State<StoresList> {
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 1),
             scrollDirection: Axis.horizontal,
             itemCount: displayStores.length + 1,
             itemBuilder: (context, index) {
@@ -206,7 +206,7 @@ class _StoresListState extends State<StoresList> {
     final useSquareCard = widget.itemExtent != null;
     final useBottomIndicator = widget.useBottomSelectionIndicator;
     final itemSize = widget.itemExtent ?? (isTablet ? 88.0 : 75.0);
-    final iconSize = useSquareCard ? 44.0 * scale : 40.0 * scale;
+    final iconSize = 40.0 * scale;
 
     return GestureDetector(
       onTap: () => widget.onStoreSelected(storeKey),
@@ -290,11 +290,12 @@ class _StoresListState extends State<StoresList> {
                     padding: EdgeInsets.all(useSquareCard ? 0 : 2),
                     child: Image.network(
                       store.image,
-                      fit: useBottomIndicator && isSelected
-                          ? BoxFit.contain
-                          : BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) =>
-                          Icon(Icons.store, size: iconSize, color: Colors.grey),
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => Icon(
+                        Icons.store,
+                        size: iconSize,
+                        color: Colors.grey,
+                      ),
                     ),
                   ),
                 ),
@@ -317,7 +318,6 @@ class _StoresListState extends State<StoresList> {
   }
 
   Widget _buildShowAllItem(BuildContext context, bool isSelected) {
-    final localizations = AppLocalizations.of(context);
     final isTablet = AppResponsive.isTablet(context);
     final scale = AppResponsive.tabletScale(context);
     final useSquareCard = widget.itemExtent != null;
@@ -413,21 +413,6 @@ class _StoresListState extends State<StoresList> {
                         ? Constants.primaryColor
                         : (useSquareCard ? Colors.grey.shade500 : Colors.grey),
                     BlendMode.srcIn,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  localizations?.translate('show_all') ?? 'All',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: isSelected
-                        ? Constants.primaryColor
-                        : (useSquareCard ? Colors.grey[700] : Colors.black87),
-                    fontWeight: isSelected
-                        ? (useSquareCard ? FontWeight.w800 : FontWeight.bold)
-                        : (useSquareCard ? FontWeight.w600 : FontWeight.normal),
-                    fontSize: 12 * scale,
-                    fontFamily: useSquareCard ? 'Tajawal' : null,
                   ),
                 ),
               ],
