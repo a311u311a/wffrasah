@@ -188,6 +188,46 @@ async function fetchCategory(
   };
 }
 
+/** Title words (letters/digits, 2+ chars) used to spot near-identical listings. */
+function titleWords(title: string): Set<string> {
+  return new Set(
+    title
+      .toLowerCase()
+      .split(/[^\p{L}\p{N}]+/u)
+      .filter((w) => w.length > 1),
+  );
+}
+
+/**
+ * Drops listings whose title shares at least DUPLICATE_SIMILARITY of its
+ * words with a better-selling listing in the same category (the same item
+ * from several sellers). Returns how many were dropped.
+ */
+const DUPLICATE_SIMILARITY = 0.75;
+function dropNearDuplicates(
+  rows: Map<number, { product_id: number; title: string; sort_score: number }>,
+): number {
+  const sorted = [...rows.values()].sort((a, b) => b.sort_score - a.sort_score);
+  const kept: Set<string>[] = [];
+  let dropped = 0;
+  for (const row of sorted) {
+    const words = titleWords(row.title);
+    const dup = kept.some((k) => {
+      let shared = 0;
+      for (const w of words) if (k.has(w)) shared++;
+      const union = words.size + k.size - shared;
+      return union > 0 && shared / union >= DUPLICATE_SIMILARITY;
+    });
+    if (dup) {
+      rows.delete(row.product_id);
+      dropped++;
+    } else {
+      kept.push(words);
+    }
+  }
+  return dropped;
+}
+
 /** Words from `-` groups; products whose title contains one are skipped. */
 function parseExcludes(rawKeywords: string): string[] {
   return rawKeywords
@@ -339,6 +379,7 @@ Deno.serve(async (req) => {
 
     let saved = 0;
     let removed = 0;
+    const duplicates = dropNearDuplicates(rows);
     interleaveScores([...rows.values()], groupOf);
 
     if (rows.size > 0) {
@@ -365,6 +406,7 @@ Deno.serve(async (req) => {
       regular: regular.length,
       hot: hot.length,
       excluded,
+      duplicates,
       saved,
       removed,
       ...(errors.length ? { errors } : {}),
