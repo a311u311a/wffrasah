@@ -6,6 +6,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/store.dart';
 import '../models/coupon.dart';
 import '../models/offers.dart';
+import '../models/ali_product.dart';
+import '../services/ali_products_service.dart';
+import '../widgets/ali_product_card.dart';
 import '../widgets/coupon_card.dart';
 import '../widgets/loading_indicator.dart';
 import '../localization/app_localizations.dart';
@@ -179,6 +182,8 @@ class _StoreCouponsScreenState extends State<StoreCouponsScreen> {
   // --- Data & State ---
   List<Coupon> _coupons = [];
   List<Offer> _offers = [];
+  // منتجات علي إكسبرس (تظهر في تبويب العروض لمتجر علي إكسبرس فقط).
+  List<AliProduct> _aliProducts = [];
   bool _isLoading = true;
   String _errorMessage = '';
   int _selectedTab = 0;
@@ -199,6 +204,7 @@ class _StoreCouponsScreenState extends State<StoreCouponsScreen> {
     super.didChangeDependencies();
     if (_couponsSub == null && _offersSub == null) {
       _fetchStoreData();
+      if (_isAliExpressStore) unawaited(_loadAliProducts());
       unawaited(_loadFollowState());
       _listenToRatings();
       unawaited(_loadMyRating());
@@ -291,6 +297,21 @@ class _StoreCouponsScreenState extends State<StoreCouponsScreen> {
 
   String _resolveStoreSlug() => widget.store.slug.trim();
 
+  bool get _isAliExpressStore {
+    final keys = [
+      widget.store.slug,
+      widget.store.id,
+      widget.store.nameEn,
+    ].map((e) => e.toLowerCase().replaceAll(RegExp(r'[\s\-_]'), ''));
+    return keys.contains('aliexpress');
+  }
+
+  Future<void> _loadAliProducts() async {
+    final items = await AliProductsService.fetch(limit: 40);
+    if (!mounted) return;
+    setState(() => _aliProducts = items);
+  }
+
   String get _storeFollowKey {
     final key = widget.store.key.trim();
     if (key.isNotEmpty) return key;
@@ -305,7 +326,7 @@ class _StoreCouponsScreenState extends State<StoreCouponsScreen> {
           icon: Icons.confirmation_number_outlined,
           label: 'الكوبونات',
         ),
-      if (_offers.isNotEmpty)
+      if (_offers.isNotEmpty || _aliProducts.isNotEmpty)
         const _StoreContentTab(
           index: 1,
           icon: Icons.local_offer_outlined,
@@ -833,16 +854,50 @@ class _StoreCouponsScreenState extends State<StoreCouponsScreen> {
 
     if (activeTab == 1) {
       return Column(
-        children: _offers
-            .map((offer) => CouponCard(
-                  coupon: _offerAsCoupon(offer, langCode),
-                  storeName: widget.store.name,
-                ))
-            .toList(),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ..._offers.map((offer) => CouponCard(
+                coupon: _offerAsCoupon(offer, langCode),
+                storeName: widget.store.name,
+              )),
+          if (_aliProducts.isNotEmpty) ...[
+            if (_offers.isNotEmpty) const SizedBox(height: 12),
+            _buildAliProductsGrid(),
+          ],
+        ],
       );
     }
 
     return _buildEmptyBox('لا توجد كوبونات أو عروض حالياً');
+  }
+
+  Widget _buildAliProductsGrid() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final columns = width >= 900 ? 4 : (width >= 600 ? 3 : 2);
+        const spacing = 12.0;
+        final cellWidth = (width - spacing * (columns - 1)) / columns;
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
+            itemCount: _aliProducts.length,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: columns,
+              mainAxisSpacing: spacing,
+              crossAxisSpacing: spacing,
+              // الصورة مربعة بعرض البطاقة، والباقي ثابت.
+              mainAxisExtent: cellWidth + 140,
+            ),
+            itemBuilder: (context, i) =>
+                AliProductCard(product: _aliProducts[i]),
+          ),
+        );
+      },
+    );
   }
 
   Coupon _offerAsCoupon(Offer offer, String langCode) {
