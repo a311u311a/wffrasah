@@ -13,6 +13,7 @@ import '../constants.dart';
 import '../models/coupon.dart';
 import '../providers/favorites_provider.dart';
 import '../services/analytics_service.dart';
+import 'savings_calculator.dart';
 
 // بطاقة الكوبون الرئيسية: تعرض بيانات الكوبون المختصرة داخل القائمة.
 // عند الضغط عليها يتم فتح شاشة التفاصيل الكاملة للكوبون.
@@ -606,6 +607,15 @@ class _CouponDetailsSheetState extends State<_CouponDetailsSheet> {
                             ),
                           ],
                         ),
+                        if (widget.coupon.discountPercent?.trim().isNotEmpty ==
+                                true &&
+                            widget.coupon.couponType == 'coupon') ...[
+                          const SizedBox(height: 20),
+                          SavingsCalculator(
+                            discountPercent: widget.coupon.discountPercent,
+                            couponType: widget.coupon.couponType,
+                          ),
+                        ],
                       ],
                       const SizedBox(height: 14),
                       if (widget.coupon.description.trim().isNotEmpty)

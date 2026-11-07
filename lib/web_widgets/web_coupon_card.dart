@@ -13,6 +13,7 @@ import '../constants.dart';
 import '../models/coupon.dart';
 import '../providers/favorites_provider.dart';
 import '../services/analytics_service.dart';
+import '../widgets/savings_calculator.dart';
 
 class WebCouponCard extends StatefulWidget {
   final Coupon coupon;
@@ -512,6 +513,14 @@ class _WebCouponDetailsDialogState extends State<_WebCouponDetailsDialog> {
                   ],
                 ),
                 const SizedBox(height: 26),
+                if (widget.coupon.discountPercent?.trim().isNotEmpty == true &&
+                    widget.coupon.couponType == 'coupon') ...[
+                  SavingsCalculator(
+                    discountPercent: widget.coupon.discountPercent,
+                    couponType: widget.coupon.couponType,
+                  ),
+                  const SizedBox(height: 20),
+                ],
                 if (widget.coupon.description.trim().isNotEmpty)
                   _InfoSection(title: 'الوصف', body: widget.coupon.description),
                 if (widget.coupon.terms.trim().isNotEmpty)
