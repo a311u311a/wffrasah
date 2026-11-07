@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +9,7 @@ import '../models/category.dart';
 import '../models/store.dart';
 import '../providers/locale_provider.dart';
 import '../services/home_data_service.dart';
+import '../services/stores_changes.dart';
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_footer.dart';
 import '../web_widgets/web_navigation_bar.dart';
@@ -44,29 +47,34 @@ class _WebStoresScreenState extends State<WebStoresScreen> {
 
   String _t(String key) => AppLocalizations.of(context)?.translate(key) ?? key;
 
+  StreamSubscription<void>? _storesSub;
+
   @override
   void initState() {
     super.initState();
     _loadData();
+    // أي متجر يُضاف أو يتعدل يحدّث الصفحة والفئات فوراً.
+    _storesSub = StoresChanges.stream.listen((_) => _loadData(silent: true));
   }
 
   @override
   void dispose() {
+    _storesSub?.cancel();
     searchController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadData() async {
-    setState(() => isLoading = true);
+  Future<void> _loadData({bool silent = false}) async {
+    if (!silent) setState(() => isLoading = true);
 
     final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
     final langCode = localeProvider.locale.languageCode;
 
     try {
       final results = await Future.wait([
-        HomeDataService.fetchStores(),
-        HomeDataService.fetchCategories(),
-        HomeDataService.fetchImportedCouponStores(),
+        HomeDataService.fetchStores(forceRefresh: silent),
+        HomeDataService.fetchCategories(forceRefresh: silent),
+        HomeDataService.fetchImportedCouponStores(forceRefresh: silent),
       ]);
 
       final storesData = results[0] as List;
@@ -100,17 +108,29 @@ class _WebStoresScreenState extends State<WebStoresScreen> {
           .map((store) => Store.fromSupabase(store, langCode))
           .toList();
 
+      // الفئة اللي ما فيها متاجر ظاهرة ما تنعرض.
+      final activeCategoryIds = loadedStores
+          .map((store) => store.categoryId?.trim() ?? '')
+          .where((id) => id.isNotEmpty)
+          .toSet();
       final loadedCategories = categoriesData
           .map((cat) => Category.fromSupabase(cat, langCode))
+          .where((cat) => activeCategoryIds.contains(cat.id))
           .toList();
 
+      if (!mounted) return;
       setState(() {
         allStores = loadedStores;
-        filteredStores = loadedStores;
         categories = loadedCategories;
+        if (selectedCategoryId != null &&
+            !activeCategoryIds.contains(selectedCategoryId)) {
+          selectedCategoryId = null;
+        }
+        _applyFilters();
         isLoading = false;
       });
     } catch (e) {
+      if (!mounted || silent) return;
       setState(() => isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

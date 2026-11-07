@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import '../constants.dart';
 import '../localization/app_localizations.dart';
 import '../models/category.dart';
+import '../services/stores_changes.dart';
 import 'app_responsive.dart';
 import 'error_message.dart';
 import 'loading_indicator.dart';
@@ -33,6 +36,24 @@ class CategoryList extends StatefulWidget {
 
 class _CategoryListState extends State<CategoryList> {
   late Future<List<Category>> _categoriesFuture;
+  StreamSubscription<void>? _storesSub;
+
+  @override
+  void initState() {
+    super.initState();
+    // الفئة الفارغة مخفية، وتظهر بمجرد إضافة متجر لها.
+    if (widget.activeCategoryIds == null) {
+      _storesSub = StoresChanges.stream.listen((_) {
+        if (mounted) setState(() => _categoriesFuture = _fetchCategories());
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _storesSub?.cancel();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {

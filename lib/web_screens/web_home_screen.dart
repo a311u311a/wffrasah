@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +12,7 @@ import '../models/offers.dart';
 import '../models/store.dart';
 import '../providers/locale_provider.dart';
 import '../services/home_data_service.dart';
+import '../services/stores_changes.dart';
 import '../services/unified_search_service.dart';
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_ali_products_grid.dart';
@@ -47,6 +50,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
   bool isLoading = true;
   bool hasLoadError = false;
   String? selectedCategoryId;
+  StreamSubscription<void>? _storesSub;
 
   @override
   void initState() {
@@ -54,27 +58,33 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
     searchController.addListener(() => setState(() {}));
     searchFocusNode.addListener(() => setState(() {}));
     _loadHomeData();
+    // أي متجر يُضاف أو يتعدل يحدّث الصفحة والفئات فوراً.
+    _storesSub =
+        StoresChanges.stream.listen((_) => _loadHomeData(silent: true));
   }
 
   @override
   void dispose() {
+    _storesSub?.cancel();
     searchController.dispose();
     searchFocusNode.dispose();
     super.dispose();
   }
 
-  Future<void> _loadHomeData() async {
+  Future<void> _loadHomeData({bool silent = false}) async {
     final langCode =
         Provider.of<LocaleProvider>(context, listen: false).locale.languageCode;
 
     try {
-      setState(() {
-        isLoading = true;
-        hasLoadError = false;
-      });
+      if (!silent) {
+        setState(() {
+          isLoading = true;
+          hasLoadError = false;
+        });
+      }
 
       final data = await HomeDataService.fetchWebHomeData(
-        forceRefresh: hasLoadError,
+        forceRefresh: hasLoadError || silent,
       );
 
       final loadedStores = data.stores
@@ -93,9 +103,19 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
         carouselItems = data.carousel
             .map((item) => Carousel.fromMap(item, langCode))
             .toList();
+        // الفئة اللي ما فيها متاجر ظاهرة ما تنعرض.
+        final activeCategoryIds = loadedStores
+            .map((store) => store.categoryId?.trim() ?? '')
+            .where((id) => id.isNotEmpty)
+            .toSet();
         categories = data.categories
             .map((item) => Category.fromSupabase(item, langCode))
+            .where((category) => activeCategoryIds.contains(category.id))
             .toList();
+        if (selectedCategoryId != null &&
+            !activeCategoryIds.contains(selectedCategoryId)) {
+          selectedCategoryId = null;
+        }
         stores = loadedStores;
         coupons = data.coupons
             .map((item) => Coupon.fromSupabase(
@@ -113,7 +133,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
         hasLoadError = false;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || silent) return;
       setState(() {
         carouselItems = [];
         categories = [];
