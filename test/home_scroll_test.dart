@@ -3,12 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:wffrhasah/screens/home_screen.dart';
+import 'package:wffrhasah/services/stores_changes.dart';
 import 'package:wffrhasah/widgets/carouse.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() async {
+    StoresChanges.enabled = false;
     SharedPreferences.setMockInitialValues({});
     await Supabase.initialize(
       url: 'https://scroll-test.invalid',

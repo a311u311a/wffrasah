@@ -14,6 +14,9 @@ class StoresChanges {
   static RealtimeChannel? _channel;
   static Timer? _debounce;
 
+  /// false في الاختبارات حتى لا تبقى مؤقتات اتصال Realtime مفتوحة.
+  static bool enabled = true;
+
   /// يطلق حدثاً بعد أي تغيير في المتاجر (مع تجميع التغييرات المتتالية).
   static Stream<void> get stream {
     _ensureSubscribed();
@@ -21,7 +24,7 @@ class StoresChanges {
   }
 
   static void _ensureSubscribed() {
-    if (_channel != null) return;
+    if (!enabled || _channel != null) return;
     try {
       _channel = Supabase.instance.client
           .channel('public:stores:changes')
