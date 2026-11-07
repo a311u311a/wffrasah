@@ -33,6 +33,10 @@ class _WebAliProductsScreenState extends State<WebAliProductsScreen> {
   static const Color faded = Color(0xFF9B96B6);
 
   String? _categoryId;
+  bool _showAllCategories = false;
+
+  /// عدد الفئات الظاهرة على الجوال قبل زر "المزيد".
+  static const int _mobileVisibleCategories = 5;
   List<AliCategory> _categories = [];
   late Future<List<AliProduct>> _future;
 
@@ -143,25 +147,70 @@ class _WebAliProductsScreenState extends State<WebAliProductsScreen> {
           if (_categories.isNotEmpty) ...[
             const SizedBox(height: 20),
             // Wrap بدل التمرير الأفقي حتى تظهر كل الفئات بدون قص.
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                _chip(null, webText(context, 'الكل', 'All')),
-                for (final c in _categories)
-                  _chip(c.id, c.name(_langCode), icon: c.icon),
-              ],
-            ),
+            // على الجوال تظهر أول الفئات فقط مع زر "المزيد" حتى لا تأخذ
+            // الفئات مساحة طويلة قبل المنتجات.
+            _buildCategoryChips(),
           ],
         ],
       ),
     );
   }
 
+  Widget _buildCategoryChips() {
+    final compact = ResponsiveLayout.isMobile(context);
+    var visible = _categories;
+    final collapsible =
+        compact && _categories.length > _mobileVisibleCategories + 1;
+    if (collapsible && !_showAllCategories) {
+      visible = _categories.take(_mobileVisibleCategories).toList();
+      final selected = _categories.where((c) => c.id == _categoryId).toList();
+      if (selected.isNotEmpty && !visible.contains(selected.first)) {
+        visible = [...visible, selected.first];
+      }
+    }
+    final hidden = _categories.length - visible.length;
+    return Wrap(
+      spacing: compact ? 6 : 10,
+      runSpacing: compact ? 6 : 10,
+      children: [
+        _chip(null, webText(context, 'الكل', 'All'), compact: compact),
+        for (final c in visible)
+          _chip(c.id, c.name(_langCode), icon: c.icon, compact: compact),
+        if (collapsible)
+          ActionChip(
+            onPressed: () =>
+                setState(() => _showAllCategories = !_showAllCategories),
+            avatar: Icon(
+              _showAllCategories
+                  ? Icons.expand_less_rounded
+                  : Icons.expand_more_rounded,
+              size: 18,
+              color: accent,
+            ),
+            label: Text(
+              _showAllCategories
+                  ? webText(context, 'أقل', 'Less')
+                  : webText(context, 'المزيد (+$hidden)', 'More (+$hidden)'),
+              style: GoogleFonts.cairo(
+                color: accent,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            backgroundColor: panelDark,
+            side: const BorderSide(color: stroke),
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          ),
+      ],
+    );
+  }
+
   String get _langCode =>
       Provider.of<LocaleProvider>(context, listen: false).locale.languageCode;
 
-  Widget _chip(String? id, String label, {String icon = ''}) {
+  Widget _chip(String? id, String label,
+      {String icon = '', bool compact = false}) {
     final selected = _categoryId == id;
     return ChoiceChip(
       selected: selected,
@@ -171,22 +220,25 @@ class _WebAliProductsScreenState extends State<WebAliProductsScreen> {
           : ClipOval(
               child: Container(
                 color: Colors.white,
-                child: WebNetworkImage(icon, width: 22, height: 22,
-                    fit: BoxFit.contain),
+                child: WebNetworkImage(icon,
+                    width: 22, height: 22, fit: BoxFit.contain),
               ),
             ),
       label: Text(
         label,
         style: GoogleFonts.cairo(
           color: selected ? Colors.white : secondary,
-          fontSize: 14,
+          fontSize: compact ? 13 : 14,
           fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
         ),
       ),
       selectedColor: accent,
       backgroundColor: panel,
       side: BorderSide(color: selected ? accent : stroke),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: compact
+          ? const EdgeInsets.symmetric(horizontal: 6, vertical: 2)
+          : const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      visualDensity: compact ? VisualDensity.compact : null,
       onSelected: (_) => _selectCategory(id),
     );
   }
