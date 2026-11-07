@@ -157,20 +157,14 @@ class _WebAliProductsScreenState extends State<WebAliProductsScreen> {
           ),
           if (_categories.isNotEmpty) ...[
             const SizedBox(height: 20),
-            SizedBox(
-              height: 48,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _categories.length + 1,
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
-                itemBuilder: (context, i) {
-                  if (i == 0) {
-                    return _chip(null, webText(context, 'الكل', 'All'));
-                  }
-                  final c = _categories[i - 1];
-                  return _chip(c.id, c.name);
-                },
-              ),
+            // Wrap بدل التمرير الأفقي حتى تظهر كل الفئات بدون قص.
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                _chip(null, webText(context, 'الكل', 'All')),
+                for (final c in _categories) _chip(c.id, c.name),
+              ],
             ),
           ],
         ],

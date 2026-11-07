@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -40,13 +41,19 @@ class _WebBannerCarouselState extends State<WebBannerCarousel> {
       return const SizedBox.shrink();
     }
 
-    // تحديد الارتفاع حسب حجم الشاشة
-    final double bannerHeight = ResponsiveLayout.isDesktop(context)
-        ? 380
-        : ResponsiveLayout.isTablet(context)
-            ? 300
-            : 200;
+    // الارتفاع يتبع عرض الصفحة حتى تظهر الصورة كاملة بدون قص.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final ratio = ResponsiveLayout.isMobile(context) ? 2.0 : 2.4;
+        final bannerHeight = (width / ratio).clamp(160.0, 560.0);
+        return _buildCarousel(itemsWithImages, bannerHeight);
+      },
+    );
+  }
 
+  Widget _buildCarousel(List<Carousel> itemsWithImages, double bannerHeight) {
+    final isMobile = ResponsiveLayout.isMobile(context);
     return SizedBox(
       width: double.infinity,
       height: bannerHeight,
@@ -78,8 +85,8 @@ class _WebBannerCarouselState extends State<WebBannerCarousel> {
 
             // مؤشرات التقدم
             Positioned(
-              bottom: 20,
-              left: 30, // تغيير المكان لليسار
+              bottom: isMobile ? 10 : 20,
+              left: isMobile ? 16 : 30, // تغيير المكان لليسار
               child: _buildIndicators(itemsWithImages.length),
             ),
 
@@ -111,6 +118,7 @@ class _WebBannerCarouselState extends State<WebBannerCarousel> {
   }
 
   Widget _buildBannerItem(Carousel item, double height) {
+    final isMobile = ResponsiveLayout.isMobile(context);
     return InkWell(
       onTap: () async {
         if (item.web.isNotEmpty) {
@@ -137,19 +145,18 @@ class _WebBannerCarouselState extends State<WebBannerCarousel> {
                 end: Alignment.bottomCenter,
                 colors: [
                   Colors.transparent,
-                  Colors.black.withValues(alpha: 0.1),
-                  Colors.black.withValues(alpha: 0.8),
+                  Colors.black.withValues(alpha: 0.35),
                 ],
-                stops: const [0.4, 0.7, 1.0],
+                stops: const [0.78, 1.0],
               ),
             ),
           ),
 
           // المحتوى النصي
           Positioned(
-            bottom: 40,
-            right: 40, // RTL alignment
-            left: 40,
+            bottom: isMobile ? 10 : 24,
+            right: isMobile ? 12 : 28, // RTL alignment
+            left: isMobile ? 12 : 28,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -158,12 +165,12 @@ class _WebBannerCarouselState extends State<WebBannerCarousel> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (item.name.isNotEmpty) const SizedBox(height: 16),
                       // زر الإجراء (Call to Action)
                       if (item.web.isNotEmpty)
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 12),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: isMobile ? 12 : 22,
+                              vertical: isMobile ? 6 : 11),
                           decoration: BoxDecoration(
                             color: Constants.primaryColor,
                             borderRadius: BorderRadius.circular(30),
@@ -173,18 +180,18 @@ class _WebBannerCarouselState extends State<WebBannerCarousel> {
                             children: [
                               Text(
                                 webText(context, 'تسوق الآن', 'Shop Now'),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 14,
+                                  fontSize: isMobile ? 12 : 14,
                                   fontWeight: FontWeight.w700,
                                   fontFamily: 'Tajawal',
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              const Icon(
+                              const SizedBox(width: 6),
+                              Icon(
                                 Icons.arrow_forward_rounded,
                                 color: Colors.white,
-                                size: 18,
+                                size: isMobile ? 14 : 18,
                               ),
                             ],
                           ),
@@ -281,10 +288,32 @@ class _RetryingWebBannerImageState extends State<_RetryingWebBannerImage> {
   Widget build(BuildContext context) {
     final imageUrl = widget.imageUrl.trim();
 
+    final url = _imageUrlForAttempt(imageUrl);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // نسخة مموّهة تملأ الفراغ حول الصورة إذا اختلفت نسبتها عن البنر.
+        ClipRect(
+          child: ImageFiltered(
+            imageFilter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+            child: Image.network(
+              url,
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+              errorBuilder: (_, __, ___) => const SizedBox(),
+            ),
+          ),
+        ),
+        _buildFullImage(imageUrl, url),
+      ],
+    );
+  }
+
+  Widget _buildFullImage(String imageUrl, String url) {
     return Image.network(
-      _imageUrlForAttempt(imageUrl),
+      url,
       key: ValueKey('$imageUrl-$_retryAttempt'),
-      fit: BoxFit.cover,
+      fit: BoxFit.contain,
       gaplessPlayback: true,
       loadingBuilder: (context, child, loadingProgress) {
         if (loadingProgress == null) return child;
