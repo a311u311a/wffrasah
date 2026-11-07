@@ -14,7 +14,6 @@
 do $$
 declare
   v_store_name  text;
-  v_category_id text;
   v_tags_type   text;
 begin
   -- لا تكرر العرض
@@ -28,9 +27,8 @@ begin
   end if;
 
   -- اسم المتجر وفئته من جدول المتاجر (store_id = stores.slug)
-  select coalesce(nullif(s.name_ar, ''), nullif(s.name, ''), nullif(s.name_en, ''), 'شي إن'),
-         s.category_id::text
-    into v_store_name, v_category_id
+  select coalesce(nullif(s.name_ar, ''), nullif(s.name, ''), nullif(s.name_en, ''), 'شي إن')
+    into v_store_name
   from public.stores s
   where s.slug = 'shein'
   limit 1;
@@ -47,8 +45,8 @@ begin
   execute format(
     'insert into public.offers
        (name_ar, name_en, description_ar, description_en, web, image, tags,
-        category_id, store_id, store_name, expiry_date, created_at)
-     values ($1, $2, $3, $4, $5, $6, %s, $7, $8, $9, $10, now())',
+        store_id, store_name, expiry_date, created_at)
+     values ($1, $2, $3, $4, $5, $6, %s, $7, $8, $9, now())',
     case
       when v_tags_type = 'jsonb' then '''["LV47474"]''::jsonb'
       when v_tags_type = 'json'  then '''["LV47474"]''::json'
@@ -63,10 +61,17 @@ begin
     'Search for code LV47474 in the SHEIN app or tap the link to start! 50% off for new users only – selected products for a limited time.',
     'https://onelink.shein.com/59/67igxqght200',
     '',                                   -- الصورة تُضاف في الجزء الأخير
-    v_category_id,
     'shein',
     v_store_name,
     now() + interval '30 days';           -- مدة العرض: 30 يوماً (عدّلها إن لزم)
+
+  -- نفس فئة متجر شي إن (إن وُجدت)
+  update public.offers o
+  set category_id = s.category_id
+  from public.stores s
+  where s.slug = 'shein'
+    and o.store_id = 'shein'
+    and o.tags::text like '%LV47474%';
 
   raise notice 'تمت إضافة عرض شي إن LV47474';
 end $$;
