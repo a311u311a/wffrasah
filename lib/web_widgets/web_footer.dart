@@ -151,8 +151,7 @@ class WebFooter extends StatelessWidget {
           children: [
             _buildStoreBadge(
               'assets/image/app-store.svg',
-              'https://apps.apple.com/us/app/%D9%88%D9%81%D8%B1%D9%87%D8%A7-%D8%B5%D8%AD/id6804630956',
-              enabled: false, // تعطيل الضغط على متجر آبل حالياً
+              'https://apps.apple.com/sa/app/%D9%88%D9%81%D8%B1%D9%87%D8%A7-%D8%B5%D8%AD/id6804630956?l=ar',
             ),
             _buildStoreBadge(
               'assets/image/google-play.svg',
