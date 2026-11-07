@@ -5,6 +5,14 @@
 // to Saudi Arabia, score them, upsert them, and drop that category's rows the
 // run did not see. Called by pg_cron with the `x-sync-token` header.
 //
+// Body (all optional):
+//   source: "store" (default) reads public.categories.ali_keywords and writes
+//           public.ali_products; "ali" reads the active public.ali_categories
+//           (keywords, in sort_order) and writes public.ali_category_products.
+//   category_id: sync only that category.
+//   from_order / to_order: with source "ali", only categories whose
+//           sort_order is in that range (to split long runs).
+//
 // `ali_keywords` is one search ("men fashion clothing"), or several searches
 // separated by `|` ("2026 women abaya | women maxi dress | women cardigan")
 // to fill one category from several AliExpress sub-categories. Each search
@@ -280,17 +288,33 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  const { category_id } = await req.json().catch(() => ({}));
-  let query = supabase.from("categories").select("id, ali_keywords");
+  const body = await req.json().catch(() => ({}));
+  const { category_id, from_order, to_order } = body ?? {};
+  const useAli = body?.source === "ali";
+  const productsTable = useAli ? "ali_category_products" : "ali_products";
+
+  let query = useAli
+    ? supabase
+      .from("ali_categories")
+      .select("id, keywords, sort_order")
+      .eq("active", true)
+      .order("sort_order")
+    : supabase.from("categories").select("id, ali_keywords");
   if (category_id) query = query.eq("id", String(category_id));
-  const { data: categories, error: catErr } = await query;
+  if (useAli && from_order != null) query = query.gte("sort_order", Number(from_order));
+  if (useAli && to_order != null) query = query.lte("sort_order", Number(to_order));
+  const { data: rawCategories, error: catErr } = await query;
   if (catErr) return json({ error: catErr.message }, 500);
+  const categories = (rawCategories ?? []).map((c: any) => ({
+    id: c.id,
+    keywords: String((useAli ? c.keywords : c.ali_keywords) ?? ""),
+  }));
 
   const runAt = new Date().toISOString();
   const report: Record<string, unknown>[] = [];
 
-  for (const cat of categories ?? []) {
-    const keywords = String(cat.ali_keywords ?? "").trim();
+  for (const cat of categories) {
+    const keywords = cat.keywords.trim();
     if (!keywords) continue;
 
     const { regular, hot, errors, groupOf } = await fetchCategoryGroups(
@@ -319,7 +343,7 @@ Deno.serve(async (req) => {
 
     if (rows.size > 0) {
       const { error: upErr } = await supabase
-        .from("ali_products")
+        .from(productsTable)
         .upsert([...rows.values()], { onConflict: "product_id,category_id" });
       if (upErr) {
         errors.push(`upsert: ${upErr.message}`);
@@ -328,7 +352,7 @@ Deno.serve(async (req) => {
         // Only prune when this run saved fresh rows, so a failed fetch never
         // empties a category.
         const { count } = await supabase
-          .from("ali_products")
+          .from(productsTable)
           .delete({ count: "exact" })
           .eq("category_id", String(cat.id))
           .lt("updated_at", runAt);
@@ -348,6 +372,7 @@ Deno.serve(async (req) => {
   }
 
   return json({
+    source: useAli ? "ali" : "store",
     run_at: runAt,
     categories: report.length,
     saved: report.reduce((s, r) => s + Number(r.saved ?? 0), 0),
