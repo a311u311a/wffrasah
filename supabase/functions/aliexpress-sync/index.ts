@@ -12,6 +12,10 @@
 // A group that starts with `-` is a comma-separated list of words to exclude:
 // any product whose title contains one of them is skipped
 // ("... | -sexy, شفاف, مكشوف").
+// With several searches, products are ordered round-robin across them (best
+// of each search first, then the second best, ...) by handing the category's
+// own sort_score values out in that order, so the page shows a mix of types
+// and the category's place in the all-categories list stays the same.
 //
 // Secrets: ALI_APP_KEY, ALI_APP_SECRET, ALI_BASE_URL, ALI_TRACKING_ID,
 // ALI_SYNC_TOKEN (and the built-in SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY).
@@ -201,8 +205,10 @@ async function fetchCategoryGroups(rawKeywords: string, trackingId: string) {
     .filter((g) => g && !g.startsWith("-"))
     .map((g) => g.replace(/\s*,\s*/g, " ").trim())
     .filter(Boolean);
+  // product_id -> index of the first search that returned it.
+  const groupOf = new Map<number, number>();
   if (groups.length <= 1) {
-    return fetchCategory(groups[0] ?? "", trackingId);
+    return { ...(await fetchCategory(groups[0] ?? "", trackingId)), groupOf };
   }
   const regular: any[] = [];
   const hot: any[] = [];
@@ -213,12 +219,49 @@ async function fetchCategoryGroups(rawKeywords: string, trackingId: string) {
       batch.map((g) => fetchCategory(g, trackingId, GROUP_PAGE_SIZE)),
     );
     results.forEach((r, j) => {
+      for (const p of [...r.regular, ...r.hot]) {
+        const id = Number(p.product_id);
+        if (id && !groupOf.has(id)) groupOf.set(id, i + j);
+      }
       regular.push(...r.regular);
       hot.push(...r.hot);
       errors.push(...r.errors.map((e) => `${batch[j]}: ${e}`));
     });
   }
-  return { regular, hot, errors };
+  return { regular, hot, errors, groupOf };
+}
+
+/**
+ * Reorders rows round-robin across their searches by reassigning the same
+ * sort_score values (highest first) in that order. No-op for one search.
+ */
+function interleaveScores(
+  rows: { product_id: number; sort_score: number }[],
+  groupOf: Map<number, number>,
+) {
+  if (groupOf.size === 0) return;
+  const byGroup = new Map<number, typeof rows>();
+  for (const r of rows) {
+    const g = groupOf.get(r.product_id) ?? -1;
+    if (!byGroup.has(g)) byGroup.set(g, []);
+    byGroup.get(g)!.push(r);
+  }
+  if (byGroup.size <= 1) return;
+  const lists = [...byGroup.keys()]
+    .sort((a, b) => a - b)
+    .map((g) => byGroup.get(g)!.sort((a, b) => b.sort_score - a.sort_score));
+  const order: typeof rows = [];
+  for (let i = 0; order.length < rows.length; i++) {
+    for (const list of lists) if (i < list.length) order.push(list[i]);
+  }
+  const scores = rows.map((r) => r.sort_score).sort((a, b) => b - a);
+  // Strictly decreasing so equal scores cannot undo the order in the DB.
+  for (let i = 1; i < scores.length; i++) {
+    if (scores[i] >= scores[i - 1]) {
+      scores[i] = Math.round((scores[i - 1] - 0.01) * 100) / 100;
+    }
+  }
+  order.forEach((r, i) => (r.sort_score = scores[i]));
 }
 
 Deno.serve(async (req) => {
@@ -250,7 +293,10 @@ Deno.serve(async (req) => {
     const keywords = String(cat.ali_keywords ?? "").trim();
     if (!keywords) continue;
 
-    const { regular, hot, errors } = await fetchCategoryGroups(keywords, trackingId);
+    const { regular, hot, errors, groupOf } = await fetchCategoryGroups(
+      keywords,
+      trackingId,
+    );
     const excludes = parseExcludes(keywords);
 
     let excluded = 0;
@@ -269,6 +315,8 @@ Deno.serve(async (req) => {
 
     let saved = 0;
     let removed = 0;
+    interleaveScores([...rows.values()], groupOf);
+
     if (rows.size > 0) {
       const { error: upErr } = await supabase
         .from("ali_products")
