@@ -21,7 +21,7 @@ import CryptoJS from "https://esm.sh/crypto-js@4.2.0";
 
 const PAGE_SIZE = 50;
 const GROUP_PAGE_SIZE = 15;
-const GROUP_CONCURRENCY = 4;
+const GROUP_CONCURRENCY = 2;
 const SHIP_TO = Deno.env.get("ALI_SHIP_TO_COUNTRY") ?? "SA";
 const CURRENCY = Deno.env.get("ALI_TARGET_CURRENCY") ?? "SAR";
 const LANGUAGE = Deno.env.get("ALI_TARGET_LANGUAGE") ?? "AR";
@@ -68,6 +68,24 @@ async function aliCall(method: string, bizParams: Record<string, string>) {
     throw new Error(`${e.code ?? "ALI_ERROR"}: ${e.msg ?? "Unknown error"}`);
   }
   return body;
+}
+
+/** Retries when AliExpress rate-limits ("ApiCallLimit ... ban will last N seconds"). */
+async function aliCallWithRetry(
+  method: string,
+  bizParams: Record<string, string>,
+  attempts = 3,
+) {
+  for (let i = 1; ; i++) {
+    try {
+      return await aliCall(method, bizParams);
+    } catch (e) {
+      const msg = String((e as Error)?.message ?? e);
+      if (i >= attempts || !msg.includes("ApiCallLimit")) throw e;
+      const secs = Number(msg.match(/last (\d+) second/)?.[1] ?? 1);
+      await new Promise((r) => setTimeout(r, (secs + 0.5) * 1000 * i));
+    }
+  }
 }
 
 function extractProducts(body: any): any[] {
@@ -144,9 +162,9 @@ async function fetchCategory(
   // enable it with the ALI_USE_HOT=true secret once AliExpress grants it.
   const useHot = Deno.env.get("ALI_USE_HOT") === "true";
   const [regular, hot] = await Promise.allSettled([
-    aliCall("aliexpress.affiliate.product.query", common),
+    aliCallWithRetry("aliexpress.affiliate.product.query", common),
     useHot
-      ? aliCall("aliexpress.affiliate.hotproduct.query", common)
+      ? aliCallWithRetry("aliexpress.affiliate.hotproduct.query", common)
       : Promise.resolve({}),
   ]);
   return {
