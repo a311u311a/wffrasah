@@ -3,9 +3,9 @@
 -- آمن للتشغيل أكثر من مرة: لن يُكرر العرض إذا كان موجوداً.
 --
 -- الخطوات:
---   1) ارفع الصورة offer_images/shein_LV47474.jpg إلى Supabase Storage
---      في الحاوية images داخل المجلد offers باسم shein_LV47474.jpg
---      (المسار النهائي: images/offers/shein_LV47474.jpg)
+--   1) ارفع الصورة offer_images/shein_offer_LV47474.jpg إلى Supabase Storage
+--      في الحاوية images داخل المجلد offers باسم shein_offer_LV47474.jpg
+--      (المسار النهائي: images/offers/shein_offer_LV47474.jpg)
 --   2) شغّل هذا الملف كاملاً. الجزء الأول يضيف العرض، والجزء الأخير يضيف الصورة.
 
 -- =========================================================
@@ -78,9 +78,9 @@ end $$;
 
 -- =========================================================
 -- الجزء الأخير: إضافة صورة العرض
--- (بعد رفع الصورة إلى images/offers/shein_LV47474.jpg)
+-- (بعد رفع الصورة إلى images/offers/shein_offer_LV47474.jpg)
 -- =========================================================
 update public.offers
-set image = 'https://ilfbqykxkjructxunuxm.supabase.co/storage/v1/object/public/images/offers/shein_LV47474.jpg'
+set image = 'https://ilfbqykxkjructxunuxm.supabase.co/storage/v1/object/public/images/offers/shein_offer_LV47474.jpg'
 where store_id = 'shein'
   and tags::text like '%LV47474%';
