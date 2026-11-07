@@ -9,6 +9,7 @@ import 'localization/app_localizations.dart';
 import 'web_screens/web_home_screen.dart';
 import 'web_screens/web_stores_screen.dart';
 import 'web_screens/web_offers_screen.dart';
+import 'web_screens/web_ali_products_screen.dart';
 import 'web_screens/web_favorites_screen.dart';
 import 'web_screens/web_about_screen.dart';
 import 'web_screens/web_contact_screen.dart';
@@ -108,6 +109,9 @@ class WebApp extends StatelessWidget {
             break;
           case '/offers':
             screen = const WebOffersScreen();
+            break;
+          case '/aliexpress':
+            screen = const WebAliProductsScreen();
             break;
           case '/favorites':
             screen = const WebFavoritesScreen();

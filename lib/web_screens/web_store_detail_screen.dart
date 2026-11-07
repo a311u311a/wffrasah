@@ -6,6 +6,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/store.dart';
 import '../models/coupon.dart';
 import '../models/offers.dart';
+import '../models/ali_product.dart';
+import '../services/ali_products_service.dart';
+import '../web_widgets/web_ali_products_grid.dart';
 import '../constants.dart';
 import '../providers/locale_provider.dart';
 import '../services/home_data_service.dart';
@@ -33,6 +36,7 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
 
   List<Coupon> _coupons = [];
   List<Offer> _offers = [];
+  List<AliProduct> _aliProducts = [];
   bool _isLoading = true;
   String _errorMessage = '';
 
@@ -55,7 +59,22 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
     super.didChangeDependencies();
     if (_couponsSub == null && _offersSub == null) {
       _fetchStoreData();
+      if (_isAliExpressStore) _loadAliProducts();
     }
+  }
+
+  bool get _isAliExpressStore {
+    final keys = {
+      widget.store.id,
+      widget.store.slug,
+      widget.store.nameEn,
+    }.map((k) => k.toLowerCase().replaceAll(' ', '').trim());
+    return keys.contains('aliexpress');
+  }
+
+  Future<void> _loadAliProducts() async {
+    final items = await AliProductsService.fetch(limit: 40);
+    if (mounted) setState(() => _aliProducts = items);
   }
 
   @override
@@ -325,7 +344,8 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
 
   Widget _buildTabBar() {
     final hasCoupons = _coupons.isNotEmpty;
-    final hasOffers = _offers.isNotEmpty;
+    final offersCount = _offers.length + _aliProducts.length;
+    final hasOffers = offersCount > 0;
 
     return Container(
       margin: ResponsivePadding.page(context).copyWith(top: 30, bottom: 0),
@@ -384,8 +404,8 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
                     const SizedBox(width: 8),
                     Text(webText(
                         context,
-                        'العروض المتاحة ${hasOffers ? '(${_offers.length})' : ''}',
-                        'Available Offers ${hasOffers ? '(${_offers.length})' : ''}')),
+                        'العروض المتاحة ${hasOffers ? '($offersCount)' : ''}',
+                        'Available Offers ${hasOffers ? '($offersCount)' : ''}')),
                   ],
                 ),
               ),
@@ -453,6 +473,20 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
   }
 
   Widget _buildOffersGrid() {
+    if (_aliProducts.isEmpty) return _buildStoreOffersGrid();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (_offers.isNotEmpty) ...[
+          _buildStoreOffersGrid(),
+          const SizedBox(height: 24),
+        ],
+        WebAliProductsGrid(items: _aliProducts),
+      ],
+    );
+  }
+
+  Widget _buildStoreOffersGrid() {
     if (_offers.isEmpty) {
       return _buildEmptyState(webText(context, 'لا توجد عروض متاحة حالياً',
           'No offers available right now'));

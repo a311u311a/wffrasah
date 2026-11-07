@@ -12,6 +12,7 @@ import '../providers/locale_provider.dart';
 import '../services/home_data_service.dart';
 import '../services/unified_search_service.dart';
 import '../web_widgets/responsive_layout.dart';
+import '../web_widgets/web_ali_products_grid.dart';
 import '../web_widgets/web_banner_carousel.dart';
 import '../web_widgets/web_coupon_card.dart';
 import '../web_widgets/web_footer.dart';
@@ -248,6 +249,19 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                               _buildCouponsSection(_filteredCoupons),
                               const SizedBox(height: 34),
                               _buildOffersSection(_filteredOffers),
+                              if (!isLoading && !_hasSearch)
+                                WebAliProductsSection(
+                                  categoryId: selectedCategoryId,
+                                  shellBuilder: (child) => _buildSectionShell(
+                                    title: _localized(
+                                      'عروض علي إكسبرس',
+                                      'AliExpress deals',
+                                    ),
+                                    icon: Icons.shopping_bag_rounded,
+                                    actionRoute: '/aliexpress',
+                                    child: child,
+                                  ),
+                                ),
                             ],
                           ),
                         ),

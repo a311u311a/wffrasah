@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'web_i18n.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
@@ -128,6 +129,10 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
       {
         'label': localizations?.translate('offers') ?? 'العروض',
         'route': '/offers'
+      },
+      {
+        'label': webText(context, 'علي إكسبرس', 'AliExpress'),
+        'route': '/aliexpress'
       },
       {
         'label': localizations?.translate('favorites') ?? 'المفضلة',
@@ -485,6 +490,11 @@ class _WebNavigationBarState extends State<WebNavigationBar> {
         'label': localizations?.translate('offers') ?? 'العروض',
         'route': '/offers',
         'icon': Icons.local_offer_rounded
+      },
+      {
+        'label': webText(context, 'علي إكسبرس', 'AliExpress'),
+        'route': '/aliexpress',
+        'icon': Icons.shopping_bag_rounded
       },
       {
         'label': localizations?.translate('favorites') ?? 'المفضلة',
