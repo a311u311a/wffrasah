@@ -16,6 +16,8 @@ import '../services/unified_search_service.dart';
 import '../widgets/coupon_card.dart';
 import '../widgets/loading_indicator.dart';
 import '../widgets/search_widget.dart';
+import '../widgets/ali_products_section.dart';
+import 'ali_products_screen.dart';
 import 'coupon_screen.dart';
 import 'stores_screen.dart';
 
@@ -183,6 +185,20 @@ class _HomeScreenState extends State<HomeScreen> {
                               selectedCategoryId: selectedCategoryId,
                               selectedStoreId: selectedStoreId,
                               searchQuery: searchQuery,
+                            ),
+                            const SizedBox(height: 22),
+                            AliProductsSection(
+                              categoryId: selectedCategoryId,
+                              header: _HomeSectionHeader(
+                                title: 'عروض علي إكسبرس',
+                                icon: Icons.shopping_bag_rounded,
+                                actionText: 'عرض الكل',
+                                onActionTap: () => _openPage(
+                                  AliProductsScreen(
+                                    initialCategoryId: selectedCategoryId,
+                                  ),
+                                ),
+                              ),
                             ),
                             const SizedBox(height: 22),
                             _HomeSectionHeader(
