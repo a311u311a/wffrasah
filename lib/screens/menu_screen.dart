@@ -41,15 +41,11 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
     'https://play.google.com/store/apps/details?id=com.rbhan.app&pcampaignid=web_share',
   );
   static final Uri _iosStoreUrl = Uri.parse(
-    'https://apps.apple.com/us/app/rbhan/id6444086616',
+    'https://apps.apple.com/us/app/%D9%88%D9%81%D8%B1%D9%87%D8%A7-%D8%B5%D8%AD/id6804630956',
   );
   static final Uri _androidRateUrl = Uri.parse(
     'market://details?id=com.rbhan.app',
   );
-  static final Uri _iosRateUrl = Uri.parse(
-    'itms-apps://itunes.apple.com/app/id6444086616?action=write-review',
-  );
-
   bool _isCheckingPermission = false;
 
   Uri get _storeUrl {
@@ -64,7 +60,7 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
 
   Uri get _rateUrl {
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
-      return _iosRateUrl;
+      return _iosStoreUrl;
     }
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       return _androidRateUrl;
@@ -165,11 +161,16 @@ class _MenuScreenState extends State<MenuScreen> with WidgetsBindingObserver {
 
   Future<void> _rateApp() async {
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('التقييم على App Store سيكون متاحًا قريبًا'),
-        ),
-      );
+      try {
+        if (!await launchUrl(
+          _iosStoreUrl,
+          mode: LaunchMode.externalApplication,
+        )) {
+          debugPrint('Could not open the App Store page $_iosStoreUrl');
+        }
+      } catch (error) {
+        debugPrint('Could not open App Store page $_iosStoreUrl: $error');
+      }
       return;
     }
 

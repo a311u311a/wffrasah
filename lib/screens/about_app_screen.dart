@@ -234,6 +234,23 @@ class _AboutAppScreenState extends State<AboutAppScreen> {
                 ),
               ),
 
+              const SizedBox(height: 20),
+              _buildSectionContainer(
+                child: Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: Text(
+                    '79c9',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[600],
+                      fontFamily: 'Tajawal',
+                    ),
+                  ),
+                ),
+              ),
+
               const SizedBox(height: 30),
               Text(
                 '© ${DateTime.now().year} ${localizations?.translate('rights_reserved_Wffrasah') ?? "جميع الحقوق محفوظة لتطبيق وموقع وفرها صح"}',
