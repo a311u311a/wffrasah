@@ -187,16 +187,16 @@ class _HomeScreenState extends State<HomeScreen> {
                               searchQuery: searchQuery,
                             ),
                             const SizedBox(height: 22),
+                            // فئات علي إكسبرس منفصلة عن فئات المتاجر،
+                            // فالقسم يعرض الأفضل من كل الفئات.
                             AliProductsSection(
-                              categoryId: selectedCategoryId,
+                              categoryId: null,
                               header: _HomeSectionHeader(
                                 title: 'عروض علي إكسبرس',
                                 icon: Icons.shopping_bag_rounded,
                                 actionText: 'عرض الكل',
                                 onActionTap: () => _openPage(
-                                  AliProductsScreen(
-                                    initialCategoryId: selectedCategoryId,
-                                  ),
+                                  const AliProductsScreen(),
                                 ),
                               ),
                             ),

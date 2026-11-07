@@ -1,43 +1,54 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/ali_category.dart';
 import '../models/ali_product.dart';
 
-/// يقرأ منتجات علي إكسبرس من جدول ali_products.
-/// الجدول يتحدّث مرة يومياً، فنحتفظ بالنتائج في الذاكرة لمدة قصيرة.
+/// يقرأ منتجات علي إكسبرس من جدول ali_category_products وفئاتها من
+/// ali_categories (منفصلة عن فئات المتاجر). الجداول تتحدّث كل 6 ساعات،
+/// فنحتفظ بالنتائج في الذاكرة لمدة قصيرة.
 class AliProductsService {
+  static const _productsTable = 'ali_category_products';
   static const _cacheTtl = Duration(minutes: 15);
   static final Map<String, _CacheEntry> _cache = {};
 
-  static Set<String>? _categoryIds;
-  static DateTime? _categoryIdsAt;
+  static List<AliCategory>? _categories;
+  static DateTime? _categoriesAt;
 
-  /// الفئات اللي فيها منتجات حالياً (من view ali_product_categories)،
-  /// عشان نخفي الفئات الفاضية في شاشة العروض.
-  static Future<Set<String>> fetchCategoryIds({bool forceRefresh = false}) async {
+  /// الفئات المفعّلة اللي فيها منتجات، بالترتيب المحدد في لوحة التحكم.
+  static Future<List<AliCategory>> fetchCategories({
+    bool forceRefresh = false,
+  }) async {
     if (!forceRefresh &&
-        _categoryIds != null &&
-        DateTime.now().difference(_categoryIdsAt!) < _cacheTtl) {
-      return _categoryIds!;
+        _categories != null &&
+        DateTime.now().difference(_categoriesAt!) < _cacheTtl) {
+      return _categories!;
     }
     try {
-      final rows = await Supabase.instance.client
-          .from('ali_product_categories')
-          .select('category_id')
-          .gt('products', 0);
-      _categoryIds = rows
-          .map((r) => (r['category_id'] ?? '').toString())
-          .where((id) => id.isNotEmpty)
-          .toSet();
-      _categoryIdsAt = DateTime.now();
-      return _categoryIds!;
+      final client = Supabase.instance.client;
+      final results = await Future.wait([
+        client
+            .from('ali_categories')
+            .select('id, name_ar, name_en, icon, sort_order')
+            .eq('active', true)
+            .order('sort_order', ascending: true),
+        client.from('ali_category_counts').select('id').gt('products', 0),
+      ]);
+      final withProducts =
+          (results[1] as List).map((r) => (r['id'] ?? '').toString()).toSet();
+      _categories = (results[0] as List)
+          .map((r) => AliCategory.fromMap(Map<String, dynamic>.from(r)))
+          .where((c) => withProducts.contains(c.id))
+          .toList();
+      _categoriesAt = DateTime.now();
+      return _categories!;
     } catch (e) {
-      debugPrint('AliProductsService.fetchCategoryIds error: $e');
-      return _categoryIds ?? <String>{};
+      debugPrint('AliProductsService.fetchCategories error: $e');
+      return _categories ?? const [];
     }
   }
 
-  /// [categoryId] فارغ = أفضل المنتجات من كل الأقسام.
+  /// [categoryId] فارغ = أفضل المنتجات من كل الفئات.
   static Future<List<AliProduct>> fetch({
     String? categoryId,
     int limit = 20,
@@ -52,21 +63,23 @@ class AliProductsService {
     }
 
     try {
-      var query = Supabase.instance.client.from('ali_products').select(
+      var query = Supabase.instance.client.from(_productsTable).select(
           'product_id, category_id, title, image, sale_price, original_price, '
           'discount_percent, currency, commission_rate, promotion_link, '
           'orders_count, rating');
       if (categoryId != null && categoryId.isNotEmpty) {
         query = query.eq('category_id', categoryId);
       }
-      // نطلب أكثر من المطلوب لأن المنتج نفسه قد يتكرر في أكثر من قسم.
+      final all = categoryId == null || categoryId.isEmpty;
+      // "الكل": نطلب أكثر بكثير ثم نخلط بالتناوب بين الفئات، حتى لا تطغى
+      // فئة واحدة (مثل الشواحن) على الصفحة.
       final rows = await query
           .order('sort_score', ascending: false)
-          .limit(categoryId == null ? limit * 2 : limit);
+          .limit(all ? (limit * 6).clamp(200, 600) : limit);
 
       final seen = <int>{};
       final items = <AliProduct>[];
-      for (final row in rows) {
+      for (final row in all ? _interleaveByCategory(rows) : rows) {
         final p = AliProduct.fromMap(row);
         if (p.productId == 0 ||
             p.promotionLink.isEmpty ||
@@ -83,6 +96,31 @@ class AliProductsService {
       debugPrint('AliProductsService.fetch error: $e');
       return cached?.items ?? const [];
     }
+  }
+
+  /// يرتب الصفوف بالتناوب بين الفئات مع الحفاظ على ترتيب كل فئة.
+  static List<Map<String, dynamic>> _interleaveByCategory(List rows) {
+    final groups = <String, List<Map<String, dynamic>>>{};
+    for (final r in rows) {
+      final row = Map<String, dynamic>.from(r);
+      groups
+          .putIfAbsent((row['category_id'] ?? '').toString(), () => [])
+          .add(row);
+    }
+    final lists = groups.values.toList();
+    final out = <Map<String, dynamic>>[];
+    for (var i = 0; out.length < rows.length; i++) {
+      for (final list in lists) {
+        if (i < list.length) out.add(list[i]);
+      }
+    }
+    return out;
+  }
+
+  /// يمسح الذاكرة المؤقتة (بعد تعديل الفئات من لوحة التحكم).
+  static void clearCache() {
+    _cache.clear();
+    _categories = null;
   }
 }
 

@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
+import '../models/ali_category.dart';
 import '../models/ali_product.dart';
-import '../models/category.dart';
 import '../providers/locale_provider.dart';
 import '../services/ali_products_service.dart';
-import '../services/home_data_service.dart';
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_ali_products_grid.dart';
 import '../web_widgets/web_footer.dart';
 import '../web_widgets/web_i18n.dart';
 import '../web_widgets/web_navigation_bar.dart';
+import '../web_widgets/web_network_image.dart';
 
 /// صفحة كل عروض علي إكسبرس في الموقع، مع فلترة حسب الفئة.
 class WebAliProductsScreen extends StatefulWidget {
@@ -33,7 +33,7 @@ class _WebAliProductsScreenState extends State<WebAliProductsScreen> {
   static const Color faded = Color(0xFF9B96B6);
 
   String? _categoryId;
-  List<Category> _categories = [];
+  List<AliCategory> _categories = [];
   late Future<List<AliProduct>> _future;
 
   @override
@@ -47,23 +47,8 @@ class _WebAliProductsScreenState extends State<WebAliProductsScreen> {
       AliProductsService.fetch(categoryId: _categoryId, limit: 60);
 
   Future<void> _loadCategories() async {
-    final langCode =
-        Provider.of<LocaleProvider>(context, listen: false).locale.languageCode;
-    try {
-      final results = await Future.wait([
-        HomeDataService.fetchCategories(),
-        AliProductsService.fetchCategoryIds(),
-      ]);
-      final rows = results[0] as List<Map<String, dynamic>>;
-      final activeIds = results[1] as Set<String>;
-      final categories = rows
-          .map((row) => Category.fromSupabase(row, langCode))
-          .where((c) => activeIds.contains(c.id))
-          .toList();
-      if (mounted) setState(() => _categories = categories);
-    } catch (e) {
-      debugPrint('WebAliProductsScreen categories error: $e');
-    }
+    final categories = await AliProductsService.fetchCategories();
+    if (mounted) setState(() => _categories = categories);
   }
 
   void _selectCategory(String? id) {
@@ -163,7 +148,8 @@ class _WebAliProductsScreenState extends State<WebAliProductsScreen> {
               runSpacing: 10,
               children: [
                 _chip(null, webText(context, 'الكل', 'All')),
-                for (final c in _categories) _chip(c.id, c.name),
+                for (final c in _categories)
+                  _chip(c.id, c.name(_langCode), icon: c.icon),
               ],
             ),
           ],
@@ -172,11 +158,23 @@ class _WebAliProductsScreenState extends State<WebAliProductsScreen> {
     );
   }
 
-  Widget _chip(String? id, String label) {
+  String get _langCode =>
+      Provider.of<LocaleProvider>(context, listen: false).locale.languageCode;
+
+  Widget _chip(String? id, String label, {String icon = ''}) {
     final selected = _categoryId == id;
     return ChoiceChip(
       selected: selected,
       showCheckmark: false,
+      avatar: icon.isEmpty
+          ? null
+          : ClipOval(
+              child: Container(
+                color: Colors.white,
+                child: WebNetworkImage(icon, width: 22, height: 22,
+                    fit: BoxFit.contain),
+              ),
+            ),
       label: Text(
         label,
         style: GoogleFonts.cairo(

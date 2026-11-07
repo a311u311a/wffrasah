@@ -270,8 +270,10 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                               const SizedBox(height: 34),
                               _buildOffersSection(_filteredOffers),
                               if (!isLoading && !_hasSearch)
+                                // فئات علي إكسبرس منفصلة عن فئات المتاجر،
+                                // فالقسم يعرض الأفضل من كل الفئات.
                                 WebAliProductsSection(
-                                  categoryId: selectedCategoryId,
+                                  categoryId: null,
                                   shellBuilder: (child) => _buildSectionShell(
                                     title: _localized(
                                       'عروض علي إكسبرس',

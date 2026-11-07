@@ -13,6 +13,7 @@ import 'web_admin_offers_screen.dart';
 import 'web_admin_carousel_screen.dart';
 import 'web_admin_notifications_screen.dart';
 import 'web_admin_coupon_providers_screen.dart';
+import 'web_admin_ali_categories_screen.dart';
 import '../screens/admin/admin_categories_screen.dart';
 import '../screens/admin/admin_pending_coupons_screen.dart';
 
@@ -40,6 +41,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
     'admin_pending_approval',
     'notifications',
     'admin_coupon_providers',
+    'admin_ali_categories',
   ];
 
   final List<IconData> _icons = [
@@ -52,6 +54,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
     Icons.pending_actions_rounded,
     Icons.notifications_active_rounded,
     Icons.business_center_outlined,
+    Icons.shopping_bag_rounded,
   ];
 
   final List<String> _countSources = [
@@ -64,6 +67,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
     'admin_pending_coupons',
     'notifications',
     'coupon_providers',
+    'ali_categories',
   ];
 
   @override
@@ -110,6 +114,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
       const AdminPendingCouponsScreen(isEmbedded: true),
       const WebAdminNotificationsScreen(isEmbedded: true),
       const WebAdminCouponProvidersScreen(),
+      const WebAdminAliCategoriesScreen(isEmbedded: true),
     ];
 
     return Directionality(

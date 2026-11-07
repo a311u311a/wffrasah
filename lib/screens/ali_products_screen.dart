@@ -4,7 +4,7 @@ import '../constants.dart';
 import '../models/ali_product.dart';
 import '../services/ali_products_service.dart';
 import '../widgets/ali_product_card.dart';
-import '../widgets/category_list.dart';
+import '../widgets/ali_category_chips.dart';
 
 /// كل عروض علي إكسبرس، مع فلترة حسب الفئة.
 class AliProductsScreen extends StatefulWidget {
@@ -58,19 +58,16 @@ class _AliProductsScreenState extends State<AliProductsScreen> {
         child: Column(
           children: [
             const SizedBox(height: 10),
-            SizedBox(
-              height: CategoryList.preferredHeight(context),
-              child: CategoryList(
-                selectedCategoryId: _categoryId,
-                activeCategoryIds: AliProductsService.fetchCategoryIds,
-                onCategorySelected: (id) {
-                  setState(() {
-                    _categoryId = id;
-                    _load();
-                  });
-                },
-              ),
+            AliCategoryChips(
+              selectedId: _categoryId,
+              onSelected: (id) {
+                setState(() {
+                  _categoryId = id;
+                  _load();
+                });
+              },
             ),
+            const SizedBox(height: 6),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: () async {
