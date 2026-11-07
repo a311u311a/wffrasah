@@ -29,6 +29,20 @@ function pickFirstString(v: unknown): string | null {
   return null;
 }
 
+// AliExpress sends rates like "7.0%". hot_product_commission_rate is often
+// "0.0%" on regular products, so take the highest rate instead of the first.
+function pickCommission(...rates: unknown[]): string | null {
+  let best: { value: number; raw: string } | null = null;
+  for (const r of rates) {
+    if (r == null) continue;
+    const raw = String(r).trim();
+    const value = parseFloat(raw.replace("%", ""));
+    if (Number.isNaN(value)) continue;
+    if (!best || value > best.value) best = { value, raw };
+  }
+  return best?.raw ?? null;
+}
+
 function md5HexUpper(input: string): string {
   return CryptoJS.MD5(input).toString().toUpperCase();
 }
@@ -126,7 +140,7 @@ Deno.serve(async (req) => {
     if (!tracking_id) return json({ error: "Missing ALI_TRACKING_ID" }, 500);
 
     const productResp = await aliCall("aliexpress.affiliate.product.query", {
-      key_words: keywords,
+      keywords,
       page_no: String(page_no),
       page_size: String(page_size),
       target_language,
@@ -148,7 +162,7 @@ Deno.serve(async (req) => {
       product_main_image_url: p.product_main_image_url ?? null,
       sale_price: p.target_sale_price ?? p.sale_price ?? null,
       original_price: p.target_original_price ?? p.original_price ?? null,
-      commission_rate: p.hot_product_commission_rate ?? p.commission_rate ?? null,
+      commission_rate: pickCommission(p.hot_product_commission_rate, p.commission_rate),
       promotion_link: p.promotion_link ?? null,
     }));
 
