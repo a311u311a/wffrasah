@@ -12,10 +12,15 @@ class CategoryList extends StatefulWidget {
   final Function(String?) onCategorySelected;
   final String? selectedCategoryId;
 
+  /// إذا انمرّر، تظهر فقط الفئات اللي يرجعها بدل الفئات اللي فيها متاجر.
+  /// (تستخدمه شاشة عروض علي إكسبرس لإخفاء الفئات الفاضية.)
+  final Future<Set<String>> Function()? activeCategoryIds;
+
   const CategoryList({
     super.key,
     required this.onCategorySelected,
     this.selectedCategoryId,
+    this.activeCategoryIds,
   });
 
   static double preferredHeight(BuildContext context) {
@@ -38,6 +43,21 @@ class _CategoryListState extends State<CategoryList> {
   Future<List<Category>> _fetchCategories() async {
     final supabase = Supabase.instance.client;
     final langCode = AppLocalizations.of(context)?.locale.languageCode ?? 'ar';
+
+    final customIds = widget.activeCategoryIds;
+    if (customIds != null) {
+      final results = await Future.wait<Object>([
+        customIds(),
+        supabase.from('categories').select(),
+      ]).timeout(const Duration(seconds: 12));
+      final ids = results[0] as Set<String>;
+      final rows = (results[1] as List).cast<Map<String, dynamic>>();
+      return rows
+          .map((data) => Category.fromSupabase(data, langCode))
+          .where((category) => ids.contains(category.id))
+          .toList();
+    }
+
     final results = await Future.wait([
       supabase.from('stores').select('category_id'),
       supabase.from('categories').select(),

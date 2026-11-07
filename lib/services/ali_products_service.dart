@@ -9,6 +9,34 @@ class AliProductsService {
   static const _cacheTtl = Duration(minutes: 15);
   static final Map<String, _CacheEntry> _cache = {};
 
+  static Set<String>? _categoryIds;
+  static DateTime? _categoryIdsAt;
+
+  /// الفئات اللي فيها منتجات حالياً (من view ali_product_categories)،
+  /// عشان نخفي الفئات الفاضية في شاشة العروض.
+  static Future<Set<String>> fetchCategoryIds({bool forceRefresh = false}) async {
+    if (!forceRefresh &&
+        _categoryIds != null &&
+        DateTime.now().difference(_categoryIdsAt!) < _cacheTtl) {
+      return _categoryIds!;
+    }
+    try {
+      final rows = await Supabase.instance.client
+          .from('ali_product_categories')
+          .select('category_id')
+          .gt('products', 0);
+      _categoryIds = rows
+          .map((r) => (r['category_id'] ?? '').toString())
+          .where((id) => id.isNotEmpty)
+          .toSet();
+      _categoryIdsAt = DateTime.now();
+      return _categoryIds!;
+    } catch (e) {
+      debugPrint('AliProductsService.fetchCategoryIds error: $e');
+      return _categoryIds ?? <String>{};
+    }
+  }
+
   /// [categoryId] فارغ = أفضل المنتجات من كل الأقسام.
   static Future<List<AliProduct>> fetch({
     String? categoryId,

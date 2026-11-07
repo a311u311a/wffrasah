@@ -62,6 +62,7 @@ class _AliProductsScreenState extends State<AliProductsScreen> {
               height: CategoryList.preferredHeight(context),
               child: CategoryList(
                 selectedCategoryId: _categoryId,
+                activeCategoryIds: AliProductsService.fetchCategoryIds,
                 onCategorySelected: (id) {
                   setState(() {
                     _categoryId = id;

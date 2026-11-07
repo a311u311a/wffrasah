@@ -29,6 +29,15 @@ create index if not exists ali_products_score_idx
 
 alter table public.ali_products enable row level security;
 
+-- Categories that currently have products, so the app can hide empty ones.
+create or replace view public.ali_product_categories
+with (security_invoker = true) as
+  select category_id, count(*)::int as products
+  from public.ali_products
+  group by category_id;
+
+grant select on public.ali_product_categories to anon, authenticated;
+
 drop policy if exists "ali_products public read" on public.ali_products;
 create policy "ali_products public read"
   on public.ali_products
