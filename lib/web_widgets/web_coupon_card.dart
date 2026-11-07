@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'web_network_image.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -779,10 +779,10 @@ class _StoreImage extends StatelessWidget {
         color: Constants.primaryColor.withValues(alpha: 0.07),
         child: imageUrl.trim().isEmpty
             ? Icon(Icons.store_rounded, color: Constants.primaryColor)
-            : CachedNetworkImage(
-                imageUrl: imageUrl,
+            : WebNetworkImage(
+                imageUrl,
                 fit: BoxFit.contain,
-                errorWidget: (_, __, ___) =>
+                error: (context) =>
                     Icon(Icons.store_rounded, color: Constants.primaryColor),
               ),
       ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'web_network_image.dart';
 import '../constants.dart';
 import '../models/store.dart';
 import 'web_i18n.dart';
@@ -93,16 +93,16 @@ class _WebStoreCardState extends State<WebStoreCard> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16), // ✅ مربعة بزوايا دائرية
-        child: CachedNetworkImage(
-          imageUrl: widget.store.image,
+        child: WebNetworkImage(
+          widget.store.image,
           fit: BoxFit.contain,
-          placeholder: (context, url) => Container(
+          placeholder: (context) => Container(
             color: Colors.grey[200],
             child: const Center(
               child: CircularProgressIndicator(),
             ),
           ),
-          errorWidget: (context, url, error) => Container(
+          error: (context) => Container(
             color: Colors.grey[200],
             child: Icon(
               Icons.store_rounded,

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -8,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../constants.dart';
 import '../models/ali_product.dart';
 import '../services/analytics_service.dart';
+import '../web_widgets/web_network_image.dart';
 
 /// يفتح رابط العمولة خارج التطبيق (متصفح أو تطبيق علي إكسبرس) حتى يُحتسب التتبّع.
 Future<void> openAliProduct(BuildContext context, AliProduct product) async {
@@ -76,16 +78,27 @@ class AliProductCard extends StatelessWidget {
                           child: product.image.isEmpty
                               ? const Icon(Icons.shopping_bag_outlined,
                                   color: Constants.disabledTextColor, size: 36)
-                              : CachedNetworkImage(
-                                  imageUrl: product.image,
-                                  fit: BoxFit.cover,
-                                  memCacheWidth: 400,
-                                  placeholder: (_, __) => const SizedBox(),
-                                  errorWidget: (_, __, ___) => const Icon(
-                                    Icons.broken_image_outlined,
-                                    color: Constants.disabledTextColor,
-                                  ),
-                                ),
+                              : kIsWeb
+                                  // على الموقع: CachedNetworkImage ترسم صوراً
+                                  // سوداء عند إعادة بناء الشبكة.
+                                  ? WebNetworkImage(
+                                      product.image,
+                                      fit: BoxFit.cover,
+                                      error: (_) => const Icon(
+                                        Icons.broken_image_outlined,
+                                        color: Constants.disabledTextColor,
+                                      ),
+                                    )
+                                  : CachedNetworkImage(
+                                      imageUrl: product.image,
+                                      fit: BoxFit.cover,
+                                      memCacheWidth: 400,
+                                      placeholder: (_, __) => const SizedBox(),
+                                      errorWidget: (_, __, ___) => const Icon(
+                                        Icons.broken_image_outlined,
+                                        color: Constants.disabledTextColor,
+                                      ),
+                                    ),
                         ),
                         if (product.hasDiscount)
                           PositionedDirectional(

@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'web_network_image.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 import '../constants.dart';
 import 'web_coupon_card.dart';
@@ -369,12 +369,12 @@ class _WebSearchDialogState extends State<WebSearchDialog> {
                 child: Row(
                   children: [
                     ClipOval(
-                      child: CachedNetworkImage(
-                        imageUrl: s.image,
+                      child: WebNetworkImage(
+                        s.image,
                         width: 44,
                         height: 44,
                         fit: BoxFit.cover,
-                        errorWidget: (_, __, ___) => Container(
+                        error: (context) => Container(
                           width: 44,
                           height: 44,
                           color: Colors.grey[200],
@@ -673,12 +673,12 @@ class _WebSearchDialogState extends State<WebSearchDialog> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: CachedNetworkImage(
-                imageUrl: o.image,
+              child: WebNetworkImage(
+                o.image,
                 width: 40,
                 height: 40,
                 fit: BoxFit.cover,
-                errorWidget: (_, __, ___) => Container(
+                error: (context) => Container(
                   width: 40,
                   height: 40,
                   color: Colors.grey[200],

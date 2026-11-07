@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'web_network_image.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../constants.dart';
 import '../models/offers.dart';
 import '../providers/favorites_provider.dart';
@@ -133,16 +133,16 @@ class _WebOfferCardState extends State<WebOfferCard> {
           fit: StackFit.expand,
           children: [
             // الصورة
-            CachedNetworkImage(
-              imageUrl: widget.offer.image,
+            WebNetworkImage(
+              widget.offer.image,
               fit: BoxFit.fill,
-              placeholder: (context, url) => Container(
+              placeholder: (context) => Container(
                 color: Colors.grey[200],
                 child: const Center(
                   child: CircularProgressIndicator(),
                 ),
               ),
-              errorWidget: (context, url, error) => Container(
+              error: (context) => Container(
                 color: Colors.grey[200],
                 child: Icon(
                   Icons.local_mall_rounded,
@@ -228,10 +228,10 @@ class _WebOfferCardState extends State<WebOfferCard> {
                     color: Colors.white,
                   ),
                   child: ClipOval(
-                    child: CachedNetworkImage(
-                      imageUrl: widget.storeImage!,
+                    child: WebNetworkImage(
+                      widget.storeImage!,
                       fit: BoxFit.contain,
-                      errorWidget: (context, url, error) => Icon(
+                      error: (context) => Icon(
                           Icons.store_rounded,
                           size: 16,
                           color: Colors.grey[400]),
