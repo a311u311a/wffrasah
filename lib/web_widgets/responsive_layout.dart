@@ -81,6 +81,12 @@ class ResponsiveGrid {
     }
   }
 
+  /// Coupon tickets have a fixed height and need about 320px of width, so
+  /// their grids pick columns by available width instead of breakpoints.
+  static int couponColumnsForWidth(double width, {int max = 3}) {
+    return (width / 340).floor().clamp(1, max);
+  }
+
   static int columnsForWidth(double width, {int max = 4}) {
     if (width >= 1366) return max;
     if (width >= 1024) return max > 4 ? 4 : (max > 3 ? 3 : max);

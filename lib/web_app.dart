@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'models/store.dart';
+import 'services/home_data_service.dart';
 import 'providers/locale_provider.dart';
 import 'providers/theme_provider.dart';
 import 'localization/app_localizations.dart';
@@ -78,6 +79,16 @@ class WebApp extends StatelessWidget {
           if (store != null && store is Store) {
             return MaterialPageRoute(
               builder: (context) => WebStoreDetailScreen(store: store),
+              settings: settings,
+            );
+          }
+          // Opened from a shared link or a page refresh: load the store by key.
+          final key = Uri.decodeComponent(
+            settings.name!.substring('/store/'.length).split('?').first,
+          ).trim();
+          if (key.isNotEmpty) {
+            return MaterialPageRoute(
+              builder: (context) => _StoreRouteLoader(storeKey: key),
               settings: settings,
             );
           }
@@ -163,6 +174,52 @@ class WebApp extends StatelessWidget {
           builder: (context) => screen,
           settings: settings,
         );
+      },
+    );
+  }
+}
+
+/// Loads a store by slug or id for `/store/<key>` URLs opened directly.
+class _StoreRouteLoader extends StatefulWidget {
+  final String storeKey;
+
+  const _StoreRouteLoader({required this.storeKey});
+
+  @override
+  State<_StoreRouteLoader> createState() => _StoreRouteLoaderState();
+}
+
+class _StoreRouteLoaderState extends State<_StoreRouteLoader> {
+  late final Future<Store?> _storeFuture = _loadStore();
+
+  Future<Store?> _loadStore() async {
+    final langCode =
+        Provider.of<LocaleProvider>(context, listen: false).locale.languageCode;
+    final key = widget.storeKey.toLowerCase();
+    final rows = await HomeDataService.fetchStores();
+    for (final row in rows) {
+      final slug = (row['slug'] ?? '').toString().trim().toLowerCase();
+      final id = (row['id'] ?? '').toString().trim().toLowerCase();
+      if (slug == key || id == key) {
+        return Store.fromSupabase(row, langCode);
+      }
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Store?>(
+      future: _storeFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        final store = snapshot.data;
+        if (store != null) return WebStoreDetailScreen(store: store);
+        return const WebStoresScreen();
       },
     );
   }

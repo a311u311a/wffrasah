@@ -248,7 +248,7 @@ class HomeDataService {
       final ids = counts.keys.toList()
         ..sort((a, b) => (counts[b] ?? 0).compareTo(counts[a] ?? 0));
       if (ids.isEmpty) {
-        return _withCouponStoreNames(
+        return await _withCouponStoreNames(
             (await fetchPublicCoupons(limit: limit)).take(limit).toList());
       }
       final rows = await _loadRows(_supabase
@@ -258,7 +258,7 @@ class HomeDataService {
           .inFilter('id', ids.take(20).toList()));
       rows.sort((a, b) => (counts[(b['id'] ?? '').toString()] ?? 0)
           .compareTo(counts[(a['id'] ?? '').toString()] ?? 0));
-      return _withCouponStoreNames(rows.take(limit).toList());
+      return await _withCouponStoreNames(rows.take(limit).toList());
     } catch (_) {
       return _withCouponStoreNames(
           (await fetchPublicCoupons(limit: limit)).take(limit).toList());

@@ -389,9 +389,7 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
         LayoutBuilder(
           builder: (context, constraints) {
             final width = constraints.maxWidth;
-            final columns = width >= 1024
-                ? 3
-                : ResponsiveGrid.columnsForWidth(width, max: 3);
+            final columns = ResponsiveGrid.couponColumnsForWidth(width);
             final spacing = ResponsiveGrid.spacingForWidth(width);
 
             return GridView.builder(
@@ -401,7 +399,7 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
                 crossAxisCount: columns,
                 crossAxisSpacing: spacing,
                 mainAxisSpacing: spacing,
-                childAspectRatio: width >= 1024 ? 2.5 : 0.68,
+                mainAxisExtent: 136,
               ),
               itemCount: displayCoupons.length,
               itemBuilder: (context, index) {

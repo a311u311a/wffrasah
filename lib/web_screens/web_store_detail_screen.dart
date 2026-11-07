@@ -402,6 +402,13 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
       constraints: const BoxConstraints(minHeight: 300),
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 200),
+        layoutBuilder: (currentChild, previousChildren) => Stack(
+          alignment: Alignment.topCenter,
+          children: [
+            ...previousChildren,
+            if (currentChild != null) currentChild
+          ],
+        ),
         child: KeyedSubtree(
           key: ValueKey(_tabController.index),
           child: _tabController.index == 0
@@ -421,7 +428,7 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final columns = ResponsiveGrid.columnsForWidth(width, max: 6);
+        final columns = ResponsiveGrid.couponColumnsForWidth(width);
         final spacing = ResponsiveGrid.spacingForWidth(width);
 
         return GridView.builder(
@@ -431,7 +438,7 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
             crossAxisCount: columns,
             crossAxisSpacing: spacing,
             mainAxisSpacing: spacing,
-            childAspectRatio: width >= 1024 ? 0.52 : 0.58,
+            mainAxisExtent: 156,
           ),
           itemCount: _coupons.length,
           itemBuilder: (context, index) {

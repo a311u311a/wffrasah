@@ -667,8 +667,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
           }
 
           final width = constraints.maxWidth;
-          final columns =
-              width >= 1024 ? 3 : ResponsiveGrid.columnsForWidth(width, max: 3);
+          final columns = ResponsiveGrid.couponColumnsForWidth(width);
           final visibleCoupons = sectionCoupons.take(columns * 2).toList();
           final storesMap = _storesMap;
           final spacing = ResponsiveGrid.spacingForWidth(width);
@@ -684,7 +683,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                   crossAxisCount: columns,
                   crossAxisSpacing: spacing,
                   mainAxisSpacing: spacing,
-                  childAspectRatio: width >= 1024 ? 2.5 : 0.62,
+                  mainAxisExtent: 136,
                 ),
                 itemBuilder: (context, index) {
                   final coupon = visibleCoupons[index];

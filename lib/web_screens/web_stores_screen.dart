@@ -403,7 +403,7 @@ class _WebStoresScreenState extends State<WebStoresScreen> {
                     final store = filteredStores[index];
                     Navigator.pushNamed(
                       context,
-                      '/store/${store.slug}',
+                      '/store/${store.key}',
                       arguments: store,
                     );
                   },
