@@ -8,20 +8,21 @@ import {VOICE_ENVELOPE} from './voice-envelope';
 // 20s vertical promo (1080×1920 @30fps) with the presenter avatar.
 export const PROMO_FRAMES = 600;
 
-const C = {
+export const C = {
   purple: '#6B5CFF', deep: '#3B2FC9', night: '#1D1760', ink: '#2E2779',
   lav: '#EEEBFF', yellow: '#FFD84D', red: '#FF4D6D', green: '#22C59A', muted: '#8A84AD',
 };
-const FONT = '"Readex Pro", sans-serif';
-const rtl: React.CSSProperties = {direction: 'rtl', fontFamily: FONT, textAlign: 'center'};
-const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
+export const FONT = '"Readex Pro", sans-serif';
+export const rtl: React.CSSProperties = {direction: 'rtl', fontFamily: FONT, textAlign: 'center'};
+export const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
 
 // Scene boundaries (frames), cut on the pauses of public/promo/voice.wav.
 const S = {hook: 0, talk: 68, home: 205, coupons: 315, stores: 395, cta: 468};
 
 // Global frame where the current scene starts, so avatars can read the voice envelope.
-const SceneStart = createContext(0);
-const voiceAt = (frame: number) => VOICE_ENVELOPE[frame] ?? 0;
+export const SceneStart = createContext(0);
+// Per-frame voice loudness for the whole video; empty means the avatar only idles and reacts to beats.
+export const VoiceEnvelope = createContext<number[]>([]);
 
 const usePop = (delay = 0, damping = 12, mass = 0.7) => {
   const f = useCurrentFrame();
@@ -29,11 +30,11 @@ const usePop = (delay = 0, damping = 12, mass = 0.7) => {
   return spring({frame: f - delay, fps, config: {damping, mass}});
 };
 
-const fontsCss = `@font-face{font-family:'Readex Pro';src:url('${staticFile('reel/ReadexPro.ttf')}') format('truetype');font-weight:160 700;font-display:block}`;
+export const fontsCss = `@font-face{font-family:'Readex Pro';src:url('${staticFile('reel/ReadexPro.ttf')}') format('truetype');font-weight:160 700;font-display:block}`;
 
 /* ---------- shared pieces ---------- */
 
-const Burst: React.FC<{color?: string; opacity?: number}> = ({color = '#ffffff', opacity = 0.08}) => {
+export const Burst: React.FC<{color?: string; opacity?: number}> = ({color = '#ffffff', opacity = 0.08}) => {
   const f = useCurrentFrame();
   const rays = Array.from({length: 18});
   return (
@@ -52,7 +53,7 @@ const Burst: React.FC<{color?: string; opacity?: number}> = ({color = '#ffffff',
   );
 };
 
-const Floaters: React.FC<{color: string}> = ({color}) => {
+export const Floaters: React.FC<{color: string}> = ({color}) => {
   const f = useCurrentFrame();
   const items = [
     {x: 90, y: 300, s: 70, d: 0}, {x: 930, y: 420, s: 50, d: 40}, {x: 160, y: 1250, s: 44, d: 80},
@@ -81,7 +82,7 @@ type AvatarMotion = {
 const useAvatarMotion = ({beats = [], lean = []}: AvatarMotion) => {
   const f = useCurrentFrame();
   const start = useContext(SceneStart);
-  const voice = voiceAt(start + f);
+  const voice = useContext(VoiceEnvelope)[start + f] ?? 0;
   const {fps} = useVideoConfig();
   let rot = Math.sin(f / 32) * 1.2;
   let y = 0;
@@ -151,7 +152,7 @@ const SoundWaves: React.FC<{x: number; y: number; size: number; on: boolean}> = 
 };
 
 // Full-body presenter that breathes, sways, leans toward text and reacts on beats.
-const Avatar: React.FC<{width: number; style?: React.CSSProperties; glow?: string} & AvatarMotion> = ({width, style, glow = '#ffffff', ...motion}) => {
+export const Avatar: React.FC<{width: number; style?: React.CSSProperties; glow?: string} & AvatarMotion> = ({width, style, glow = '#ffffff', ...motion}) => {
   const {f, rot, y, sc, breath, speaking, voice} = useAvatarMotion(motion);
   const h = width * 1268 / 1241;
   const halo = 1 + Math.sin(f / 10) * 0.04 + voice * 0.1;
@@ -174,7 +175,7 @@ const Avatar: React.FC<{width: number; style?: React.CSSProperties; glow?: strin
 };
 
 // Circular picture-in-picture presenter for screens where the app UI takes the stage.
-const AvatarBadge: React.FC<{size: number; style?: React.CSSProperties} & AvatarMotion> = ({size, style, ...motion}) => {
+export const AvatarBadge: React.FC<{size: number; style?: React.CSSProperties} & AvatarMotion> = ({size, style, ...motion}) => {
   const {rot, y, sc, speaking, voice} = useAvatarMotion(motion);
   const img = size * 2.1;
   const ring = 1 + voice * 0.12;
@@ -191,7 +192,7 @@ const AvatarBadge: React.FC<{size: number; style?: React.CSSProperties} & Avatar
   );
 };
 
-const Phone: React.FC<{src: string; width?: number; zoom?: number; children?: React.ReactNode; style?: React.CSSProperties}> = ({
+export const Phone: React.FC<{src: string; width?: number; zoom?: number; children?: React.ReactNode; style?: React.CSSProperties}> = ({
   src, width = 640, zoom = 1, children, style,
 }) => {
   const h = (width * 2000) / 920;
@@ -211,13 +212,13 @@ const Phone: React.FC<{src: string; width?: number; zoom?: number; children?: Re
 };
 
 // Crops a region (in source-image px) from a 920×2000 screenshot into a tile.
-const Crop: React.FC<{src: string; x: number; y: number; w: number; h: number; scale: number}> = ({src, x, y, w, h, scale}) => (
+export const Crop: React.FC<{src: string; x: number; y: number; w: number; h: number; scale: number}> = ({src, x, y, w, h, scale}) => (
   <div style={{width: w * scale, height: h * scale, overflow: 'hidden', position: 'relative'}}>
     <Img src={staticFile(src)} style={{position: 'absolute', width: 920 * scale, height: 2000 * scale, left: -x * scale, top: -y * scale}}/>
   </div>
 );
 
-const Headline: React.FC<{lines: string[]; top: number; color?: string; size?: number; delay?: number; highlight?: number}> = ({
+export const Headline: React.FC<{lines: string[]; top: number; color?: string; size?: number; delay?: number; highlight?: number}> = ({
   lines, top, color = C.ink, size = 96, delay = 0, highlight = -1,
 }) => {
   const f = useCurrentFrame();
@@ -242,7 +243,7 @@ const Headline: React.FC<{lines: string[]; top: number; color?: string; size?: n
   );
 };
 
-const Bubble: React.FC<{text: string; delay?: number; style?: React.CSSProperties; tail?: 'left' | 'right'}> = ({text, delay = 0, style, tail = 'right'}) => {
+export const Bubble: React.FC<{text: string; delay?: number; style?: React.CSSProperties; tail?: 'left' | 'right'}> = ({text, delay = 0, style, tail = 'right'}) => {
   const p = usePop(delay, 10, 0.6);
   return (
     <div style={{
@@ -513,6 +514,7 @@ export const AvatarPromo: React.FC = () => {
     [S.coupons, S.stores, Coupons], [S.stores, S.cta, Stores], [S.cta, PROMO_FRAMES, Cta],
   ];
   return (
+    <VoiceEnvelope.Provider value={VOICE_ENVELOPE}>
     <AbsoluteFill style={{background: C.night}}>
       <style>{fontsCss}</style>
       {scenes.map(([from, to, Scene], i) => (
@@ -528,5 +530,6 @@ export const AvatarPromo: React.FC = () => {
       />
       <Audio src={staticFile('promo/voice.wav')}/>
     </AbsoluteFill>
+    </VoiceEnvelope.Provider>
   );
 };
