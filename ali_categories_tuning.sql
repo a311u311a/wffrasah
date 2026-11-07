@@ -8,7 +8,7 @@ update public.ali_categories set updated_at = now(), keywords = v.keywords
 from (values
   ('home-kitchen',
     'kitchen gadgets | coffee tools | incense burner bakhoor | home decor | storage organizer | bedding set'
-    || ' | -السيارة, سيارة, للسيارة, car , الأحذية'
+    || ' | -السيارة, سيارة, للسيارة, سيارات, للسيارات, car , الأحذية'
     || ' | -الاتحاد الأوروبي, معيار الاتحاد, eu plug, قابس أوروبي, القابس الأوروبي'),
   ('phones',
     'phone case | fast charger | wireless earbuds | phone holder | usb c cable | power bank'
@@ -28,13 +28,13 @@ from (values
     || ' | -BT21, أنيمي, anime, سترة, ميدالية'),
   ('watches-jewelry',
     'watches | smart watch | women jewelry | men ring bracelet | women sunglasses | men sunglasses'
-    || ' | -السيارة, سيارة, للسيارة, حزام خصر, تكتيكي, ديكور'),
+    || ' | -السيارة, سيارة, للسيارة, سيارات, للسيارات, حزام خصر, تكتيكي, ديكور'),
   ('cars',
     'car interior accessories | car electronics | car cleaning tools | car phone holder'
     || ' | -كابل بيانات'),
   ('appliances',
     'electric kettle | portable blender | handheld vacuum cleaner home | air humidifier home | electric toothbrush | hair dryer'
-    || ' | -السيارة, سيارة, للسيارة, car , مانيكير, الأظافر, كابل'
+    || ' | -السيارة, سيارة, للسيارة, سيارات, للسيارات, car , مانيكير, الأظافر, كابل'
     || ' | -الاتحاد الأوروبي, معيار الاتحاد, eu plug, قابس أوروبي, القابس الأوروبي'),
   ('pets',
     'cat supplies | dog supplies | pet bed | pet toys'
