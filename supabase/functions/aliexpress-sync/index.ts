@@ -9,6 +9,9 @@
 // separated by `|` ("2026 women abaya | women maxi dress | women cardigan")
 // to fill one category from several AliExpress sub-categories. Each search
 // gets its own page of GROUP_PAGE_SIZE products and the results are merged.
+// A group that starts with `-` is a comma-separated list of words to exclude:
+// any product whose title contains one of them is skipped
+// ("... | -sexy, شفاف, مكشوف").
 //
 // Secrets: ALI_APP_KEY, ALI_APP_SECRET, ALI_BASE_URL, ALI_TRACKING_ID,
 // ALI_SYNC_TOKEN (and the built-in SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY).
@@ -155,10 +158,29 @@ async function fetchCategory(
   };
 }
 
+/** Words from `-` groups; products whose title contains one are skipped. */
+function parseExcludes(rawKeywords: string): string[] {
+  return rawKeywords
+    .split("|")
+    .map((g) => g.trim())
+    .filter((g) => g.startsWith("-"))
+    .flatMap((g) => g.slice(1).split(","))
+    .map((w) => w.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function isExcluded(title: string, excludes: string[]): boolean {
+  if (!excludes.length) return false;
+  const t = title.toLowerCase();
+  return excludes.some((w) => t.includes(w));
+}
+
 /** Runs every `|` search of a category and merges the results. */
 async function fetchCategoryGroups(rawKeywords: string, trackingId: string) {
   const groups = rawKeywords
     .split("|")
+    .map((g) => g.trim())
+    .filter((g) => g && !g.startsWith("-"))
     .map((g) => g.replace(/\s*,\s*/g, " ").trim())
     .filter(Boolean);
   if (groups.length <= 1) {
@@ -211,15 +233,20 @@ Deno.serve(async (req) => {
     if (!keywords) continue;
 
     const { regular, hot, errors } = await fetchCategoryGroups(keywords, trackingId);
+    const excludes = parseExcludes(keywords);
 
+    let excluded = 0;
     const rows = new Map<number, ReturnType<typeof toRow>>();
-    for (const p of regular) {
-      const row = toRow(p, String(cat.id), false, runAt);
-      if (row.product_id && row.title && row.promotion_link) rows.set(row.product_id, row);
-    }
-    for (const p of hot) {
-      const row = toRow(p, String(cat.id), true, runAt);
-      if (row.product_id && row.title && row.promotion_link) rows.set(row.product_id, row);
+    for (const [list, isHot] of [[regular, false], [hot, true]] as const) {
+      for (const p of list) {
+        const row = toRow(p, String(cat.id), isHot, runAt);
+        if (!row.product_id || !row.title || !row.promotion_link) continue;
+        if (isExcluded(row.title, excludes)) {
+          excluded++;
+          continue;
+        }
+        rows.set(row.product_id, row);
+      }
     }
 
     let saved = 0;
@@ -247,6 +274,7 @@ Deno.serve(async (req) => {
       category_id: cat.id,
       regular: regular.length,
       hot: hot.length,
+      excluded,
       saved,
       removed,
       ...(errors.length ? { errors } : {}),
