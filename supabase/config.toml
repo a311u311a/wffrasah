@@ -33,3 +33,10 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/omolaat-coupons-import/deno.json"
 entrypoint = "./functions/omolaat-coupons-import/index.ts"
+
+[functions.aliexpress-sync]
+enabled = true
+# Called by pg_cron; authenticated with the x-sync-token header instead of a JWT.
+verify_jwt = false
+import_map = "./functions/aliexpress-sync/deno.json"
+entrypoint = "./functions/aliexpress-sync/index.ts"
