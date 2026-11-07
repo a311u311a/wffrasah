@@ -5,6 +5,11 @@
 // to Saudi Arabia, score them, upsert them, and drop that category's rows the
 // run did not see. Called by pg_cron with the `x-sync-token` header.
 //
+// `ali_keywords` is one search ("men fashion clothing"), or several searches
+// separated by `|` ("2026 women abaya | women maxi dress | women cardigan")
+// to fill one category from several AliExpress sub-categories. Each search
+// gets its own page of GROUP_PAGE_SIZE products and the results are merged.
+//
 // Secrets: ALI_APP_KEY, ALI_APP_SECRET, ALI_BASE_URL, ALI_TRACKING_ID,
 // ALI_SYNC_TOKEN (and the built-in SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY).
 import "@supabase/functions-js/edge-runtime.d.ts";
@@ -12,6 +17,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import CryptoJS from "https://esm.sh/crypto-js@4.2.0";
 
 const PAGE_SIZE = 50;
+const GROUP_PAGE_SIZE = 15;
+const GROUP_CONCURRENCY = 4;
 const SHIP_TO = Deno.env.get("ALI_SHIP_TO_COUNTRY") ?? "SA";
 const CURRENCY = Deno.env.get("ALI_TARGET_CURRENCY") ?? "SAR";
 const LANGUAGE = Deno.env.get("ALI_TARGET_LANGUAGE") ?? "AR";
@@ -115,11 +122,15 @@ function toRow(p: any, categoryId: string, isHot: boolean, runAt: string) {
   };
 }
 
-async function fetchCategory(keywords: string, trackingId: string) {
+async function fetchCategory(
+  keywords: string,
+  trackingId: string,
+  pageSize = PAGE_SIZE,
+) {
   const common = {
     keywords,
     page_no: "1",
-    page_size: String(PAGE_SIZE),
+    page_size: String(pageSize),
     sort: "LAST_VOLUME_DESC",
     ship_to_country: SHIP_TO,
     target_currency: CURRENCY,
@@ -142,6 +153,32 @@ async function fetchCategory(keywords: string, trackingId: string) {
       .filter((r): r is PromiseRejectedResult => r.status === "rejected")
       .map((r) => String(r.reason?.message ?? r.reason)),
   };
+}
+
+/** Runs every `|` search of a category and merges the results. */
+async function fetchCategoryGroups(rawKeywords: string, trackingId: string) {
+  const groups = rawKeywords
+    .split("|")
+    .map((g) => g.replace(/\s*,\s*/g, " ").trim())
+    .filter(Boolean);
+  if (groups.length <= 1) {
+    return fetchCategory(groups[0] ?? "", trackingId);
+  }
+  const regular: any[] = [];
+  const hot: any[] = [];
+  const errors: string[] = [];
+  for (let i = 0; i < groups.length; i += GROUP_CONCURRENCY) {
+    const batch = groups.slice(i, i + GROUP_CONCURRENCY);
+    const results = await Promise.all(
+      batch.map((g) => fetchCategory(g, trackingId, GROUP_PAGE_SIZE)),
+    );
+    results.forEach((r, j) => {
+      regular.push(...r.regular);
+      hot.push(...r.hot);
+      errors.push(...r.errors.map((e) => `${batch[j]}: ${e}`));
+    });
+  }
+  return { regular, hot, errors };
 }
 
 Deno.serve(async (req) => {
@@ -170,10 +207,10 @@ Deno.serve(async (req) => {
   const report: Record<string, unknown>[] = [];
 
   for (const cat of categories ?? []) {
-    const keywords = String(cat.ali_keywords ?? "").replace(/\s*,\s*/g, " ").trim();
+    const keywords = String(cat.ali_keywords ?? "").trim();
     if (!keywords) continue;
 
-    const { regular, hot, errors } = await fetchCategory(keywords, trackingId);
+    const { regular, hot, errors } = await fetchCategoryGroups(keywords, trackingId);
 
     const rows = new Map<number, ReturnType<typeof toRow>>();
     for (const p of regular) {
