@@ -65,8 +65,6 @@ class _AliProductsSectionState extends State<AliProductsSection> {
                 ),
               ),
             ),
-            const SizedBox(height: 8),
-            const AliAffiliateNote(),
           ],
         );
       },

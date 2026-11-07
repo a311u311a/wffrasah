@@ -128,10 +128,7 @@ class _AliProductsScreenState extends State<AliProductsScreen> {
                             ),
                           ),
                         ),
-                        const SliverPadding(
-                          padding: EdgeInsets.fromLTRB(24, 4, 24, 32),
-                          sliver: SliverToBoxAdapter(child: AliAffiliateNote()),
-                        ),
+                        const SliverToBoxAdapter(child: SizedBox(height: 32)),
                       ],
                     );
                   },

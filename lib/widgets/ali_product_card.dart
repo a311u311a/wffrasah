@@ -222,22 +222,3 @@ class _PriceRow extends StatelessWidget {
     );
   }
 }
-
-/// تنويه الشراكة المطلوب من المتاجر ومن برنامج العمولة.
-class AliAffiliateNote extends StatelessWidget {
-  const AliAffiliateNote({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Text(
-      'روابط شراكة من علي إكسبرس: قد نحصل على عمولة عند الشراء دون أي تكلفة إضافية عليك.',
-      textAlign: TextAlign.center,
-      textDirection: TextDirection.rtl,
-      style: TextStyle(
-        fontFamily: 'Tajawal',
-        fontSize: 11,
-        color: Constants.secondaryTextColor,
-      ),
-    );
-  }
-}
