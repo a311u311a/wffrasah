@@ -258,8 +258,8 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
                                 Text(
                                   webText(
                                       context,
-                                      'اضغط لاختيار صورة (يفضل PNG أو JPG)',
-                                      'Tap to choose an image (PNG or JPG preferred)'),
+                                      'اضغط لاختيار صورة (PNG أو JPG) — المقاس المناسب 1600×730',
+                                      'Tap to choose an image (PNG or JPG) — best size 1600×730'),
                                   style: TextStyle(
                                     fontFamily: _font,
                                     fontWeight: FontWeight.w700,

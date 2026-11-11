@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 class Constants {
   static const String isDarkMode = 'isDarkMode';
 
+  /// نسبة العرض إلى الارتفاع لبنرات الصفحة الرئيسية (التطبيق والموقع).
+  /// المقاس الموصى به للصور: 1600×730 أو 1200×545.
+  static const double bannerAspectRatio = 2.2;
+
   static const String primaryFontFamily = 'Tajawal';
   static const String displayFontFamily = 'Tajawal';
 

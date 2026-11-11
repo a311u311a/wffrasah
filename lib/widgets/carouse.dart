@@ -47,12 +47,16 @@ class _CustomCarouselState extends State<CustomCarousel> {
         final items = incomingItems.isNotEmpty ? incomingItems : _lastItems;
         if (items.isEmpty) return const SizedBox.shrink();
 
+        // الارتفاع يتبع عرض الشاشة بنسبة البنر الموحّدة مع الموقع،
+        // فتظهر الصورة بنفس الشكل على كل الجوالات بدون تمطيط.
+        final bannerHeight = (MediaQuery.of(context).size.width * 0.99) /
+            Constants.bannerAspectRatio;
+
         return CarouselSlider(
           options: CarouselOptions(
-            height: 176,
+            height: bannerHeight,
             autoPlay: true,
             enlargeCenterPage: true,
-            aspectRatio: 16 / 9,
             autoPlayCurve: Curves.fastOutSlowIn,
             enableInfiniteScroll: true,
             autoPlayAnimationDuration: const Duration(milliseconds: 800),
@@ -97,7 +101,7 @@ class _CustomCarouselState extends State<CustomCarousel> {
                 clipBehavior: Clip.antiAlias,
                 child: CachedNetworkImage(
                   imageUrl: imageUrl,
-                  fit: BoxFit.fill,
+                  fit: BoxFit.cover,
                   placeholder: (context, url) => Container(
                     color: Constants.primaryColor.withValues(alpha: 0.035),
                     child: Center(

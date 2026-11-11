@@ -1,4 +1,3 @@
-import 'dart:ui' as ui;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -41,12 +40,13 @@ class _WebBannerCarouselState extends State<WebBannerCarousel> {
       return const SizedBox.shrink();
     }
 
-    // الارتفاع يتبع عرض الصفحة حتى تظهر الصورة كاملة بدون قص.
+    // نفس نسبة بنر التطبيق، وكل صورة تملأ الإطار بالكامل (cover)
+    // فلا تظهر فراغات جانبية ولا تتمطط الصورة.
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final ratio = ResponsiveLayout.isMobile(context) ? 2.0 : 2.4;
-        final bannerHeight = (width / ratio).clamp(160.0, 560.0);
+        final bannerHeight =
+            (width / Constants.bannerAspectRatio).clamp(140.0, 700.0);
         return _buildCarousel(itemsWithImages, bannerHeight);
       },
     );
@@ -289,31 +289,14 @@ class _RetryingWebBannerImageState extends State<_RetryingWebBannerImage> {
     final imageUrl = widget.imageUrl.trim();
 
     final url = _imageUrlForAttempt(imageUrl);
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // نسخة مموّهة تملأ الفراغ حول الصورة إذا اختلفت نسبتها عن البنر.
-        ClipRect(
-          child: ImageFiltered(
-            imageFilter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-            child: Image.network(
-              url,
-              fit: BoxFit.cover,
-              gaplessPlayback: true,
-              errorBuilder: (_, __, ___) => const SizedBox(),
-            ),
-          ),
-        ),
-        _buildFullImage(imageUrl, url),
-      ],
-    );
+    return _buildFullImage(imageUrl, url);
   }
 
   Widget _buildFullImage(String imageUrl, String url) {
     return Image.network(
       url,
       key: ValueKey('$imageUrl-$_retryAttempt'),
-      fit: BoxFit.contain,
+      fit: BoxFit.cover,
       gaplessPlayback: true,
       loadingBuilder: (context, child, loadingProgress) {
         if (loadingProgress == null) return child;

@@ -127,6 +127,10 @@ class _AdminCarouselScreenState extends State<AdminCarouselScreen> {
                                 const SizedBox(height: 10),
                                 const Text('اختر صورة البنر',
                                     style: TextStyle(color: Colors.grey)),
+                                const SizedBox(height: 4),
+                                const Text('المقاس المناسب: 1600×730',
+                                    style: TextStyle(
+                                        color: Colors.grey, fontSize: 12)),
                               ],
                             ),
                     ),
