@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../constants.dart';
+import '../../utils/expiry.dart';
 import '../login_signup/widgets/snackbar.dart';
 
 class AdminCarouselScreen extends StatefulWidget {
@@ -70,6 +71,7 @@ class _AdminCarouselScreenState extends State<AdminCarouselScreen> {
     final nameEnCtrl = TextEditingController();
     final webCtrl = TextEditingController();
     XFile? pickedImage;
+    DateTime? expiryDay;
     bool isSaving = false;
 
     showModalBottomSheet(
@@ -143,6 +145,12 @@ class _AdminCarouselScreenState extends State<AdminCarouselScreen> {
                   const SizedBox(height: 15),
                   _buildTextField(
                       webCtrl, 'رابط الموقع (Web Link)', Icons.link),
+                  const SizedBox(height: 15),
+                  ExpiryDayField(
+                    value: expiryDay,
+                    accentColor: Constants.primaryColor,
+                    onChanged: (d) => setStateSheet(() => expiryDay = d),
+                  ),
                   const SizedBox(height: 20),
                   const SizedBox(height: 30),
                   SizedBox(
@@ -171,6 +179,7 @@ class _AdminCarouselScreenState extends State<AdminCarouselScreen> {
                                     'name': nameArCtrl.text.trim(),
                                     'image': url,
                                     'web': webCtrl.text.trim(),
+                                    'expiry_date': expiryDayToDb(expiryDay),
                                   });
                                   if (mounted) {
                                     Navigator.pop(context);
@@ -211,6 +220,10 @@ class _AdminCarouselScreenState extends State<AdminCarouselScreen> {
         TextEditingController(text: data['name_en'] ?? data['name']);
     final webCtrl = TextEditingController(text: data['web']);
     XFile? pickedImage;
+    final existingExpiry = parseExpiryDate(data['expiry_date']);
+    DateTime? expiryDay = existingExpiry == null
+        ? null
+        : DateTime.parse(formatExpiryDay(existingExpiry));
     bool isSaving = false;
     final String existingImageUrl = data['image'];
 
@@ -274,6 +287,12 @@ class _AdminCarouselScreenState extends State<AdminCarouselScreen> {
                   const SizedBox(height: 15),
                   _buildTextField(webCtrl, 'رابط الموقع (Web Link)',
                       Icons.language_outlined),
+                  const SizedBox(height: 15),
+                  ExpiryDayField(
+                    value: expiryDay,
+                    accentColor: Constants.primaryColor,
+                    onChanged: (d) => setStateSheet(() => expiryDay = d),
+                  ),
                   const SizedBox(height: 20),
                   const SizedBox(height: 30),
                   SizedBox(
@@ -298,6 +317,7 @@ class _AdminCarouselScreenState extends State<AdminCarouselScreen> {
                                   'name': nameArCtrl.text.trim(),
                                   'web': webCtrl.text.trim(),
                                   'image': finalUrl,
+                                  'expiry_date': expiryDayToDb(expiryDay),
                                 }).eq('id', data['id']);
                                 if (mounted) {
                                   Navigator.pop(context);
@@ -460,6 +480,7 @@ class _AdminCarouselScreenState extends State<AdminCarouselScreen> {
                   final imageUrl = item['image']?.toString();
                   final name = item['name_ar'] ?? item['name'] ?? 'بدون اسم';
                   final link = item['web'] ?? 'لا يوجد رابط';
+                  final expiry = parseExpiryDate(item['expiry_date']);
 
                   return Container(
                     margin: const EdgeInsets.only(bottom: 15),
@@ -503,12 +524,31 @@ class _AdminCarouselScreenState extends State<AdminCarouselScreen> {
                                 ),
                         ),
                         ListTile(
-                          title: Text(name,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text(link,
-                              style: const TextStyle(
-                                  fontSize: 12, color: Colors.blue)),
+                          title: Row(
+                            children: [
+                              Flexible(
+                                child: Text(name,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold)),
+                              ),
+                              if (isExpiredDate(expiry)) ...[
+                                const SizedBox(width: 8),
+                                const ExpiredBadge(),
+                              ],
+                            ],
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(link,
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Colors.blue)),
+                              if (expiry != null)
+                                Text('ينتهي: ${formatExpiryDay(expiry)}',
+                                    style: const TextStyle(
+                                        fontSize: 12, color: Colors.grey)),
+                            ],
+                          ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [

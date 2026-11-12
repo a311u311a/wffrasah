@@ -5,6 +5,7 @@ import 'package:wffrhasah/screens/login_signup/widgets/snackbar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../constants.dart';
+import '../../utils/expiry.dart';
 
 import '../../web_widgets/responsive_layout.dart';
 import '../../web_widgets/web_navigation_bar.dart';
@@ -143,6 +144,10 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
     XFile? pickedImage;
     Uint8List? pickedBytes;
     bool isSaving = false;
+    final existingExpiry = parseExpiryDate(item?['expiry_date']);
+    DateTime? expiryDay = existingExpiry == null
+        ? null
+        : DateTime.parse(formatExpiryDay(existingExpiry));
 
     final existingImageUrl = (item?['image'] ?? '').toString();
     final editingId = (item?['id'] ?? '').toString();
@@ -289,6 +294,11 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
                       webText(
                           context, 'رابط الموقع (Web Link)', 'Website Link'),
                       Icons.link_rounded),
+                  ExpiryDayField(
+                    value: expiryDay,
+                    accentColor: Constants.primaryColor,
+                    onChanged: (d) => setStateDialog(() => expiryDay = d),
+                  ),
                   const SizedBox(height: 6),
                 ],
               ),
@@ -352,6 +362,7 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
                             'name': nameArCtrl.text.trim(),
                             'web': webCtrl.text.trim(),
                             'image': finalUrl,
+                            'expiry_date': expiryDayToDb(expiryDay),
                           };
 
                           if (item == null) {
@@ -776,6 +787,25 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
     );
   }
 
+  List<Widget> _expiryTag(Map<String, dynamic> item) {
+    final expiry = parseExpiryDate(item['expiry_date']);
+    if (expiry == null) return const [];
+    return [
+      const SizedBox(width: 8),
+      isExpiredDate(expiry)
+          ? ExpiredBadge(label: webText(context, 'منتهي', 'Expired'))
+          : Text(
+              webText(context, 'ينتهي ${formatExpiryDay(expiry)}',
+                  'Ends ${formatExpiryDay(expiry)}'),
+              style: TextStyle(
+                fontFamily: _font,
+                fontSize: 11,
+                color: Colors.grey[600],
+              ),
+            ),
+    ];
+  }
+
   Widget _carouselCard({
     required String id,
     required Map<String, dynamic> item,
@@ -833,15 +863,22 @@ class _WebAdminCarouselScreenState extends State<WebAdminCarouselScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          fontFamily: _font,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 14,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              name,
+                              style: const TextStyle(
+                                fontFamily: _font,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 14,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          ..._expiryTag(item),
+                        ],
                       ),
                       const SizedBox(height: 6),
                       Text(

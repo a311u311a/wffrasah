@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/store.dart';
 import '../widgets/loading_indicator.dart';
+import '../utils/expiry.dart';
 
 class StoreOffersScreen extends StatelessWidget {
   final Store store;
@@ -56,7 +57,10 @@ class StoreOffersScreen extends StatelessWidget {
               return Center(child: Text('Error: ${snap.error}'));
             }
 
-            final rows = snap.data ?? [];
+            final rows = (snap.data ?? [])
+                .where((row) =>
+                    !isExpiredDate(parseExpiryDate(row['expiry_date'])))
+                .toList();
             if (rows.isEmpty) {
               return const Center(
                   child: Text('لا توجد عروض لهذا المتجر حالياً'));

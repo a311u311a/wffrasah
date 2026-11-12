@@ -257,6 +257,7 @@ class _CouponOfTheDaySection extends StatelessWidget {
         if (rows.isEmpty) return const SizedBox.shrink();
         final coupon = Coupon.fromSupabase(
             rows.first, Localizations.localeOf(context).languageCode);
+        if (coupon.isExpired) return const SizedBox.shrink();
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -304,6 +305,7 @@ class _PersonalizedCouponsSection extends StatelessWidget {
           }
         })
         .whereType<Coupon>()
+        .where((coupon) => !coupon.isExpired)
         .toList();
     if (coupons.isEmpty) return const SizedBox.shrink();
     return Column(
@@ -456,7 +458,9 @@ class _MostUsedCouponsListState extends State<_MostUsedCouponsList> {
             _withStoreData(row, store, langCode),
             langCode,
           );
-          if (coupon.id.trim().isNotEmpty) coupons.add(coupon);
+          if (coupon.id.trim().isNotEmpty && !coupon.isExpired) {
+            coupons.add(coupon);
+          }
         } catch (_) {
           // Ignore one malformed row and keep the remaining coupons visible.
         }
@@ -683,7 +687,7 @@ class _HomeUnifiedSearchResultsState extends State<_HomeUnifiedSearchResults> {
           return Coupon.fromSupabase(
               _withStoreData(item, store, langCode), langCode);
         })
-        .where((coupon) => coupon.id.trim().isNotEmpty)
+        .where((coupon) => coupon.id.trim().isNotEmpty && !coupon.isExpired)
         .toList();
 
     final offers = rows.offers
@@ -694,7 +698,7 @@ class _HomeUnifiedSearchResultsState extends State<_HomeUnifiedSearchResults> {
           return Offer.fromSupabase(
               _withStoreData(item, store, langCode), langCode);
         })
-        .where((offer) => offer.id.trim().isNotEmpty)
+        .where((offer) => offer.id.trim().isNotEmpty && !offer.isExpired)
         .toList();
 
     return _HomeSearchData(
@@ -1138,6 +1142,7 @@ class _CategoryStoreCouponsFallback extends StatelessWidget {
         'store_image': store.image,
       }, langCode));
     }
+    coupons.removeWhere((coupon) => coupon.isExpired);
 
     coupons.sort((a, b) {
       final aDate = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
@@ -1361,6 +1366,7 @@ class _HomeDealsListState extends State<_HomeDealsList> {
 
         final enriched = _withStoreData(row, store, langCode);
         final coupon = Coupon.fromSupabase(enriched, langCode);
+        if (coupon.isExpired) continue;
         final deal = _HomeDeal.coupon(
           coupon,
           coupon.createdAt ?? DateTime(1970),
@@ -1383,6 +1389,7 @@ class _HomeDealsListState extends State<_HomeDealsList> {
 
         final enriched = _withStoreData(row, store, langCode);
         final offer = Offer.fromSupabase(enriched, langCode);
+        if (offer.isExpired) continue;
         final deal = _HomeDeal.offer(
           offer,
           offer.createdAt ?? DateTime(1970),

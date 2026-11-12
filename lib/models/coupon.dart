@@ -1,3 +1,4 @@
+import '../utils/expiry.dart';
 import 'dart:convert';
 
 class Coupon {
@@ -34,6 +35,9 @@ class Coupon {
 
   final DateTime? createdAt;
   final DateTime? expiryDate;
+
+  /// Past the end of its expiry day (Saudi time); hidden from the public.
+  bool get isExpired => isExpiredDate(expiryDate);
 
   Coupon({
     required this.id,

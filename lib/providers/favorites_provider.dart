@@ -16,7 +16,11 @@ class FavoriteProvider with ChangeNotifier {
   final List<dynamic> _favoriteItems = []; // Coupon / Offer
   bool _isLoading = false;
 
-  List<dynamic> get favoriteItems => List.unmodifiable(_favoriteItems);
+  /// Expired coupons and offers stay saved but are not shown.
+  List<dynamic> get favoriteItems => List.unmodifiable(_favoriteItems.where(
+        (item) => !((item is Coupon && item.isExpired) ||
+            (item is Offer && item.isExpired)),
+      ));
   bool get isLoading => _isLoading;
 
   FavoriteProvider() {

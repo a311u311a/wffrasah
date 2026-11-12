@@ -298,9 +298,7 @@ class _AdminOfferScreenState extends State<AdminOfferScreen> {
                         offer.expiryDate!.difference(DateTime.now()).inDays;
                     final isExpiringSoon = daysLeft <= 5;
                     return Text(
-                      daysLeft < 0
-                          ? 'منتهي منذ ${daysLeft.abs()} يوم'
-                          : 'باقي $daysLeft يوم',
+                      offer.isExpired ? 'منتهي' : 'باقي $daysLeft يوم',
                       style: TextStyle(
                         fontSize: 11,
                         color: isExpiringSoon ? Colors.red : Colors.grey[600],

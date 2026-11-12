@@ -112,20 +112,28 @@ class _WebSearchDialogState extends State<WebSearchDialog> {
           .map((s) => Store.fromSupabase(s, langCode))
           .toList();
       final storesByKey = _storesByKey(stores);
-      final coupons = results[1].map((c) {
-        final storeId = (c['store_id'] ?? c['storeId'] ?? '').toString().trim();
-        return Coupon.fromSupabase(
-          _withStoreData(c, storesByKey[storeId.toLowerCase()]),
-          langCode,
-        );
-      }).toList();
-      final offers = results[2].map((o) {
-        final storeId = (o['store_id'] ?? o['storeId'] ?? '').toString().trim();
-        return Offer.fromSupabase(
-          _withStoreData(o, storesByKey[storeId.toLowerCase()]),
-          langCode,
-        );
-      }).toList();
+      final coupons = results[1]
+          .map((c) {
+            final storeId =
+                (c['store_id'] ?? c['storeId'] ?? '').toString().trim();
+            return Coupon.fromSupabase(
+              _withStoreData(c, storesByKey[storeId.toLowerCase()]),
+              langCode,
+            );
+          })
+          .where((c) => !c.isExpired)
+          .toList();
+      final offers = results[2]
+          .map((o) {
+            final storeId =
+                (o['store_id'] ?? o['storeId'] ?? '').toString().trim();
+            return Offer.fromSupabase(
+              _withStoreData(o, storesByKey[storeId.toLowerCase()]),
+              langCode,
+            );
+          })
+          .where((o) => !o.isExpired)
+          .toList();
 
       final searchResults = UnifiedSearchService.search(
         query: query,
@@ -191,9 +199,12 @@ class _WebSearchDialogState extends State<WebSearchDialog> {
                   _withStoreData(c as Map<String, dynamic>, store),
                   langCode,
                 ))
+            .where((c) => !c.isExpired)
             .toList();
-        storeOffers =
-            offersData.map((o) => Offer.fromSupabase(o, langCode)).toList();
+        storeOffers = offersData
+            .map((o) => Offer.fromSupabase(o, langCode))
+            .where((o) => !o.isExpired)
+            .toList();
         isLoadingStoreContent = false;
       });
     } catch (e) {

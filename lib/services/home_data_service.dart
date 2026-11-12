@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../utils/expiry.dart';
 
 class HomeDataRows {
   final List<Map<String, dynamic>> carousel;
@@ -340,7 +341,8 @@ class HomeDataService {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> fetchPersonalizedCouponsForHome() async {
+  static Future<List<Map<String, dynamic>>>
+      fetchPersonalizedCouponsForHome() async {
     var rows = await fetchPersonalizedCoupons();
     if (rows.length < 3) {
       final fallbackRows = await fetchMostUsedCoupons(limit: 6);
@@ -357,10 +359,21 @@ class HomeDataService {
         'get_most_copied_coupons',
         params: {'limit_count': limit},
       );
-      return _normalizeRows(response);
+      return _withoutExpired(_normalizeRows(response));
     } catch (_) {
       return const [];
     }
+  }
+
+  /// Drops coupons, offers and banners past their expiry day. The database
+  /// already hides them from the public; this also covers admins browsing the
+  /// public pages and rows cached before they expired.
+  static List<Map<String, dynamic>> _withoutExpired(
+    List<Map<String, dynamic>> rows,
+  ) {
+    return rows
+        .where((row) => !isExpiredDate(parseExpiryDate(row['expiry_date'])))
+        .toList();
   }
 
   static List<Map<String, dynamic>> _normalizeRows(dynamic rows) {
@@ -509,6 +522,6 @@ class HomeDataService {
     Future<dynamic> query,
   ) async {
     final rows = await query.timeout(const Duration(seconds: 8));
-    return (rows as List).cast<Map<String, dynamic>>();
+    return _withoutExpired((rows as List).cast<Map<String, dynamic>>());
   }
 }

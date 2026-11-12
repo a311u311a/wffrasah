@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../utils/expiry.dart';
+
 class Offer {
   final String id;
   final String categoryId;
@@ -26,6 +28,9 @@ class Offer {
   final List<String> tags;
   final DateTime? createdAt;
   final DateTime? expiryDate;
+
+  /// Past the end of its expiry day (Saudi time); hidden from the public.
+  bool get isExpired => isExpiredDate(expiryDate);
 
   /// ✅ الكود يُخزّن كأول عنصر في tags (اختياري)
   String get code => tags.isNotEmpty ? tags.first : '';

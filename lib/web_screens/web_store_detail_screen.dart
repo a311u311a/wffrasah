@@ -111,9 +111,11 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
                   _withCurrentStore(e),
                   langCode,
                 ))
+            .where((c) => !c.isExpired)
             .toList();
         _offers = cachedData.offers
             .map((e) => Offer.fromSupabase(e, langCode))
+            .where((o) => !o.isExpired)
             .toList();
         _isLoading = false;
       });
@@ -133,6 +135,7 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
                         _withCurrentStore(e),
                         langCode,
                       ))
+                  .where((c) => !c.isExpired)
                   .toList();
               _isLoading = false;
             });
@@ -149,8 +152,10 @@ class _WebStoreDetailScreenState extends State<WebStoreDetailScreen>
           .listen((data) {
             if (!mounted) return;
             setState(() {
-              _offers =
-                  data.map((e) => Offer.fromSupabase(e, langCode)).toList();
+              _offers = data
+                  .map((e) => Offer.fromSupabase(e, langCode))
+                  .where((o) => !o.isExpired)
+                  .toList();
               _isLoading = false;
             });
           }, onError: (e) {

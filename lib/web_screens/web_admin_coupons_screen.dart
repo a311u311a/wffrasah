@@ -11,6 +11,7 @@ import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_navigation_bar.dart';
 import '../web_widgets/web_footer.dart';
 import '../web_widgets/web_i18n.dart';
+import '../../utils/expiry.dart';
 
 /// صفحة إدارة الكوبونات على الويب
 class WebAdminCouponsScreen extends StatefulWidget {
@@ -158,10 +159,8 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
         .select('id,slug,name,name_ar,name_en,image')
         .eq('approval_status', 'approved');
     final stores = List<Map<String, dynamic>>.from(storeRes);
-    final providerRes = await _sb
-        .from('coupon_providers')
-        .select('id,name')
-        .order('name');
+    final providerRes =
+        await _sb.from('coupon_providers').select('id,name').order('name');
     final providers = List<Map<String, dynamic>>.from(providerRes);
 
     if (coupon != null) {
@@ -799,7 +798,7 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                       itemCount: filteredProviders.length + 1,
                       separatorBuilder: (_, __) => const SizedBox(height: 10),
                       itemBuilder: (context, i) {
-                      if (i == 0) {
+                        if (i == 0) {
                           return Material(
                             color:
                                 Constants.primaryColor.withValues(alpha: 0.035),
@@ -829,8 +828,8 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
-                                        webText(
-                                            context, 'بدون موفر', 'No provider'),
+                                        webText(context, 'بدون موفر',
+                                            'No provider'),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(
@@ -884,8 +883,8 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                                   Expanded(
                                     child: Text(
                                       name.isEmpty
-                                          ? webText(
-                                              context, 'موفر بدون اسم', 'Provider')
+                                          ? webText(context, 'موفر بدون اسم',
+                                              'Provider')
                                           : name,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -1786,15 +1785,26 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        storeName,
-                        style: const TextStyle(
-                          fontFamily: _font,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 14,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              storeName,
+                              style: const TextStyle(
+                                fontFamily: _font,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 14,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (isExpiredDate(expiryDate)) ...[
+                            const SizedBox(width: 8),
+                            ExpiredBadge(
+                                label: webText(context, 'منتهي', 'Expired')),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 6),
                       Text(

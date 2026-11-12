@@ -91,6 +91,7 @@ class _WebCouponsScreenState extends State<WebCouponsScreen> {
                 _withStoreData(coupon),
                 langCode,
               ))
+          .where((c) => !c.isExpired)
           .toList();
 
       setState(() {

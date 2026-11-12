@@ -82,6 +82,7 @@ class _WebOffersScreenState extends State<WebOffersScreen> {
 
       final loadedOffers = offersData
           .map((offer) => Offer.fromSupabase(offer, langCode))
+          .where((o) => !o.isExpired)
           .toList();
 
       setState(() {

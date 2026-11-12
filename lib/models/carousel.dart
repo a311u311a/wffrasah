@@ -1,9 +1,14 @@
+import '../utils/expiry.dart';
+
 class Carousel {
   final String name;
   final String nameAr;
   final String nameEn;
   final String image;
   final String web;
+  final DateTime? expiryDate;
+
+  bool get isExpired => isExpiredDate(expiryDate);
 
   Carousel({
     required this.name,
@@ -11,6 +16,7 @@ class Carousel {
     required this.nameEn,
     required this.image,
     required this.web,
+    this.expiryDate,
   });
 
   factory Carousel.fromMap(Map<String, dynamic> data, String langCode) {
@@ -23,6 +29,7 @@ class Carousel {
       nameEn: nEn,
       image: (data['image'] ?? '').toString(),
       web: (data['web'] ?? '').toString(),
+      expiryDate: parseExpiryDate(data['expiry_date']),
     );
   }
 
@@ -33,6 +40,7 @@ class Carousel {
       'name_en': nameEn,
       'image': image,
       'web': web,
+      'expiry_date': expiryDate?.toIso8601String(),
     };
   }
 }

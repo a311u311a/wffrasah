@@ -43,8 +43,10 @@ class OffersList extends StatelessWidget {
         }
 
         final rows = snapshot.data ?? [];
-        final offers =
-            rows.map((row) => Offer.fromSupabase(row, langCode)).toList();
+        final offers = rows
+            .map((row) => Offer.fromSupabase(row, langCode))
+            .where((o) => !o.isExpired)
+            .toList();
 
         final filtered = offers.where((o) {
           final selectedStore = selectedStoreId?.trim();

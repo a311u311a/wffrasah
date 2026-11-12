@@ -12,6 +12,7 @@ import '../widgets/category_list.dart';
 import '../widgets/loading_indicator.dart';
 import '../widgets/search_widget.dart';
 import 'store_coupons_screen.dart';
+import '../utils/expiry.dart';
 
 class OffersScreen extends StatefulWidget {
   const OffersScreen({super.key});
@@ -58,12 +59,13 @@ class _OffersScreenState extends State<OffersScreen> {
     final results = await Future.wait([
       sb
           .from('offers')
-          .select('store_id')
+          .select('store_id, expiry_date')
           .order('created_at', ascending: false),
       sb.from('stores').select().order('created_at', ascending: false),
     ]);
 
     final offerStoreIds = (results[0] as List)
+        .where((offer) => !isExpiredDate(parseExpiryDate(offer['expiry_date'])))
         .map((offer) => (offer['store_id'] ?? '').toString().trim())
         .where((storeId) => storeId.isNotEmpty)
         .toSet();

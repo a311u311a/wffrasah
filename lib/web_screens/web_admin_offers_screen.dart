@@ -725,7 +725,7 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                   Builder(builder: (_) {
                     final daysLeft =
                         offer.expiryDate!.difference(DateTime.now()).inDays;
-                    final isExpired = daysLeft < 0;
+                    final isExpired = offer.isExpired;
                     final isCritical = daysLeft <= 5;
 
                     // ✅ التاريخ
@@ -736,9 +736,7 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
                     String remainingText;
                     if (isExpired) {
                       remainingText = webText(
-                          context,
-                          '$dateStr • منتهي منذ ${daysLeft.abs()} يوم',
-                          '$dateStr • expired ${daysLeft.abs()} days ago');
+                          context, '$dateStr • منتهي', '$dateStr • expired');
                     } else if (daysLeft == 0) {
                       remainingText = webText(
                           context,

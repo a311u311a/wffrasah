@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../constants.dart';
 import '../../services/notification_service.dart';
 import '../login_signup/widgets/snackbar.dart';
+import '../../utils/expiry.dart';
 
 class AdminCouponsScreen extends StatefulWidget {
   const AdminCouponsScreen({super.key});
@@ -170,7 +171,8 @@ class _AdminCouponsScreenState extends State<AdminCouponsScreen> {
                     itemBuilder: (context, i) {
                       if (i == 0) {
                         return Material(
-                          color: Constants.primaryColor.withValues(alpha: 0.035),
+                          color:
+                              Constants.primaryColor.withValues(alpha: 0.035),
                           borderRadius: BorderRadius.circular(16),
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(
@@ -191,7 +193,8 @@ class _AdminCouponsScreenState extends State<AdminCouponsScreen> {
                                     backgroundColor: Constants.primaryColor
                                         .withValues(alpha: 0.08),
                                     child: Icon(Icons.close_rounded,
-                                        color: Constants.primaryColor, size: 18),
+                                        color: Constants.primaryColor,
+                                        size: 18),
                                   ),
                                   const SizedBox(width: 12),
                                   const Expanded(
@@ -495,10 +498,8 @@ class _AdminCouponsScreenState extends State<AdminCouponsScreen> {
         .select('id,slug,name,name_ar,name_en,image')
         .eq('approval_status', 'approved');
     final stores = List<Map<String, dynamic>>.from(storeRes);
-    final providerRes = await _sb
-        .from('coupon_providers')
-        .select('id,name')
-        .order('name');
+    final providerRes =
+        await _sb.from('coupon_providers').select('id,name').order('name');
     final providers = List<Map<String, dynamic>>.from(providerRes);
 
     if (coupon != null) {
@@ -1500,9 +1501,19 @@ class _AdminCouponsScreenState extends State<AdminCouponsScreen> {
                       color: Constants.primaryColor),
             ),
           ),
-          title: Text(name,
-              style:
-                  const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          title: Row(
+            children: [
+              Flexible(
+                child: Text(name,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w800, fontSize: 16)),
+              ),
+              if (isExpiredDate(parseExpiryDate(data['expiry_date']))) ...[
+                const SizedBox(width: 8),
+                const ExpiredBadge(),
+              ],
+            ],
+          ),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

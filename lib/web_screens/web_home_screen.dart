@@ -102,6 +102,7 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
       setState(() {
         carouselItems = data.carousel
             .map((item) => Carousel.fromMap(item, langCode))
+            .where((item) => !item.isExpired)
             .toList();
         // الفئة اللي ما فيها متاجر ظاهرة ما تنعرض.
         final activeCategoryIds = loadedStores
@@ -125,9 +126,11 @@ class _WebHomeScreenState extends State<WebHomeScreen> {
                   ),
                   langCode,
                 ))
+            .where((c) => !c.isExpired)
             .toList();
         offers = data.offers
             .map((item) => Offer.fromSupabase(item, langCode))
+            .where((o) => !o.isExpired)
             .toList();
         isLoading = false;
         hasLoadError = false;

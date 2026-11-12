@@ -250,6 +250,7 @@ class _StoreCouponsScreenState extends State<StoreCouponsScreen> {
                         _withCurrentStore(e),
                         langCode,
                       ))
+                  .where((c) => !c.isExpired)
                   .toList();
               _isLoading = false;
             });
@@ -266,8 +267,10 @@ class _StoreCouponsScreenState extends State<StoreCouponsScreen> {
           .listen((data) {
             if (!mounted) return;
             setState(() {
-              _offers =
-                  data.map((e) => Offer.fromSupabase(e, langCode)).toList();
+              _offers = data
+                  .map((e) => Offer.fromSupabase(e, langCode))
+                  .where((o) => !o.isExpired)
+                  .toList();
               _isLoading = false;
             });
           }, onError: (e) {

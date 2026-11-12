@@ -1,4 +1,5 @@
 import 'package:carousel_slider/carousel_slider.dart';
+import '../utils/expiry.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -44,7 +45,11 @@ class _CustomCarouselState extends State<CustomCarousel> {
           _lastItems = incomingItems;
         }
 
-        final items = incomingItems.isNotEmpty ? incomingItems : _lastItems;
+        // البنر المنتهي لا يظهر حتى لو كان التطبيق مفتوح وقت انتهائه.
+        final items = (incomingItems.isNotEmpty ? incomingItems : _lastItems)
+            .where(
+                (item) => !isExpiredDate(parseExpiryDate(item['expiry_date'])))
+            .toList();
         if (items.isEmpty) return const SizedBox.shrink();
 
         // الارتفاع يتبع عرض الشاشة بنسبة البنر الموحّدة مع الموقع،

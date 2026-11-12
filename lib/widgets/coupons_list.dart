@@ -73,6 +73,7 @@ class _CouponsListState extends State<CouponsList> {
 
         final coupons = normalizedRows
             .map((row) => Coupon.fromSupabase(row, langCode))
+            .where((c) => !c.isExpired)
             .toList();
         final storeNames = _storeNamesByCouponId(normalizedRows, langCode);
 
