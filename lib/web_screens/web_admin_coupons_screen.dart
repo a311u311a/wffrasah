@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../web_widgets/admin_section_chrome.dart';
 import '../constants.dart';
 import '../screens/login_signup/widgets/snackbar.dart';
 import '../web_widgets/responsive_layout.dart';
@@ -1359,12 +1360,7 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
   @override
   Widget build(BuildContext context) {
     if (widget.isEmbedded) {
-      return SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: _buildContent(),
-        ),
-      );
+      return SingleChildScrollView(child: _buildContent());
     }
 
     return Scaffold(
@@ -1446,7 +1442,9 @@ class _WebAdminCouponsScreenState extends State<WebAdminCouponsScreen> {
 
   Widget _buildContent() {
     return Container(
-      padding: ResponsivePadding.page(context),
+      padding: widget.isEmbedded
+          ? kAdminEmbeddedPadding
+          : ResponsivePadding.page(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

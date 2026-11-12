@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:wffrhasah/screens/login_signup/widgets/snackbar.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../web_widgets/admin_section_chrome.dart';
 import '../constants.dart';
 import '../models/offers.dart';
 import '../web_widgets/responsive_layout.dart';
@@ -197,12 +198,7 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
   @override
   Widget build(BuildContext context) {
     if (widget.isEmbedded) {
-      return SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: _buildBody(),
-        ),
-      );
+      return SingleChildScrollView(child: _buildBody());
     }
 
     return Scaffold(
@@ -281,7 +277,9 @@ class _WebAdminOffersScreenState extends State<WebAdminOffersScreen> {
 
   Widget _buildBody() {
     return Container(
-      padding: ResponsivePadding.page(context),
+      padding: widget.isEmbedded
+          ? kAdminEmbeddedPadding
+          : ResponsivePadding.page(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

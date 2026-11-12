@@ -16,6 +16,11 @@ import 'web_admin_coupon_providers_screen.dart';
 import 'web_admin_ali_categories_screen.dart';
 import '../screens/admin/admin_categories_screen.dart';
 import '../screens/admin/admin_pending_coupons_screen.dart';
+import '../utils/expiry.dart';
+import '../web_widgets/web_i18n.dart';
+import '../web_widgets/admin_section_chrome.dart';
+
+part 'web_admin_dashboard.dart';
 
 class WebAdminScreen extends StatefulWidget {
   static const routeName = '/admin';
@@ -70,6 +75,20 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
     'ali_categories',
   ];
 
+  static const int _pendingIndex = 6;
+  // Re-queried when the admin switches sections, so counts stay fresh after
+  // edits without hitting Supabase on every rebuild.
+  late List<Future<int>> _countFutures = _loadCounts();
+
+  List<Future<int>> _loadCounts() => _countSources.map(_countRows).toList();
+
+  void _openSection(int index) {
+    setState(() {
+      _selectedIndex = index;
+      _countFutures = _loadCounts();
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -95,6 +114,43 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
 
   String _t(String key) => AppLocalizations.of(context)?.translate(key) ?? key;
 
+  String _sectionSubtitle(BuildContext context, int index) {
+    switch (index) {
+      case 1:
+        return webText(context, 'أضف المتاجر وعدّل بياناتها واعتمد الجديد منها',
+            'Add, edit and approve stores');
+      case 2:
+        return webText(
+            context,
+            'أضف الكوبونات وعدّلها، والمنتهي منها معلّم بالأحمر',
+            'Add and edit coupons; expired ones are marked in red');
+      case 3:
+        return webText(context, 'أضف العروض وعدّلها وحدّد تاريخ انتهائها',
+            'Add and edit offers and their expiry dates');
+      case 4:
+        return webText(context, 'رتّب تصنيفات المتاجر والكوبونات',
+            'Organise store and coupon categories');
+      case 5:
+        return webText(
+            context,
+            'بنرات الصفحة الرئيسية، ويُخفى المنتهي منها تلقائيًا',
+            'Home page banners; expired ones are hidden automatically');
+      case 6:
+        return webText(context, 'كوبونات أرسلها المستخدمون بانتظار موافقتك',
+            'Coupons submitted by users, waiting for your approval');
+      case 7:
+        return webText(context, 'أرسل إشعارًا لمستخدمي التطبيق وراجع ما أُرسل',
+            'Send app notifications and review sent ones');
+      case 8:
+        return webText(context, 'الجهات التي تزوّدك بالكوبونات',
+            'Partners that supply your coupons');
+      case 9:
+        return webText(context, 'أقسام منتجات علي إكسبريس في الموقع',
+            'AliExpress product sections on the site');
+    }
+    return '';
+  }
+
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).languageCode;
@@ -104,7 +160,7 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
     final List<Widget> pages = [
       _AdminOverview(
         countRows: _countRows,
-        onOpenSection: (index) => setState(() => _selectedIndex = index),
+        onOpenSection: _openSection,
       ),
       const WebAdminStoresScreen(isEmbedded: true),
       const WebAdminCouponsScreen(isEmbedded: true),
@@ -113,118 +169,128 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
       const WebAdminCarouselScreen(isEmbedded: true),
       const AdminPendingCouponsScreen(isEmbedded: true),
       const WebAdminNotificationsScreen(isEmbedded: true),
-      const WebAdminCouponProvidersScreen(),
+      const WebAdminCouponProvidersScreen(isEmbedded: true),
       const WebAdminAliCategoriesScreen(isEmbedded: true),
     ];
 
     return Directionality(
       textDirection: textDirection,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF9F9F9),
+        backgroundColor: Constants.backgroundColor,
         appBar: const WebNavigationBar(),
         body: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // --- Sidebar ---
             Container(
-              width: 280,
+              width: 264,
               decoration: BoxDecoration(
                 color: Colors.white,
-                border: Border(
-                  left: BorderSide(color: Colors.grey[200]!),
+                border: BorderDirectional(
+                  end: BorderSide(color: Constants.mutedBorderColor),
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 10,
-                    offset: Offset(isArabic ? -2 : 2, 0),
-                  ),
-                ],
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 30),
-                  // Sidebar Header / User Info could go here
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 14),
                     child: Row(
                       children: [
-                        CircleAvatar(
-                          backgroundColor:
-                              Constants.primaryColor.withValues(alpha: 0.1),
-                          child: Icon(Icons.admin_panel_settings,
-                              color: Constants.primaryColor),
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: Constants.primaryLightColor,
+                            borderRadius:
+                                BorderRadius.circular(Constants.radiusSmall),
+                          ),
+                          child: Icon(Icons.admin_panel_settings_outlined,
+                              size: 20, color: Constants.primaryColor),
                         ),
-                        const SizedBox(width: 12),
-                        Text(
-                          _t('admin_panel'),
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Tajawal',
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _t('admin_panel'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              fontFamily: Constants.primaryFontFamily,
+                              color: Color(0xFF1E1B3A),
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
+                  const Divider(height: 1, color: Constants.mutedBorderColor),
                   const SizedBox(height: 10),
-                  const Divider(height: 40),
 
                   // Navigation Items
                   Expanded(
                     child: ListView.builder(
                       itemCount: titles.length,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
                       itemBuilder: (context, index) {
                         final isSelected = _selectedIndex == index;
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          decoration: BoxDecoration(
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 2),
+                          child: Material(
                             color: isSelected
-                                ? Constants.primaryColor.withValues(alpha: 0.1)
+                                ? Constants.primaryLightColor
                                 : Colors.transparent,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: InkWell(
-                            onTap: () => setState(() => _selectedIndex = index),
-                            borderRadius: BorderRadius.circular(10),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 14),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    _icons[index],
-                                    color: isSelected
-                                        ? Constants.primaryColor
-                                        : Colors.grey[600],
-                                    size: 24,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      titles[index],
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: isSelected
-                                            ? Constants.primaryColor
-                                            : Colors.grey[800],
-                                        fontWeight: isSelected
-                                            ? FontWeight.bold
-                                            : FontWeight.normal,
-                                        fontFamily: 'Tajawal',
-                                        fontSize: 15,
+                            borderRadius:
+                                BorderRadius.circular(Constants.radiusSmall),
+                            child: InkWell(
+                              onTap: () => _openSection(index),
+                              borderRadius:
+                                  BorderRadius.circular(Constants.radiusSmall),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 10),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      _icons[index],
+                                      color: isSelected
+                                          ? Constants.primaryColor
+                                          : Constants.secondaryTextColor,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        titles[index],
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: isSelected
+                                              ? Constants.primaryColor
+                                              : const Color(0xFF3B3754),
+                                          fontWeight: isSelected
+                                              ? FontWeight.w800
+                                              : FontWeight.w600,
+                                          fontFamily:
+                                              Constants.primaryFontFamily,
+                                          fontSize: 14,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  _AdminCountBadge(
-                                    future: _countRows(_countSources[index]),
-                                    color: Constants.primaryColor,
-                                    isSelected: isSelected,
-                                  ),
-                                ],
+                                    if (index > 0) ...[
+                                      const SizedBox(width: 8),
+                                      _AdminCountBadge(
+                                        future: _countFutures[index],
+                                        color: index == _pendingIndex
+                                            ? const Color(0xFFD97706)
+                                            : Constants.primaryColor,
+                                        isSelected: isSelected,
+                                        emphasize: index == _pendingIndex,
+                                      ),
+                                    ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -233,12 +299,15 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
                     ),
                   ),
 
-                  // Footer in Sidebar (Optional)
                   Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
                     child: Text(
                       _version.isEmpty ? '' : '${_t('version')} $_version',
-                      style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                      style: const TextStyle(
+                        color: Constants.disabledTextColor,
+                        fontSize: 12,
+                        fontFamily: Constants.primaryFontFamily,
+                      ),
                     ),
                   ),
                 ],
@@ -247,14 +316,23 @@ class _WebAdminScreenState extends State<WebAdminScreen> {
 
             // --- Main Content Area ---
             Expanded(
-              child: Column(
+              child: IndexedStack(
+                index: _selectedIndex,
                 children: [
-                  Expanded(
-                    child: IndexedStack(
-                      index: _selectedIndex,
-                      children: pages,
-                    ),
-                  ),
+                  for (var i = 0; i < pages.length; i++)
+                    i == 0
+                        ? pages[i]
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              AdminSectionHeader(
+                                icon: _icons[i],
+                                title: titles[i],
+                                subtitle: _sectionSubtitle(context, i),
+                              ),
+                              Expanded(child: pages[i]),
+                            ],
+                          ),
                 ],
               ),
             ),
@@ -269,11 +347,13 @@ class _AdminCountBadge extends StatelessWidget {
   final Future<int> future;
   final Color color;
   final bool isSelected;
+  final bool emphasize;
 
   const _AdminCountBadge({
     required this.future,
     required this.color,
     required this.isSelected,
+    this.emphasize = false,
   });
 
   @override
@@ -281,39 +361,39 @@ class _AdminCountBadge extends StatelessWidget {
     return FutureBuilder<int>(
       future: future,
       builder: (context, snapshot) {
-        final count = snapshot.data;
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          constraints: const BoxConstraints(minWidth: 34, minHeight: 26),
-          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+        final count = snapshot.data ?? 0;
+        final loading = snapshot.connectionState == ConnectionState.waiting;
+        final hot = emphasize && count > 0;
+        final fg = hot
+            ? Colors.white
+            : isSelected
+                ? color
+                : Constants.secondaryTextColor;
+        return Container(
+          constraints: const BoxConstraints(minWidth: 30, minHeight: 22),
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
           decoration: BoxDecoration(
-            color: isSelected
-                ? color.withValues(alpha: 0.14)
-                : Colors.grey.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isSelected
-                  ? color.withValues(alpha: 0.22)
-                  : Colors.grey.withValues(alpha: 0.12),
-            ),
+            color: hot
+                ? color
+                : isSelected
+                    ? Colors.white
+                    : const Color(0xFFF3F2F8),
+            borderRadius: BorderRadius.circular(20),
           ),
           alignment: Alignment.center,
-          child: snapshot.connectionState == ConnectionState.waiting
+          child: loading
               ? SizedBox(
-                  width: 12,
-                  height: 12,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: isSelected ? color : Colors.grey[500],
-                  ),
+                  width: 10,
+                  height: 10,
+                  child: CircularProgressIndicator(strokeWidth: 1.5, color: fg),
                 )
               : Text(
-                  '${count ?? 0}',
+                  '$count',
                   style: TextStyle(
-                    color: isSelected ? color : Colors.grey[700],
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                    fontFamily: 'Tajawal',
+                    color: fg,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                    fontFamily: Constants.primaryFontFamily,
                   ),
                 ),
         );
@@ -441,6 +521,7 @@ class _OverviewData {
   final int returningUsersRate;
   final List<_UserFavoriteItem> mostFavoritedItems;
   final List<_AdminAttentionItem> attentionItems;
+  final _DashboardStats dashboard;
 
   const _OverviewData({
     required this.stores,
@@ -485,6 +566,7 @@ class _OverviewData {
     required this.returningUsersRate,
     required this.mostFavoritedItems,
     required this.attentionItems,
+    required this.dashboard,
   });
 
   factory _OverviewData.empty() {
@@ -552,6 +634,7 @@ class _OverviewData {
       returningUsersRate: 0,
       mostFavoritedItems: <_UserFavoriteItem>[],
       attentionItems: <_AdminAttentionItem>[],
+      dashboard: _DashboardStats.empty,
     );
   }
 
@@ -562,6 +645,7 @@ class _OverviewData {
     required List<dynamic> couponStatusReports,
     required List<dynamic> couponRows,
     required List<dynamic> offerRows,
+    required List<dynamic> carouselRows,
     required List<dynamic> storeRows,
     required List<dynamic> storeFollowRows,
     required List<dynamic> userRows,
@@ -1216,7 +1300,270 @@ class _OverviewData {
       ),
     ];
 
+    // ---- Dashboard (one-screen overview) ----
+    final soonLimit = now.add(const Duration(days: 7));
+    bool expiresSoon(DateTime? expiry) =>
+        expiry != null &&
+        !isExpiredDate(expiry, now: now) &&
+        isExpiredDate(expiry, now: soonLimit);
+
+    var dashActiveCoupons = 0;
+    var dashExpiredCoupons = 0;
+    var dashSoonCoupons = 0;
+    var dashInactiveCoupons = 0;
+    for (final row in couponRows.whereType<Map>()) {
+      final isActiveRaw = row['is_active'];
+      final isActive = isActiveRaw == null ||
+          isActiveRaw == true ||
+          isActiveRaw.toString().toLowerCase().trim() == 'true';
+      final expiry = parseExpiryDate(row['expiry_date']);
+      final expired = isExpiredDate(expiry, now: now);
+      if (expired) {
+        dashExpiredCoupons++;
+      } else if (!isActive) {
+        dashInactiveCoupons++;
+      } else {
+        dashActiveCoupons++;
+        if (expiresSoon(expiry)) dashSoonCoupons++;
+      }
+    }
+
+    var dashExpiredOffers = 0;
+    var dashSoonOffers = 0;
+    for (final row in offerRows.whereType<Map>()) {
+      final expiry = parseExpiryDate(row['expiry_date']);
+      if (isExpiredDate(expiry, now: now)) {
+        dashExpiredOffers++;
+      } else if (expiresSoon(expiry)) {
+        dashSoonOffers++;
+      }
+    }
+
+    var dashExpiredBanners = 0;
+    var dashSoonBanners = 0;
+    for (final row in carouselRows.whereType<Map>()) {
+      final expiry = parseExpiryDate(row['expiry_date']);
+      if (isExpiredDate(expiry, now: now)) {
+        dashExpiredBanners++;
+      } else if (expiresSoon(expiry)) {
+        dashSoonBanners++;
+      }
+    }
+
+    final dailyCopies = List<int>.filled(14, 0);
+    final firstDay = todayStart.subtract(const Duration(days: 13));
+    final sortedUsage = usageEvents
+        .whereType<Map>()
+        .map((event) {
+          final createdAt =
+              DateTime.tryParse(event['created_at']?.toString() ?? '')
+                  ?.toLocal();
+          return MapEntry(createdAt, event);
+        })
+        .where((entry) => entry.key != null)
+        .toList()
+      ..sort((a, b) => b.key!.compareTo(a.key!));
+    for (final entry in sortedUsage) {
+      if (entry.value['event_type']?.toString() != 'copy') continue;
+      final created = entry.key!;
+      if (created.isBefore(firstDay)) continue;
+      final day = DateTime(created.year, created.month, created.day);
+      final index = day.difference(firstDay).inDays;
+      if (index >= 0 && index < 14) dailyCopies[index]++;
+    }
+
+    final recentActivity = <_ActivityEntry>[];
+    for (final entry in sortedUsage) {
+      if (recentActivity.length >= 20) break;
+      final type = entry.value['event_type']?.toString() ?? '';
+      if (type != 'copy' && type != 'shop_now' && type != 'share') continue;
+      final couponId = entry.value['coupon_id']?.toString() ?? '';
+      final row = couponRowFor(couponId);
+      final code = row?['code']?.toString().trim() ?? '';
+      recentActivity.add(_ActivityEntry(
+        type: type,
+        code: code.isEmpty ? '—' : code,
+        storeName: storeNameFor(row),
+        time: entry.key!,
+      ));
+    }
+
+    final recentCouponRows = couponRows
+        .whereType<Map>()
+        .where((row) =>
+            DateTime.tryParse(row['created_at']?.toString() ?? '') != null)
+        .toList()
+      ..sort((a, b) => DateTime.parse(b['created_at'].toString())
+          .compareTo(DateTime.parse(a['created_at'].toString())));
+    final recentCoupons = recentCouponRows.take(20).map((row) {
+      final isActiveRaw = row['is_active'];
+      final isActive = isActiveRaw == null ||
+          isActiveRaw == true ||
+          isActiveRaw.toString().toLowerCase().trim() == 'true';
+      final expired =
+          isExpiredDate(parseExpiryDate(row['expiry_date']), now: now);
+      final code = row['code']?.toString().trim() ?? '';
+      return _RecentCouponEntry(
+        code: code.isEmpty ? '—' : code,
+        storeName: storeNameFor(row),
+        createdAt: DateTime.parse(row['created_at'].toString()).toLocal(),
+        status: expired
+            ? _CouponStatus.expired
+            : isActive
+                ? _CouponStatus.active
+                : _CouponStatus.inactive,
+      );
+    }).toList();
+
+    final storesWithoutActiveCount = storeRows.whereType<Map>().where((row) {
+      final id = row['id']?.toString().trim().toLowerCase() ?? '';
+      final slug = row['slug']?.toString().trim().toLowerCase() ?? '';
+      return (activeCouponCountByStore[id] ?? 0) +
+              (activeCouponCountByStore[slug] ?? 0) ==
+          0;
+    }).length;
+
+    final reportedCoupons = notWorkingReportCounts.length;
+    final openReports =
+        notWorkingReportCounts.values.fold<int>(0, (a, b) => a + b);
+    final expiredTotal =
+        dashExpiredCoupons + dashExpiredOffers + dashExpiredBanners;
+    final soonTotal = dashSoonCoupons + dashSoonOffers + dashSoonBanners;
+
+    String partsLabel(int c, int o, int b) {
+      final parts = <String>[
+        if (c > 0) '$c كوبون',
+        if (o > 0) '$o عرض',
+        if (b > 0) '$b بنر',
+      ];
+      return parts.isEmpty ? '' : parts.join('، ');
+    }
+
+    final dashboardAlerts = <_AdminAttentionItem>[
+      _AdminAttentionItem(
+        title: 'بلاغات «لا يعمل»',
+        subtitle: openReports == 0
+            ? 'لا توجد بلاغات مفتوحة'
+            : '$openReports بلاغ على $reportedCoupons كوبون',
+        count: reportedCoupons,
+        icon: Icons.report_gmailerrorred_rounded,
+        color: Constants.errorColor,
+        sectionIndex: _kReportsTarget,
+      ),
+      _AdminAttentionItem(
+        title: 'كوبونات بانتظار الموافقة',
+        subtitle: 'راجعها واعتمدها أو ارفضها',
+        count: counts[5],
+        icon: Icons.pending_actions_rounded,
+        color: const Color(0xFFD97706),
+        sectionIndex: 6,
+      ),
+      _AdminAttentionItem(
+        title: 'محتوى منتهٍ',
+        subtitle: expiredTotal == 0
+            ? 'مخفي عن الزوار'
+            : '${partsLabel(dashExpiredCoupons, dashExpiredOffers, dashExpiredBanners)}، مخفي عن الزوار',
+        count: expiredTotal,
+        icon: Icons.event_busy_rounded,
+        color: Constants.errorColor,
+        sectionIndex: dashExpiredCoupons > 0
+            ? 2
+            : dashExpiredOffers > 0
+                ? 3
+                : 5,
+      ),
+      _AdminAttentionItem(
+        title: 'ينتهي خلال 7 أيام',
+        subtitle: soonTotal == 0
+            ? 'لا شيء قريب من الانتهاء'
+            : partsLabel(dashSoonCoupons, dashSoonOffers, dashSoonBanners),
+        count: soonTotal,
+        icon: Icons.timer_outlined,
+        color: const Color(0xFFD97706),
+        sectionIndex: dashSoonCoupons > 0
+            ? 2
+            : dashSoonOffers > 0
+                ? 3
+                : 5,
+      ),
+      _AdminAttentionItem(
+        title: 'متاجر بانتظار الموافقة',
+        subtitle: 'متاجر جديدة أو مستوردة',
+        count: pendingStores,
+        icon: Icons.fact_check_outlined,
+        color: const Color(0xFFD97706),
+        sectionIndex: 1,
+      ),
+      _AdminAttentionItem(
+        title: 'كوبونات متوقفة',
+        subtitle: 'غير مفعّلة يدويًا',
+        count: dashInactiveCoupons,
+        icon: Icons.pause_circle_outline_rounded,
+        color: Constants.primaryColor,
+        sectionIndex: 2,
+      ),
+      _AdminAttentionItem(
+        title: 'متاجر بلا كوبون فعّال',
+        subtitle: 'أضف كوبونًا أو راجع المتجر',
+        count: storesWithoutActiveCount,
+        icon: Icons.storefront_outlined,
+        color: Constants.primaryColor,
+        sectionIndex: 1,
+      ),
+      _AdminAttentionItem(
+        title: 'عروض ينقصها رابط أو وصف',
+        subtitle: 'أكمل تفاصيل العرض',
+        count: offersWithMissingDetails,
+        icon: Icons.link_off_rounded,
+        color: Constants.primaryColor,
+        sectionIndex: 3,
+      ),
+      _AdminAttentionItem(
+        title: 'متاجر بلا شعار',
+        subtitle: 'أضف شعار المتجر',
+        count: storesWithoutLogo,
+        icon: Icons.hide_image_outlined,
+        color: Constants.primaryColor,
+        sectionIndex: 1,
+      ),
+      _AdminAttentionItem(
+        title: 'كوبونات بلا صورة',
+        subtitle: 'أضف صورة للكوبون',
+        count: couponsWithoutImage,
+        icon: Icons.image_not_supported_outlined,
+        color: Constants.primaryColor,
+        sectionIndex: 2,
+      ),
+    ];
+
+    final dashboard = _DashboardStats(
+      stores: counts[0],
+      activeCoupons: dashActiveCoupons,
+      totalCoupons: couponRows.length,
+      activeOffers: offerRows.length - dashExpiredOffers,
+      totalOffers: offerRows.length,
+      activeBanners: carouselRows.length - dashExpiredBanners,
+      totalBanners: carouselRows.length,
+      pendingCoupons: counts[5],
+      pendingStores: pendingStores,
+      expiredTotal: expiredTotal,
+      expiredLabel:
+          partsLabel(dashExpiredCoupons, dashExpiredOffers, dashExpiredBanners),
+      expiringSoonTotal: soonTotal,
+      expiringSoonLabel:
+          partsLabel(dashSoonCoupons, dashSoonOffers, dashSoonBanners),
+      users: counts[8],
+      newUsersThisWeek: newUsersThisWeek,
+      reportedCoupons: reportedCoupons,
+      dailyCopies: dailyCopies,
+      recentActivity: recentActivity,
+      recentCoupons: recentCoupons,
+      alerts: dashboardAlerts,
+      loadedAt: now,
+    );
+
     return _OverviewData(
+      dashboard: dashboard,
       stores: counts[0],
       coupons: counts[1],
       offers: counts[2],
@@ -1347,18 +1694,18 @@ class _AdminOverviewState extends State<_AdminOverview> {
     List<dynamic> offerRows = const [];
     List<dynamic> storeRows = const [];
     List<dynamic> storeFollowRows = const [];
+    List<dynamic> carouselRows = const [];
     List<dynamic> userRows = const [];
     List<dynamic> favoriteRows = const [];
     try {
-      couponRows = await Supabase.instance.client
-          .from('coupons')
-          .select('id,code,store_id,image,is_active,expiry_date,last_used_at');
+      couponRows = await Supabase.instance.client.from('coupons').select(
+          'id,code,store_id,image,is_active,expiry_date,last_used_at,created_at');
     } catch (_) {
       couponRows = const [];
     }
     try {
       offerRows = await Supabase.instance.client.from('offers').select(
-          'id,store_id,name,name_ar,name_en,store_name,store_name_ar,store_name_en,web,description,description_ar,description_en');
+          'id,store_id,name,name_ar,name_en,store_name,store_name_ar,store_name_en,web,description,description_ar,description_en,expiry_date');
     } catch (_) {
       offerRows = const [];
     }
@@ -1367,6 +1714,11 @@ class _AdminOverviewState extends State<_AdminOverview> {
           'id,slug,name,name_ar,name_en,image,approval_status,import_source');
     } catch (_) {
       storeRows = const [];
+    }
+    try {
+      carouselRows = await Supabase.instance.client.from('carousel').select();
+    } catch (_) {
+      carouselRows = const [];
     }
     try {
       storeFollowRows = await Supabase.instance.client
@@ -1397,6 +1749,7 @@ class _AdminOverviewState extends State<_AdminOverview> {
       couponStatusReports: couponStatusReports,
       couponRows: couponRows,
       offerRows: offerRows,
+      carouselRows: carouselRows,
       storeRows: storeRows,
       storeFollowRows: storeFollowRows,
       userRows: userRows,
@@ -1485,208 +1838,72 @@ class _AdminOverviewState extends State<_AdminOverview> {
       builder: (context, snapshot) {
         final data = snapshot.data ?? _OverviewData.empty();
         final loading = snapshot.connectionState == ConnectionState.waiting;
-        final stores = data.stores;
-        final coupons = data.coupons;
-        final offers = data.offers;
-        final categories = data.categories;
-        final carousel = data.carousel;
-        final pending = data.pending;
-        final notifications = data.notifications;
-        final couponProviders = data.couponProviders;
-        final users = data.users;
         final copies = data.couponCopies + data.offerCopies;
         final clicks = data.storeClicks;
         final conversionRate =
             copies + clicks == 0 ? 0.0 : copies / (copies + clicks);
-        final totalContent = coupons + offers;
-        final approvalRate = coupons + pending == 0
-            ? 1.0
-            : coupons / (coupons + pending).clamp(1, 999999);
         final localizations = AppLocalizations.of(context);
         String t(String key) => localizations?.translate(key) ?? key;
         final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-        return Directionality(
-          textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(28, 28, 28, 32),
+        void openTarget(int index) {
+          if (index == _kReportsTarget) {
+            setState(() => _selectedOverviewPage = 1);
+          } else {
+            widget.onOpenSection(index);
+          }
+        }
+
+        final Widget body;
+        if (_selectedOverviewPage == 0) {
+          body = _DashboardView(stats: data.dashboard, onOpen: openTarget);
+        } else {
+          body = SingleChildScrollView(
+            padding: const EdgeInsets.only(bottom: 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _OverviewHeader(
-                  loading: loading,
-                  totalContent: totalContent,
-                  approvalRate: approvalRate,
-                ),
-                const SizedBox(height: 20),
-                _OverviewPageTabs(
-                  selectedIndex: _selectedOverviewPage,
-                  onChanged: (index) {
-                    setState(() => _selectedOverviewPage = index);
-                  },
-                ),
-                const SizedBox(height: 18),
-                if (_selectedOverviewPage == 0) ...[
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      final width = constraints.maxWidth;
-                      final crossAxisCount = width < 720
-                          ? 2
-                          : width < 1150
-                              ? 3
-                              : 7;
-                      return GridView.count(
-                        crossAxisCount: crossAxisCount,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        childAspectRatio: width < 720 ? 1.55 : 1.45,
-                        children: [
-                          _MetricTile(
-                            title: t('stores'),
-                            value: stores,
-                            subtitle: t('admin_stores_subtitle'),
-                            icon: Icons.storefront_rounded,
-                            color: const Color(0xFF0EA5A4),
-                            onTap: () => widget.onOpenSection(1),
-                          ),
-                          _MetricTile(
-                            title: t('coupons'),
-                            value: coupons,
-                            subtitle: t('admin_coupons_subtitle'),
-                            icon: Icons.confirmation_number_rounded,
-                            color: Constants.primaryColor,
-                            onTap: () => widget.onOpenSection(2),
-                          ),
-                          _MetricTile(
-                            title: t('offers'),
-                            value: offers,
-                            subtitle: t('admin_offers_subtitle'),
-                            icon: Icons.local_offer_rounded,
-                            color: const Color(0xFF0284C7),
-                            onTap: () => widget.onOpenSection(3),
-                          ),
-                          _MetricTile(
-                            title: t('admin_carousel_banner'),
-                            value: carousel,
-                            subtitle: t('admin_carousel_subtitle'),
-                            icon: Icons.view_carousel_rounded,
-                            color: const Color(0xFF0EA5A4),
-                            onTap: () => widget.onOpenSection(5),
-                          ),
-                          _MetricTile(
-                            title: t('categories'),
-                            value: categories,
-                            subtitle: t('admin_categories_subtitle'),
-                            icon: Icons.category_rounded,
-                            color: const Color(0xFFF59E0B),
-                            onTap: () => widget.onOpenSection(4),
-                          ),
-                          _MetricTile(
-                            title: 'متاجر بانتظار الموافقة',
-                            value: data.pendingStores,
-                            subtitle: 'تحتاج مراجعة',
-                            icon: Icons.pending_actions_rounded,
-                            color: const Color(0xFFE11D48),
-                            onTap: () => widget.onOpenSection(1),
-                          ),
-                          _MetricTile(
-                            title: 'الكوبونات الفعالة',
-                            value: data.activeCoupons,
-                            subtitle: 'فعالة وغير منتهية',
-                            icon: Icons.verified_rounded,
-                            color: const Color(0xFF16A34A),
-                            onTap: () => widget.onOpenSection(2),
-                          ),
-                          _MetricTile(
-                            title: 'منتهية أو غير فعالة',
-                            value: data.expiredOrInactiveCoupons,
-                            subtitle: 'تحتاج مراجعة',
-                            icon: Icons.block_rounded,
-                            color: const Color(0xFFF59E0B),
-                            onTap: () => widget.onOpenSection(2),
-                          ),
-                          _MetricTile(
-                            title: 'نسخ اليوم',
-                            value: data.copiesToday,
-                            subtitle: 'عمليات النسخ اليوم',
-                            icon: Icons.today_rounded,
-                            color: Constants.primaryColor,
-                            onTap: () {},
-                          ),
-                          _MetricTile(
-                            title: 'نسخ هذا الأسبوع',
-                            value: data.copiesThisWeek,
-                            subtitle: 'من بداية الأسبوع',
-                            icon: Icons.date_range_rounded,
-                            color: const Color(0xFF7C3AED),
-                            onTap: () {},
-                          ),
-                          _MetricTile(
-                            title: 'نسخ هذا الشهر',
-                            value: data.copiesThisMonth,
-                            subtitle: 'من بداية الشهر',
-                            icon: Icons.calendar_month_rounded,
-                            color: const Color(0xFF0EA5A4),
-                            onTap: () {},
-                          ),
-                          _MetricTile(
-                            title: 'المستخدمين',
-                            value: users,
-                            subtitle: 'حسابات المستخدمين',
-                            icon: Icons.group_rounded,
-                            color: const Color(0xFF10B981),
-                            onTap: () {},
-                          ),
-                          _MetricTile(
-                            title: t('admin_coupon_providers'),
-                            value: couponProviders,
-                            subtitle: t('admin_coupon_providers_subtitle'),
-                            icon: Icons.business_center_outlined,
-                            color: const Color(0xFF16A34A),
-                            onTap: () => widget.onOpenSection(8),
-                          ),
-                          _MetricTile(
-                            title: t('notifications'),
-                            value: notifications,
-                            subtitle: t('admin_notifications_subtitle'),
-                            icon: Icons.notifications_active_rounded,
-                            color: const Color(0xFF7C3AED),
-                            onTap: () => widget.onOpenSection(7),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 22),
-                  _AdminAttentionSection(
-                    items: data.attentionItems,
-                    onOpenSection: widget.onOpenSection,
-                  ),
-                ] else if (_selectedOverviewPage == 1) ...[
-                  const SizedBox(height: 22),
+                if (_selectedOverviewPage == 1)
                   _CouponPerformanceSection(
                     data: data,
                     activeCoupons: data.activeCoupons,
                     inactiveCoupons: data.expiredOrInactiveCoupons,
                     onClearNotWorkingReport: _clearNotWorkingReports,
-                  ),
-                ] else if (_selectedOverviewPage == 2) ...[
-                  const SizedBox(height: 22),
-                  _StorePerformanceSection(data: data),
-                ] else if (_selectedOverviewPage == 3) ...[
-                  const SizedBox(height: 22),
-                  _UserStatsSection(data: data),
-                ] else ...[
+                  )
+                else if (_selectedOverviewPage == 2)
+                  _StorePerformanceSection(data: data)
+                else if (_selectedOverviewPage == 3)
+                  _UserStatsSection(data: data)
+                else
                   _AnalyticsOverviewSection(
                     data: data,
                     conversionRate: conversionRate,
-                    approvedCoupons: coupons,
-                    pendingReviews: pending,
+                    approvedCoupons: data.coupons,
+                    pendingReviews: data.pending,
                     t: t,
                   ),
-                ],
+              ],
+            ),
+          );
+        }
+
+        return Directionality(
+          textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 18, 24, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _OverviewTopBar(
+                  selectedTab: _selectedOverviewPage,
+                  onTabChanged: (index) =>
+                      setState(() => _selectedOverviewPage = index),
+                  onRefresh: _refreshData,
+                  loading: loading,
+                  loadedAt: data.dashboard.loadedAt,
+                ),
+                const SizedBox(height: 16),
+                Expanded(child: body),
               ],
             ),
           ),
@@ -1696,266 +1913,11 @@ class _AdminOverviewState extends State<_AdminOverview> {
   }
 }
 
-class _OverviewHeader extends StatelessWidget {
-  final bool loading;
-  final int totalContent;
-  final double approvalRate;
-
-  const _OverviewHeader({
-    required this.loading,
-    required this.totalContent,
-    required this.approvalRate,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final localizations = AppLocalizations.of(context);
-    String t(String key) => localizations?.translate(key) ?? key;
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: const Color(0xFF111827),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x12000000),
-            blurRadius: 18,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: Constants.primaryColor.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(Icons.analytics_rounded, color: Constants.primaryColor),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  t('admin_performance_dashboard'),
-                  style: const TextStyle(
-                    fontSize: 22,
-                    height: 1.35,
-                    fontWeight: FontWeight.w900,
-                    fontFamily: 'Tajawal',
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  t('admin_performance_subtitle'),
-                  style: const TextStyle(
-                    fontSize: 13,
-                    height: 1.5,
-                    fontFamily: 'Tajawal',
-                    color: Color(0xFFD1D5DB),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (loading)
-            SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Constants.primaryColor,
-              ),
-            )
-          else
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '$totalContent',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    fontFamily: 'Tajawal',
-                    color: Colors.white,
-                  ),
-                ),
-                Text(
-                  t('admin_published_approval')
-                      .replaceAll('{count}', '$totalContent')
-                      .replaceAll(
-                        '{rate}',
-                        '${(approvalRate * 100).round()}',
-                      ),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontFamily: 'Tajawal',
-                    color: Color(0xFFD1D5DB),
-                  ),
-                ),
-              ],
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _OverviewPageTabs extends StatelessWidget {
-  final int selectedIndex;
-  final ValueChanged<int> onChanged;
-
-  const _OverviewPageTabs({
-    required this.selectedIndex,
-    required this.onChanged,
-  });
-
-  static const _items = <_OverviewPageTabItem>[
-    _OverviewPageTabItem('الملخص العام', Icons.dashboard_rounded),
-    _OverviewPageTabItem('أداء الكوبونات', Icons.confirmation_number_rounded),
-    _OverviewPageTabItem('أداء المتاجر', Icons.storefront_rounded),
-    _OverviewPageTabItem('المستخدمون', Icons.group_rounded),
-    _OverviewPageTabItem('التحليلات والإدارة', Icons.insights_rounded),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x08000000),
-            blurRadius: 18,
-            offset: Offset(0, 8),
-          ),
-        ],
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final compact = constraints.maxWidth < 920;
-          final children = List.generate(_items.length, (index) {
-            final item = _items[index];
-            final selected = selectedIndex == index;
-            final button = _OverviewPageTabButton(
-              label: item.label,
-              icon: item.icon,
-              selected: selected,
-              onTap: () => onChanged(index),
-            );
-            return compact ? button : Expanded(child: button);
-          });
-
-          if (compact) {
-            return SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  for (var i = 0; i < children.length; i++) ...[
-                    if (i > 0) const SizedBox(width: 8),
-                    SizedBox(width: 180, child: children[i]),
-                  ],
-                ],
-              ),
-            );
-          }
-
-          return Row(
-            children: [
-              for (var i = 0; i < children.length; i++) ...[
-                if (i > 0) const SizedBox(width: 8),
-                children[i],
-              ],
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
 class _OverviewPageTabItem {
   final String label;
   final IconData icon;
 
   const _OverviewPageTabItem(this.label, this.icon);
-}
-
-class _OverviewPageTabButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _OverviewPageTabButton({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected
-          ? Constants.primaryColor.withValues(alpha: 0.12)
-          : Colors.transparent,
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: selected
-                  ? Constants.primaryColor.withValues(alpha: 0.28)
-                  : Colors.transparent,
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 19,
-                color:
-                    selected ? Constants.primaryColor : const Color(0xFF6B7280),
-              ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: selected
-                        ? Constants.primaryColor
-                        : const Color(0xFF374151),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                    fontFamily: 'Tajawal',
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _MetricTile extends StatelessWidget {
@@ -2286,137 +2248,6 @@ class _StorePerformanceListPanel extends StatelessWidget {
                 );
               },
             ),
-    );
-  }
-}
-
-class _AdminAttentionSection extends StatelessWidget {
-  final List<_AdminAttentionItem> items;
-  final ValueChanged<int> onOpenSection;
-
-  const _AdminAttentionSection({
-    required this.items,
-    required this.onOpenSection,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final columns = width < 760
-            ? 1
-            : width < 1180
-                ? 2
-                : 3;
-        final tileHeight = width < 760 ? 82.0 : 92.0;
-        if (items.isEmpty) {
-          return const SizedBox(
-            height: 180,
-            child: _ChartPanel(
-              title: 'يحتاج انتباهك',
-              child: _EmptyOverviewMessage(
-                icon: Icons.check_circle_outline_rounded,
-                text: 'لا توجد عناصر تحتاج انتباهك الآن',
-              ),
-            ),
-          );
-        }
-
-        final rows = (items.length / columns).ceil();
-        final panelHeight = 62 + (rows * tileHeight) + ((rows - 1) * 10);
-
-        return SizedBox(
-          height: panelHeight.toDouble(),
-          child: _ChartPanel(
-            title: 'يحتاج انتباهك',
-            child: GridView.builder(
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: columns,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                mainAxisExtent: tileHeight,
-              ),
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return InkWell(
-                  borderRadius: BorderRadius.circular(8),
-                  onTap: item.sectionIndex == null
-                      ? null
-                      : () => onOpenSection(item.sectionIndex!),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF9FAFB),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: item.color.withValues(alpha: 0.10),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(item.icon, color: item.color, size: 22),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                item.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w900,
-                                  fontFamily: 'Tajawal',
-                                  color: Color(0xFF111827),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                item.subtitle,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  fontFamily: 'Tajawal',
-                                  color: Color(0xFF6B7280),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${item.count}',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                            fontFamily: 'Tajawal',
-                            color: item.count == 0
-                                ? const Color(0xFF9CA3AF)
-                                : item.color,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        );
-      },
     );
   }
 }

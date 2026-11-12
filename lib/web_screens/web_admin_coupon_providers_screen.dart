@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../web_widgets/admin_section_chrome.dart';
 import '../constants.dart';
 import '../screens/login_signup/widgets/snackbar.dart';
 import '../web_widgets/responsive_layout.dart';
 import '../web_widgets/web_i18n.dart';
 
 class WebAdminCouponProvidersScreen extends StatefulWidget {
-  const WebAdminCouponProvidersScreen({super.key});
+  final bool isEmbedded;
+  const WebAdminCouponProvidersScreen({super.key, this.isEmbedded = false});
 
   @override
   State<WebAdminCouponProvidersScreen> createState() =>
@@ -327,70 +329,80 @@ class _WebAdminCouponProvidersScreenState
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) {
+    final body = _buildBody();
+    if (widget.isEmbedded) return body;
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: Text(
+          webText(context, 'موفرو الكوبونات', 'Coupon Providers'),
+          style: TextStyle(
+            fontFamily: _font,
+            fontWeight: FontWeight.w900,
+            color: Constants.primaryColor,
+          ),
+        ),
+        centerTitle: true,
+        elevation: 0,
         backgroundColor: Colors.white,
-        appBar: AppBar(
-          title: Text(
-            webText(context, 'موفرو الكوبونات', 'Coupon Providers'),
-            style: TextStyle(
-              fontFamily: _font,
-              fontWeight: FontWeight.w900,
-              color: Constants.primaryColor,
-            ),
-          ),
-          centerTitle: true,
-          elevation: 0,
-          backgroundColor: Colors.white,
-          iconTheme: IconThemeData(color: Constants.primaryColor),
-        ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: ResponsivePadding.page(context),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _searchWithAddButton(),
-                const SizedBox(height: 18),
-                FutureBuilder<List<Map<String, dynamic>>>(
-                  future: _future,
-                  builder: (_, snap) {
-                    if (!snap.hasData) {
-                      return const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(40),
-                          child: CircularProgressIndicator(),
-                        ),
-                      );
-                    }
+        iconTheme: IconThemeData(color: Constants.primaryColor),
+      ),
+      body: body,
+    );
+  }
 
-                    final items = _applySearch(snap.data ?? []);
-                    if (items.isEmpty) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(40),
-                          child: Text(
-                            webText(context, 'لا يوجد موفرو كوبونات',
-                                'No coupon providers available'),
-                            style: TextStyle(
-                              color: Colors.grey[500],
-                              fontSize: 16,
-                              fontFamily: _font,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      );
-                    }
+  Widget _buildBody() {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: widget.isEmbedded
+            ? kAdminEmbeddedPadding
+            : ResponsivePadding.page(context),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _searchWithAddButton(),
+            const SizedBox(height: 18),
+            FutureBuilder<List<Map<String, dynamic>>>(
+              future: _future,
+              builder: (_, snap) {
+                if (!snap.hasData) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(40),
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
 
-                    return _buildProvidersGrid(items);
-                  },
-                ),
-                const SizedBox(height: 40),
-              ],
+                final items = _applySearch(snap.data ?? []);
+                if (items.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(40),
+                      child: Text(
+                        webText(context, 'لا يوجد موفرو كوبونات',
+                            'No coupon providers available'),
+                        style: TextStyle(
+                          color: Colors.grey[500],
+                          fontSize: 16,
+                          fontFamily: _font,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                return _buildProvidersGrid(items);
+              },
             ),
-          ),
+            const SizedBox(height: 40),
+          ],
         ),
-      );
+      ),
+    );
+  }
 
   Widget _searchWithAddButton() {
     final isDesktop = ResponsiveLayout.isDesktop(context);
@@ -488,7 +500,10 @@ class _WebAdminCouponProvidersScreenState
   Widget _buildProvidersGrid(List<Map<String, dynamic>> items) {
     final isDesktop = ResponsiveLayout.isDesktop(context);
     final availableWidth = MediaQuery.sizeOf(context).width;
-    final pagePadding = ResponsivePadding.page(context).horizontal;
+    final pagePadding = widget.isEmbedded
+        // Inside the admin panel: sidebar plus the embedded gutters.
+        ? 264 + kAdminEmbeddedPadding.horizontal
+        : ResponsivePadding.page(context).horizontal;
     final maxContentWidth = availableWidth - pagePadding;
     final cardWidth = isDesktop
         ? ((maxContentWidth - 28) / 3).clamp(300.0, 430.0)
