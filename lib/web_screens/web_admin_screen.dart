@@ -467,6 +467,7 @@ class _AdminAttentionItem {
   final IconData icon;
   final Color color;
   final int? sectionIndex;
+  final _Drill? drill;
 
   const _AdminAttentionItem({
     required this.title,
@@ -475,6 +476,7 @@ class _AdminAttentionItem {
     required this.icon,
     required this.color,
     this.sectionIndex,
+    this.drill,
   });
 }
 
@@ -646,6 +648,7 @@ class _OverviewData {
     required List<dynamic> couponRows,
     required List<dynamic> offerRows,
     required List<dynamic> carouselRows,
+    List<dynamic> pendingRows = const [],
     required List<dynamic> storeRows,
     required List<dynamic> storeFollowRows,
     required List<dynamic> userRows,
@@ -1430,6 +1433,415 @@ class _OverviewData {
         dashExpiredCoupons + dashExpiredOffers + dashExpiredBanners;
     final soonTotal = dashSoonCoupons + dashSoonOffers + dashSoonBanners;
 
+    // ---- Drill-down lists: the exact items behind each KPI and alert ----
+    bool rowIsActive(Map row) {
+      final raw = row['is_active'];
+      return raw == null ||
+          raw == true ||
+          raw.toString().toLowerCase().trim() == 'true';
+    }
+
+    String firstOf(Map row, List<String> keys) {
+      for (final key in keys) {
+        final value = row[key]?.toString().trim() ?? '';
+        if (value.isNotEmpty) return value;
+      }
+      return '';
+    }
+
+    String joinParts(List<String> parts) =>
+        parts.where((part) => part.trim().isNotEmpty).join('، ');
+
+    String expiryText(DateTime? expiry) {
+      if (expiry == null) return 'بلا تاريخ انتهاء';
+      final day = formatExpiryDay(expiry);
+      return isExpiredDate(expiry, now: now) ? 'انتهى $day' : 'ينتهي $day';
+    }
+
+    String offerStoreName(Map row) {
+      final byKey = storeNameByKey(
+          row['store_id']?.toString().trim().toLowerCase() ?? '');
+      if (byKey.isNotEmpty) return byKey;
+      return firstOf(
+          row,
+          isArabic
+              ? ['store_name_ar', 'store_name', 'store_name_en']
+              : ['store_name_en', 'store_name', 'store_name_ar']);
+    }
+
+    String offerTitle(Map row) {
+      final title = firstOf(
+          row,
+          isArabic
+              ? ['name_ar', 'name', 'name_en']
+              : ['name_en', 'name', 'name_ar']);
+      return title.isEmpty ? 'عرض بدون اسم' : title;
+    }
+
+    String bannerTitle(Map row) {
+      final title = firstOf(
+          row,
+          isArabic
+              ? ['name_ar', 'name', 'name_en']
+              : ['name_en', 'name', 'name_ar']);
+      return title.isEmpty ? 'بنر بدون اسم' : title;
+    }
+
+    String storeTitle(Map row) {
+      final key = (row['slug'] ?? row['id'] ?? '').toString();
+      final name = storeNameByKey(key);
+      return name.isEmpty ? key : name;
+    }
+
+    int activeCouponsOf(Map row) {
+      final id = row['id']?.toString().trim().toLowerCase() ?? '';
+      final slug = row['slug']?.toString().trim().toLowerCase() ?? '';
+      return (activeCouponCountByStore[id] ?? 0) +
+          (activeCouponCountByStore[slug] ?? 0);
+    }
+
+    _DrillItem couponItem(Map row, {String? badge, Color? badgeColor}) {
+      final code = row['code']?.toString().trim() ?? '';
+      final expiry = parseExpiryDate(row['expiry_date']);
+      return _DrillItem(
+        id: row['id']?.toString() ?? '',
+        title: code.isEmpty ? '—' : code,
+        ltrTitle: true,
+        subtitle: joinParts([storeNameFor(row), expiryText(expiry)]),
+        badge: badge,
+        badgeColor: badgeColor,
+      );
+    }
+
+    _DrillItem offerItem(Map row, {String? badge, Color? badgeColor}) {
+      return _DrillItem(
+        id: row['id']?.toString() ?? '',
+        title: offerTitle(row),
+        subtitle: joinParts([
+          offerStoreName(row),
+          expiryText(parseExpiryDate(row['expiry_date'])),
+        ]),
+        badge: badge,
+        badgeColor: badgeColor,
+      );
+    }
+
+    _DrillItem bannerItem(Map row, {String? badge, Color? badgeColor}) {
+      return _DrillItem(
+        id: row['id']?.toString() ?? '',
+        title: bannerTitle(row),
+        subtitle: joinParts([
+          expiryText(parseExpiryDate(row['expiry_date'])),
+          row['web']?.toString().trim() ?? '',
+        ]),
+        badge: badge,
+        badgeColor: badgeColor,
+      );
+    }
+
+    _DrillItem storeItem(Map row, {String? badge, Color? badgeColor}) {
+      final active = activeCouponsOf(row);
+      return _DrillItem(
+        id: row['id']?.toString() ?? '',
+        title: storeTitle(row),
+        subtitle: active == 0 ? 'لا كوبونات فعّالة' : '$active كوبون فعّال',
+        badge: badge,
+        badgeColor: badgeColor,
+      );
+    }
+
+    const amber = Color(0xFFD97706);
+    final coupons = couponRows.whereType<Map>().toList();
+    final offers = offerRows.whereType<Map>().toList();
+    final banners = carouselRows.whereType<Map>().toList();
+    final stores = storeRows.whereType<Map>().toList();
+    bool storePending(Map row) =>
+        (row['approval_status'] ?? 'approved').toString().trim() ==
+        'waiting_approval';
+
+    int byExpiry(Map a, Map b) {
+      final ea = parseExpiryDate(a['expiry_date']);
+      final eb = parseExpiryDate(b['expiry_date']);
+      if (ea == null && eb == null) return 0;
+      if (ea == null) return 1;
+      if (eb == null) return -1;
+      return ea.compareTo(eb);
+    }
+
+    final storesSorted = [...stores]..sort((a, b) {
+        final pa = storePending(a) ? 0 : 1;
+        final pb = storePending(b) ? 0 : 1;
+        if (pa != pb) return pa - pb;
+        return storeTitle(a).compareTo(storeTitle(b));
+      });
+
+    final activeCouponRows = coupons
+        .where((row) =>
+            rowIsActive(row) &&
+            !isExpiredDate(parseExpiryDate(row['expiry_date']), now: now))
+        .toList()
+      ..sort(byExpiry);
+    final liveOffers = offers
+        .where((row) =>
+            !isExpiredDate(parseExpiryDate(row['expiry_date']), now: now))
+        .toList()
+      ..sort(byExpiry);
+    final liveBanners = banners
+        .where((row) =>
+            !isExpiredDate(parseExpiryDate(row['expiry_date']), now: now))
+        .toList()
+      ..sort(byExpiry);
+
+    final pendingCouponItems = pendingRows.whereType<Map>().map((row) {
+      final code = row['code']?.toString().trim() ?? '';
+      final store = storeNameFor(row).isNotEmpty
+          ? storeNameFor(row)
+          : firstOf(row, ['store_name_ar', 'store_name', 'store_name_en']);
+      final created =
+          DateTime.tryParse(row['created_at']?.toString() ?? '')?.toLocal();
+      return _DrillItem(
+        id: row['id']?.toString() ?? '',
+        title: code.isEmpty ? '—' : code,
+        ltrTitle: true,
+        subtitle: joinParts([
+          store,
+          if (created != null)
+            'أُرسل ${created.year}-${created.month.toString().padLeft(2, '0')}-${created.day.toString().padLeft(2, '0')}',
+        ]),
+      );
+    }).toList();
+
+    final expiredItems = <_DrillItem>[
+      for (final row in coupons.where((row) =>
+          isExpiredDate(parseExpiryDate(row['expiry_date']), now: now)))
+        couponItem(row, badge: 'كوبون', badgeColor: Constants.primaryColor),
+      for (final row in offers.where((row) =>
+          isExpiredDate(parseExpiryDate(row['expiry_date']), now: now)))
+        offerItem(row, badge: 'عرض', badgeColor: Constants.accentColor),
+      for (final row in banners.where((row) =>
+          isExpiredDate(parseExpiryDate(row['expiry_date']), now: now)))
+        bannerItem(row, badge: 'بنر', badgeColor: const Color(0xFF0EA5A4)),
+    ];
+
+    final soonItems = <_DrillItem>[
+      for (final row in activeCouponRows
+          .where((row) => expiresSoon(parseExpiryDate(row['expiry_date']))))
+        couponItem(row, badge: 'كوبون', badgeColor: Constants.primaryColor),
+      for (final row in liveOffers
+          .where((row) => expiresSoon(parseExpiryDate(row['expiry_date']))))
+        offerItem(row, badge: 'عرض', badgeColor: Constants.accentColor),
+      for (final row in liveBanners
+          .where((row) => expiresSoon(parseExpiryDate(row['expiry_date']))))
+        bannerItem(row, badge: 'بنر', badgeColor: const Color(0xFF0EA5A4)),
+    ];
+
+    final reportItems = (notWorkingReportCounts.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value)))
+        .map((entry) {
+      final row = couponRowFor(entry.key);
+      final code = row?['code']?.toString().trim() ?? '';
+      return _DrillItem(
+        id: entry.key,
+        title: code.isEmpty ? entry.key : code,
+        ltrTitle: true,
+        subtitle: storeNameFor(row),
+        badge: '${entry.value} بلاغ',
+        badgeColor: Constants.errorColor,
+      );
+    }).toList();
+
+    final usersSorted = userRows.whereType<Map>().toList()
+      ..sort((a, b) {
+        final da = DateTime.tryParse(a['created_at']?.toString() ?? '');
+        final db = DateTime.tryParse(b['created_at']?.toString() ?? '');
+        if (da == null && db == null) return 0;
+        if (da == null) return 1;
+        if (db == null) return -1;
+        return db.compareTo(da);
+      });
+    final userItems = usersSorted.map((row) {
+      final name = firstOf(row, ['name', 'full_name', 'display_name']);
+      final email = firstOf(row, ['email']);
+      final id = firstOf(row, ['id', 'uid']);
+      final created =
+          DateTime.tryParse(row['created_at']?.toString() ?? '')?.toLocal();
+      final isNew = created != null && !created.isBefore(weekStart);
+      return _DrillItem(
+        id: id,
+        title: name.isNotEmpty
+            ? name
+            : email.isNotEmpty
+                ? email
+                : (id.length > 12 ? '${id.substring(0, 12)}…' : id),
+        subtitle: joinParts([
+          if (name.isNotEmpty) email,
+          if (created != null)
+            'انضم ${created.year}-${created.month.toString().padLeft(2, '0')}-${created.day.toString().padLeft(2, '0')}',
+        ]),
+        badge: isNew ? 'جديد' : null,
+        badgeColor: isNew ? Constants.successColor : null,
+      );
+    }).toList();
+
+    bool offerMissing(Map row) {
+      final link = row['web']?.toString().trim() ?? '';
+      final description = [
+        row['description'],
+        row['description_ar'],
+        row['description_en'],
+      ].map((value) => value?.toString().trim() ?? '').join();
+      return link.isEmpty || description.isEmpty;
+    }
+
+    final drills = <String, _Drill>{
+      'stores': _Drill(
+        title: 'المتاجر',
+        icon: Icons.storefront_outlined,
+        color: Constants.primaryColor,
+        sectionIndex: 1,
+        items: [
+          for (final row in storesSorted)
+            storeItem(
+              row,
+              badge: storePending(row) ? 'بانتظار الموافقة' : null,
+              badgeColor: storePending(row) ? amber : null,
+            ),
+        ],
+      ),
+      'activeCoupons': _Drill(
+        title: 'الكوبونات الفعّالة',
+        icon: Icons.confirmation_number_outlined,
+        color: Constants.successColor,
+        sectionIndex: 2,
+        items: [for (final row in activeCouponRows) couponItem(row)],
+      ),
+      'activeOffers': _Drill(
+        title: 'العروض الفعّالة',
+        icon: Icons.local_offer_outlined,
+        color: Constants.accentColor,
+        sectionIndex: 3,
+        items: [for (final row in liveOffers) offerItem(row)],
+      ),
+      'activeBanners': _Drill(
+        title: 'البنرات الظاهرة',
+        icon: Icons.view_carousel_outlined,
+        color: const Color(0xFF0EA5A4),
+        sectionIndex: 5,
+        items: [for (final row in liveBanners) bannerItem(row)],
+      ),
+      'pendingCoupons': _Drill(
+        title: 'كوبونات بانتظار الموافقة',
+        icon: Icons.pending_actions_outlined,
+        color: amber,
+        sectionIndex: 6,
+        items: pendingCouponItems,
+      ),
+      'expired': _Drill(
+        title: 'المحتوى المنتهي',
+        icon: Icons.event_busy_outlined,
+        color: Constants.errorColor,
+        sectionIndex: dashExpiredCoupons > 0
+            ? 2
+            : dashExpiredOffers > 0
+                ? 3
+                : 5,
+        items: expiredItems,
+      ),
+      'expiringSoon': _Drill(
+        title: 'ينتهي خلال 7 أيام',
+        icon: Icons.timer_outlined,
+        color: amber,
+        sectionIndex: dashSoonCoupons > 0
+            ? 2
+            : dashSoonOffers > 0
+                ? 3
+                : 5,
+        items: soonItems,
+      ),
+      'users': _Drill(
+        title: 'المستخدمون',
+        icon: Icons.group_outlined,
+        color: Constants.primaryColor,
+        items: userItems,
+      ),
+      'reports': _Drill(
+        title: 'بلاغات «لا يعمل»',
+        icon: Icons.report_gmailerrorred_rounded,
+        color: Constants.errorColor,
+        sectionIndex: 2,
+        items: reportItems,
+        canResolveReports: true,
+      ),
+      'pendingStores': _Drill(
+        title: 'متاجر بانتظار الموافقة',
+        icon: Icons.fact_check_outlined,
+        color: amber,
+        sectionIndex: 1,
+        items: [for (final row in stores.where(storePending)) storeItem(row)],
+      ),
+      'inactiveCoupons': _Drill(
+        title: 'كوبونات متوقفة',
+        icon: Icons.pause_circle_outline_rounded,
+        color: Constants.primaryColor,
+        sectionIndex: 2,
+        items: [
+          for (final row in coupons.where((row) =>
+              !rowIsActive(row) &&
+              !isExpiredDate(parseExpiryDate(row['expiry_date']), now: now)))
+            couponItem(row),
+        ],
+      ),
+      'storesWithoutActive': _Drill(
+        title: 'متاجر بلا كوبون فعّال',
+        icon: Icons.storefront_outlined,
+        color: Constants.primaryColor,
+        sectionIndex: 1,
+        items: [
+          for (final row
+              in storesSorted.where((row) => activeCouponsOf(row) == 0))
+            storeItem(row),
+        ],
+      ),
+      'offersMissing': _Drill(
+        title: 'عروض ينقصها رابط أو وصف',
+        icon: Icons.link_off_rounded,
+        color: Constants.primaryColor,
+        sectionIndex: 3,
+        items: [
+          for (final row in offers.where(offerMissing))
+            offerItem(
+              row,
+              badge: (row['web']?.toString().trim() ?? '').isEmpty
+                  ? 'بلا رابط'
+                  : 'بلا وصف',
+              badgeColor: Constants.errorColor,
+            ),
+        ],
+      ),
+      'storesWithoutLogo': _Drill(
+        title: 'متاجر بلا شعار',
+        icon: Icons.hide_image_outlined,
+        color: Constants.primaryColor,
+        sectionIndex: 1,
+        items: [
+          for (final row in storesSorted
+              .where((row) => (row['image']?.toString().trim() ?? '').isEmpty))
+            storeItem(row),
+        ],
+      ),
+      'couponsWithoutImage': _Drill(
+        title: 'كوبونات بلا صورة',
+        icon: Icons.image_not_supported_outlined,
+        color: Constants.primaryColor,
+        sectionIndex: 2,
+        items: [
+          for (final row in coupons
+              .where((row) => (row['image']?.toString().trim() ?? '').isEmpty))
+            couponItem(row),
+        ],
+      ),
+    };
+
     String partsLabel(int c, int o, int b) {
       final parts = <String>[
         if (c > 0) '$c كوبون',
@@ -1441,6 +1853,7 @@ class _OverviewData {
 
     final dashboardAlerts = <_AdminAttentionItem>[
       _AdminAttentionItem(
+        drill: drills['reports'],
         title: 'بلاغات «لا يعمل»',
         subtitle: openReports == 0
             ? 'لا توجد بلاغات مفتوحة'
@@ -1451,6 +1864,7 @@ class _OverviewData {
         sectionIndex: _kReportsTarget,
       ),
       _AdminAttentionItem(
+        drill: drills['pendingCoupons'],
         title: 'كوبونات بانتظار الموافقة',
         subtitle: 'راجعها واعتمدها أو ارفضها',
         count: counts[5],
@@ -1459,6 +1873,7 @@ class _OverviewData {
         sectionIndex: 6,
       ),
       _AdminAttentionItem(
+        drill: drills['expired'],
         title: 'محتوى منتهٍ',
         subtitle: expiredTotal == 0
             ? 'مخفي عن الزوار'
@@ -1473,6 +1888,7 @@ class _OverviewData {
                 : 5,
       ),
       _AdminAttentionItem(
+        drill: drills['expiringSoon'],
         title: 'ينتهي خلال 7 أيام',
         subtitle: soonTotal == 0
             ? 'لا شيء قريب من الانتهاء'
@@ -1487,6 +1903,7 @@ class _OverviewData {
                 : 5,
       ),
       _AdminAttentionItem(
+        drill: drills['pendingStores'],
         title: 'متاجر بانتظار الموافقة',
         subtitle: 'متاجر جديدة أو مستوردة',
         count: pendingStores,
@@ -1495,6 +1912,7 @@ class _OverviewData {
         sectionIndex: 1,
       ),
       _AdminAttentionItem(
+        drill: drills['inactiveCoupons'],
         title: 'كوبونات متوقفة',
         subtitle: 'غير مفعّلة يدويًا',
         count: dashInactiveCoupons,
@@ -1503,6 +1921,7 @@ class _OverviewData {
         sectionIndex: 2,
       ),
       _AdminAttentionItem(
+        drill: drills['storesWithoutActive'],
         title: 'متاجر بلا كوبون فعّال',
         subtitle: 'أضف كوبونًا أو راجع المتجر',
         count: storesWithoutActiveCount,
@@ -1511,6 +1930,7 @@ class _OverviewData {
         sectionIndex: 1,
       ),
       _AdminAttentionItem(
+        drill: drills['offersMissing'],
         title: 'عروض ينقصها رابط أو وصف',
         subtitle: 'أكمل تفاصيل العرض',
         count: offersWithMissingDetails,
@@ -1519,6 +1939,7 @@ class _OverviewData {
         sectionIndex: 3,
       ),
       _AdminAttentionItem(
+        drill: drills['storesWithoutLogo'],
         title: 'متاجر بلا شعار',
         subtitle: 'أضف شعار المتجر',
         count: storesWithoutLogo,
@@ -1527,6 +1948,7 @@ class _OverviewData {
         sectionIndex: 1,
       ),
       _AdminAttentionItem(
+        drill: drills['couponsWithoutImage'],
         title: 'كوبونات بلا صورة',
         subtitle: 'أضف صورة للكوبون',
         count: couponsWithoutImage,
@@ -1559,6 +1981,7 @@ class _OverviewData {
       recentActivity: recentActivity,
       recentCoupons: recentCoupons,
       alerts: dashboardAlerts,
+      drills: drills,
       loadedAt: now,
     );
 
@@ -1695,6 +2118,7 @@ class _AdminOverviewState extends State<_AdminOverview> {
     List<dynamic> storeRows = const [];
     List<dynamic> storeFollowRows = const [];
     List<dynamic> carouselRows = const [];
+    List<dynamic> pendingRows = const [];
     List<dynamic> userRows = const [];
     List<dynamic> favoriteRows = const [];
     try {
@@ -1716,6 +2140,14 @@ class _AdminOverviewState extends State<_AdminOverview> {
       storeRows = const [];
     }
     try {
+      pendingRows = await Supabase.instance.client
+          .from('admin_pending_coupons')
+          .select()
+          .order('created_at', ascending: false);
+    } catch (_) {
+      pendingRows = const [];
+    }
+    try {
       carouselRows = await Supabase.instance.client.from('carousel').select();
     } catch (_) {
       carouselRows = const [];
@@ -1730,9 +2162,15 @@ class _AdminOverviewState extends State<_AdminOverview> {
     try {
       userRows = await Supabase.instance.client
           .from('users')
-          .select('id,uid,created_at');
+          .select('id,uid,name,email,created_at');
     } catch (_) {
-      userRows = const [];
+      try {
+        userRows = await Supabase.instance.client
+            .from('users')
+            .select('id,uid,created_at');
+      } catch (_) {
+        userRows = const [];
+      }
     }
     try {
       favoriteRows = await Supabase.instance.client
@@ -1750,6 +2188,7 @@ class _AdminOverviewState extends State<_AdminOverview> {
       couponRows: couponRows,
       offerRows: offerRows,
       carouselRows: carouselRows,
+      pendingRows: pendingRows,
       storeRows: storeRows,
       storeFollowRows: storeFollowRows,
       userRows: userRows,
@@ -1856,7 +2295,11 @@ class _AdminOverviewState extends State<_AdminOverview> {
 
         final Widget body;
         if (_selectedOverviewPage == 0) {
-          body = _DashboardView(stats: data.dashboard, onOpen: openTarget);
+          body = _DashboardView(
+            stats: data.dashboard,
+            onOpen: openTarget,
+            onResolveReport: _clearNotWorkingReports,
+          );
         } else {
           body = SingleChildScrollView(
             padding: const EdgeInsets.only(bottom: 24),

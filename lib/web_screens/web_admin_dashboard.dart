@@ -40,6 +40,44 @@ class _RecentCouponEntry {
   });
 }
 
+/// One row in a drill-down list.
+class _DrillItem {
+  final String id;
+  final String title;
+  final String subtitle;
+  final bool ltrTitle;
+  final String? badge;
+  final Color? badgeColor;
+
+  const _DrillItem({
+    required this.id,
+    required this.title,
+    required this.subtitle,
+    this.ltrTitle = false,
+    this.badge,
+    this.badgeColor,
+  });
+}
+
+/// The exact items behind a KPI or an alert.
+class _Drill {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final List<_DrillItem> items;
+  final int? sectionIndex;
+  final bool canResolveReports;
+
+  const _Drill({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.items,
+    this.sectionIndex,
+    this.canResolveReports = false,
+  });
+}
+
 class _DashboardStats {
   final int stores;
   final int activeCoupons;
@@ -61,6 +99,7 @@ class _DashboardStats {
   final List<_ActivityEntry> recentActivity;
   final List<_RecentCouponEntry> recentCoupons;
   final List<_AdminAttentionItem> alerts;
+  final Map<String, _Drill> drills;
   final DateTime? loadedAt;
 
   const _DashboardStats({
@@ -84,6 +123,7 @@ class _DashboardStats {
     required this.recentActivity,
     required this.recentCoupons,
     required this.alerts,
+    this.drills = const {},
     required this.loadedAt,
   });
 
@@ -325,19 +365,35 @@ class _TopBarTab extends StatelessWidget {
 class _DashboardView extends StatelessWidget {
   final _DashboardStats stats;
   final ValueChanged<int> onOpen;
+  final Future<void> Function(String couponId) onResolveReport;
 
-  const _DashboardView({required this.stats, required this.onOpen});
+  const _DashboardView({
+    required this.stats,
+    required this.onOpen,
+    required this.onResolveReport,
+  });
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(builder: (context, constraints) {
       final wide = constraints.maxWidth >= 900 && constraints.maxHeight >= 470;
+      void showDrill(_Drill drill) => _showDrillDialog(
+            context,
+            drill: drill,
+            onOpenSection: onOpen,
+            onResolveReport: onResolveReport,
+          );
       final kpis = _KpiBand(
         stats: stats,
         onOpen: onOpen,
+        onDrill: showDrill,
         columns: constraints.maxWidth >= 900 ? 8 : 4,
       );
-      final alerts = _AlertsPanel(items: stats.alerts, onOpen: onOpen);
+      final alerts = _AlertsPanel(
+        items: stats.alerts,
+        onOpen: onOpen,
+        onDrill: showDrill,
+      );
       final activity = _ActivityPanel(entries: stats.recentActivity);
       final chart = _CopiesChartPanel(daily: stats.dailyCopies);
       final latest = _RecentCouponsPanel(
@@ -408,6 +464,7 @@ class _Kpi {
   final Color tone;
   final bool flag; // needs attention when value > 0
   final int? target;
+  final String? drillKey;
 
   const _Kpi({
     required this.label,
@@ -417,17 +474,20 @@ class _Kpi {
     required this.tone,
     this.flag = false,
     this.target,
+    this.drillKey,
   });
 }
 
 class _KpiBand extends StatelessWidget {
   final _DashboardStats stats;
   final ValueChanged<int> onOpen;
+  final ValueChanged<_Drill> onDrill;
   final int columns;
 
   const _KpiBand({
     required this.stats,
     required this.onOpen,
+    required this.onDrill,
     required this.columns,
   });
 
@@ -446,6 +506,7 @@ class _KpiBand extends StatelessWidget {
         icon: Icons.storefront_outlined,
         tone: primary,
         target: 1,
+        drillKey: 'stores',
       ),
       _Kpi(
         label: webText(context, 'كوبونات فعّالة', 'Active coupons'),
@@ -455,6 +516,7 @@ class _KpiBand extends StatelessWidget {
         icon: Icons.confirmation_number_outlined,
         tone: Constants.successColor,
         target: 2,
+        drillKey: 'activeCoupons',
       ),
       _Kpi(
         label: webText(context, 'عروض فعّالة', 'Active offers'),
@@ -464,6 +526,7 @@ class _KpiBand extends StatelessWidget {
         icon: Icons.local_offer_outlined,
         tone: Constants.accentColor,
         target: 3,
+        drillKey: 'activeOffers',
       ),
       _Kpi(
         label: webText(context, 'بنرات ظاهرة', 'Live banners'),
@@ -473,6 +536,7 @@ class _KpiBand extends StatelessWidget {
         icon: Icons.view_carousel_outlined,
         tone: const Color(0xFF0EA5A4),
         target: 5,
+        drillKey: 'activeBanners',
       ),
       _Kpi(
         label: webText(context, 'معلّقة', 'Pending'),
@@ -484,6 +548,7 @@ class _KpiBand extends StatelessWidget {
         tone: _amber,
         flag: true,
         target: 6,
+        drillKey: 'pendingCoupons',
       ),
       _Kpi(
         label: webText(context, 'منتهية', 'Expired'),
@@ -495,6 +560,7 @@ class _KpiBand extends StatelessWidget {
         tone: Constants.errorColor,
         flag: true,
         target: 2,
+        drillKey: 'expired',
       ),
       _Kpi(
         label: webText(context, 'تنتهي قريبًا', 'Expiring soon'),
@@ -507,6 +573,7 @@ class _KpiBand extends StatelessWidget {
         tone: _amber,
         flag: true,
         target: 2,
+        drillKey: 'expiringSoon',
       ),
       _Kpi(
         label: webText(context, 'المستخدمون', 'Users'),
@@ -515,8 +582,16 @@ class _KpiBand extends StatelessWidget {
             '+${s.newUsersThisWeek} this week'),
         icon: Icons.group_outlined,
         tone: primary,
+        drillKey: 'users',
       ),
     ];
+
+    VoidCallback? tapFor(_Kpi kpi) {
+      final drill = kpi.drillKey == null ? null : stats.drills[kpi.drillKey];
+      if (drill != null) return () => onDrill(drill);
+      if (kpi.target != null) return () => onOpen(kpi.target!);
+      return null;
+    }
 
     final rows = <List<_Kpi>>[];
     for (var i = 0; i < kpis.length; i += columns) {
@@ -553,9 +628,7 @@ class _KpiBand extends StatelessWidget {
                     Expanded(
                       child: _KpiCell(
                         kpi: rows[r][i],
-                        onTap: rows[r][i].target == null
-                            ? null
-                            : () => onOpen(rows[r][i].target!),
+                        onTap: tapFor(rows[r][i]),
                       ),
                     ),
                   ],
@@ -727,8 +800,13 @@ class _CountPill extends StatelessWidget {
 class _AlertsPanel extends StatelessWidget {
   final List<_AdminAttentionItem> items;
   final ValueChanged<int> onOpen;
+  final ValueChanged<_Drill> onDrill;
 
-  const _AlertsPanel({required this.items, required this.onOpen});
+  const _AlertsPanel({
+    required this.items,
+    required this.onOpen,
+    required this.onDrill,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -750,9 +828,11 @@ class _AlertsPanel extends StatelessWidget {
           final item = open[index];
           return InkWell(
             borderRadius: BorderRadius.circular(Constants.radiusSmall),
-            onTap: item.sectionIndex == null
-                ? null
-                : () => onOpen(item.sectionIndex!),
+            onTap: item.drill != null
+                ? () => onDrill(item.drill!)
+                : item.sectionIndex == null
+                    ? null
+                    : () => onOpen(item.sectionIndex!),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Row(
@@ -1163,6 +1243,302 @@ class _PanelEmpty extends StatelessWidget {
           Text(text,
               textAlign: TextAlign.center,
               style: _ts(12.5, FontWeight.w600, Constants.secondaryTextColor)),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Drill-down dialog: shows only the items behind a KPI or alert
+// ---------------------------------------------------------------------------
+
+const List<String> _sectionNames = [
+  'النظرة العامة',
+  'المتاجر',
+  'الكوبونات',
+  'العروض',
+  'الفئات',
+  'البنرات',
+  'بانتظار الموافقة',
+  'الإشعارات',
+  'موفري الكوبونات',
+  'فئات علي إكسبريس',
+];
+
+Future<void> _showDrillDialog(
+  BuildContext context, {
+  required _Drill drill,
+  required ValueChanged<int> onOpenSection,
+  required Future<void> Function(String couponId) onResolveReport,
+}) {
+  return showDialog<void>(
+    context: context,
+    builder: (dialogContext) => Directionality(
+      textDirection: Directionality.of(context),
+      child: _DrillDialog(
+        drill: drill,
+        onOpenSection: (index) {
+          Navigator.of(dialogContext).pop();
+          onOpenSection(index);
+        },
+        onResolveReport: onResolveReport,
+      ),
+    ),
+  );
+}
+
+class _DrillDialog extends StatefulWidget {
+  final _Drill drill;
+  final ValueChanged<int> onOpenSection;
+  final Future<void> Function(String couponId) onResolveReport;
+
+  const _DrillDialog({
+    required this.drill,
+    required this.onOpenSection,
+    required this.onResolveReport,
+  });
+
+  @override
+  State<_DrillDialog> createState() => _DrillDialogState();
+}
+
+class _DrillDialogState extends State<_DrillDialog> {
+  late final List<_DrillItem> _items = [...widget.drill.items];
+  final Set<String> _resolving = {};
+  String _query = '';
+
+  List<_DrillItem> get _visible {
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) return _items;
+    return _items
+        .where((item) =>
+            item.title.toLowerCase().contains(q) ||
+            item.subtitle.toLowerCase().contains(q))
+        .toList();
+  }
+
+  Future<void> _resolve(_DrillItem item) async {
+    setState(() => _resolving.add(item.id));
+    await widget.onResolveReport(item.id);
+    if (!mounted) return;
+    setState(() {
+      _resolving.remove(item.id);
+      _items.removeWhere((other) => other.id == item.id);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final drill = widget.drill;
+    final size = MediaQuery.sizeOf(context);
+    final visible = _visible;
+    final section = drill.sectionIndex;
+
+    return Dialog(
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.white,
+      insetPadding: const EdgeInsets.all(24),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(Constants.radiusCard),
+      ),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 600,
+          maxHeight: math.min(680, size.height - 48),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 12, 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: drill.color.withValues(alpha: 0.10),
+                      borderRadius:
+                          BorderRadius.circular(Constants.radiusSmall),
+                    ),
+                    child: Icon(drill.icon, size: 20, color: drill.color),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(drill.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: _ts(17, FontWeight.w800, _ink)),
+                  ),
+                  _CountPill(text: '${_items.length}', color: drill.color),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    tooltip: webText(context, 'إغلاق', 'Close'),
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded,
+                        color: Constants.secondaryTextColor),
+                  ),
+                ],
+              ),
+            ),
+            if (_items.length > 8)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                child: TextField(
+                  autofocus: true,
+                  onChanged: (value) => setState(() => _query = value),
+                  style: _ts(13.5, FontWeight.w500, _ink),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    hintText: webText(context, 'ابحث في القائمة', 'Search'),
+                    hintStyle:
+                        _ts(13, FontWeight.w500, Constants.disabledTextColor),
+                    prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                    filled: true,
+                    fillColor: Constants.backgroundColor,
+                    border: OutlineInputBorder(
+                      borderRadius:
+                          BorderRadius.circular(Constants.radiusButton),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ),
+            const Divider(height: 1, color: Constants.mutedBorderColor),
+            Flexible(
+              child: visible.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 40),
+                      child: _PanelEmpty(
+                        icon: Icons.inbox_outlined,
+                        text: _items.isEmpty
+                            ? webText(context, 'لا توجد عناصر', 'No items')
+                            : webText(context, 'لا نتائج مطابقة',
+                                'No matching items'),
+                      ),
+                    )
+                  : ListView.separated(
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      itemCount: visible.length,
+                      separatorBuilder: (_, __) => const Divider(
+                        height: 1,
+                        indent: 20,
+                        endIndent: 20,
+                        color: Constants.mutedBorderColor,
+                      ),
+                      itemBuilder: (context, index) =>
+                          _buildRow(context, visible[index]),
+                    ),
+            ),
+            if (section != null) ...[
+              const Divider(height: 1, color: Constants.mutedBorderColor),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        webText(
+                          context,
+                          'للتعديل أو الحذف افتح قسم ${_sectionNames[section]}',
+                          'Open the section to edit or delete',
+                        ),
+                        style: _ts(
+                            12, FontWeight.w500, Constants.secondaryTextColor),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    FilledButton(
+                      onPressed: () => widget.onOpenSection(section),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Constants.primaryColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(Constants.radiusButton),
+                        ),
+                        textStyle: _ts(13, FontWeight.w700, Colors.white),
+                      ),
+                      child: Text(webText(
+                        context,
+                        'فتح قسم ${_sectionNames[section]}',
+                        'Open section',
+                      )),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRow(BuildContext context, _DrillItem item) {
+    final resolving = _resolving.contains(item.id);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    item.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textDirection: item.ltrTitle ? TextDirection.ltr : null,
+                    style: _ts(14, FontWeight.w700, _ink),
+                  ),
+                ),
+                if (item.subtitle.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    item.subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style:
+                        _ts(12, FontWeight.w500, Constants.secondaryTextColor),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (item.badge != null) ...[
+            const SizedBox(width: 10),
+            _CountPill(
+              text: item.badge!,
+              color: item.badgeColor ?? Constants.secondaryTextColor,
+            ),
+          ],
+          if (widget.drill.canResolveReports) ...[
+            const SizedBox(width: 10),
+            resolving
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : OutlinedButton.icon(
+                    onPressed: () => _resolve(item),
+                    style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      foregroundColor: Constants.successColor,
+                      side: BorderSide(
+                          color: Constants.successColor.withValues(alpha: 0.4)),
+                      textStyle:
+                          _ts(12, FontWeight.w700, Constants.successColor),
+                    ),
+                    icon: const Icon(Icons.check_rounded, size: 16),
+                    label: Text(webText(context, 'تم الإصلاح', 'Fixed')),
+                  ),
+          ],
         ],
       ),
     );
